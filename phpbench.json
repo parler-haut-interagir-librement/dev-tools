@@ -1,0 +1,4 @@
+{
+    "$include": ["config/phpbench.json"],
+    "runner.path": "tests"
+}

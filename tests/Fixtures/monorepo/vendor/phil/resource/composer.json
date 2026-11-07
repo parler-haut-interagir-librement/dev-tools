@@ -1,0 +1,9 @@
+{
+    "name": "phil/resource",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Phil\\Resource\\": "src/"
+        }
+    }
+}

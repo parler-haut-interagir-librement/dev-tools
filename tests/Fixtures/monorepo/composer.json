@@ -1,0 +1,9 @@
+{
+    "name": "phil/example-monorepo",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Example\\": "src/"
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "scripts": {
+        "cs": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff",
+        "cs:fix": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer fix",
+        "phpstan": [
+            "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress",
+            "@php @bin@ witnesses"
+        ],
+        "rector": "vendor-bin/rector/vendor/bin/rector process --dry-run",
+        "rector:fix": "vendor-bin/rector/vendor/bin/rector process",
+        "deptrac": "@php @bin@ deptrac",
+        "arkitect": "vendor-bin/arkitect/vendor/bin/phparkitect check --config=arkitect.php",
+        "test": "vendor/bin/phpunit",
+        "test:unit": "vendor/bin/phpunit --testsuite=Unit",
+        "test:integration": "vendor/bin/phpunit --testsuite=Integration",
+        "test:services": "@php @bin@ services test",
+        "test:next": "@php @bin@ php next",
+        "infection": "@php @bin@ infection",
+        "infection:changed": "@php @bin@ infection --changed",
+        "infection:next": "@php @bin@ php next -- php @bin@ infection",
+        "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
+        "deps": "vendor/bin/composer-dependency-analyser",
+        "docs": "@php @bin@ check-docs",
+        "paquets": "@php @bin@ check-packages",
+        "paquets:next": "@php @bin@ php next -- php @bin@ check-packages",
+        "portes": [
+            "@deps",
+            "@cs",
+            "@phpstan",
+            "@rector",
+            "@deptrac",
+            "@arkitect",
+            "@test",
+            "@infection"
+        ]
+    },
+    "descriptions": {
+        "phpstan": "PHPStan at the maximum level, then the witnesses that prove each forbidden call is still reported.",
+        "deptrac": "The layers, generated from the composer.json and phil-dev.php of each package.",
+        "test:services": "The Integration suite against the MySQL, PostgreSQL and Gotenberg of phil-dev services.",
+        "infection": "Mutation testing of the whole code at 100 % of covered mutants.",
+        "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",
+        "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
+        "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.",
+        "docs": "The documentation checks of each package.",
+        "paquets": "Each package installed on its own, with its dependency analysis and its tests.",
+        "paquets:next": "The same, on the next PHP of the matrix.",
+        "portes": "Every quality gate, in order."
+    }
+}

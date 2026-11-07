@@ -1,0 +1,12 @@
+{
+    "require": {
+        "php": ">={{php}}",
+        "infection/infection": "^0.34"
+    },
+    "config": {
+        "allow-plugins": {
+            "infection/extension-installer": true
+        },
+        "sort-packages": true
+    }
+}

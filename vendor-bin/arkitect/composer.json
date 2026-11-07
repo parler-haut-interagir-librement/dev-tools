@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "phparkitect/phparkitect": "^1.3"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

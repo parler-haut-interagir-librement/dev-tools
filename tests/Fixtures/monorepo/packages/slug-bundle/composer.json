@@ -1,0 +1,17 @@
+{
+    "name": "phil/slug-bundle",
+    "type": "symfony-bundle",
+    "require": {
+        "php": ">=8.5",
+        "phil/slug": "^0.1",
+        "phil/resource": "^0.1"
+    },
+    "require-dev": {
+        "tilttek/dice": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phil\\SlugBundle\\": "src/"
+        }
+    }
+}

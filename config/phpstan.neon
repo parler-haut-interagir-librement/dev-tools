@@ -1,0 +1,54 @@
+# The shared PHPStan configuration. A project's `phpstan.neon` includes this file and sets its own `tmpDir`, and
+# whatever only it needs (a Symfony container, a Doctrine object manager).
+#
+# `phpstan/extension-installer` loads phpstan-doctrine, phpstan-phpunit, phpstan-symfony and phpstan-strict-rules on
+# its own. `phpstan-disallowed.php` adds the sets of forbidden calls; `phpstan-workspace.php` adds the paths of the
+# root and of each package, and the exceptions their `phil-dev.php` declare.
+includes:
+    - phpstan-disallowed.php
+    - phpstan-workspace.php
+
+parameters:
+    level: max
+
+    # phpVersion comes from config/matrix.json, through phpstan-workspace.php: from the floor to the next PHP.
+
+    # The maximum level does not cover these three, and each is a place where a bug hides behind a type that looks
+    # right.
+    checkUninitializedProperties: true
+    checkBenevolentUnionTypes: true
+    treatPhpDocTypesAsCertain: true
+
+    # An exception that no longer matches anything is an exception nobody needs; the shared ones below do not count,
+    # since a package may have nothing they apply to.
+    reportUnmatchedIgnoredErrors: true
+
+    # Files derived at cache warm-up, and the witnesses, which must fail and are analysed apart; `phpstan-workspace.php`
+    # adds each package's own.
+    excludePaths:
+        analyse:
+            - '*/config/reference.php'
+            - '*/tests/Witnesses/*'
+
+    ignoreErrors:
+        # A test may assert what static analysis already proves: that a compiled container returns a given object,
+        # that a method does not exist. The test is there for the day the proof stops holding. Restricted to tests:
+        # in production code, an always-true comparison is a defect.
+        -
+            identifier: staticMethod.alreadyNarrowedType
+            path: '*/tests/*'
+            reportUnmatched: false
+        -
+            identifier: function.impossibleType
+            path: '*/tests/*'
+            reportUnmatched: false
+
+        # The timing-safe codecs are required everywhere, because a secret may pass through an encoding. A test only
+        # encodes published vectors and fixture values: the rule protects nothing there, and pushes towards workarounds
+        # (`pack('H*', …)`) that read worse than `hex2bin()`. In production code, each exception is written on its line
+        # with its reason, so that it follows the package into its own repository.
+        -
+            identifier: disallowed.function
+            message: '#^Calling (hex2bin|bin2hex|base64_decode|base64_encode)\(\) is forbidden, it is not timing-safe#'
+            path: '*/tests/*'
+            reportUnmatched: false

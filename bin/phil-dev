@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Phil\DevTools\Console\Application;
+
+// The autoloader of the project that installed this package, or of this repository while it is developed.
+foreach ([dirname(__DIR__, 3).'/autoload.php', dirname(__DIR__).'/vendor/autoload.php'] as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+
+        break;
+    }
+}
+
+if (!class_exists(Application::class)) {
+    fwrite(\STDERR, "phil-dev: run composer install first.\n");
+
+    exit(1);
+}
+
+exit(new Application()->run());

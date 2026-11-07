@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">={{php}}",
+        "friendsofphp/php-cs-fixer": "^3.95"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

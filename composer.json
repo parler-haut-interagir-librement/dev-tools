@@ -1,0 +1,114 @@
+{
+    "name": "phil/dev-tools",
+    "description": "Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts, documentation checks and the package skeleton.",
+    "type": "library",
+    "keywords": [
+        "dev-tools",
+        "quality",
+        "monorepo",
+        "skeleton",
+        "static-analysis"
+    ],
+    "license": "MIT",
+    "homepage": "https://ph-il.ca",
+    "authors": [
+        {
+            "name": "Philippe Gamache",
+            "email": "philippe@ph-il.ca",
+            "homepage": "https://github.com/ph-il",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.5",
+        "ext-mbstring": "*",
+        "symfony/console": "^8.2"
+    },
+    "require-dev": {
+        "bamarni/composer-bin-plugin": "^1.9",
+        "phpunit/phpunit": "^13.4",
+        "shipmonk/composer-dependency-analyser": "^1.8",
+        "symfony/http-client": "^8.2",
+        "symfony/phpunit-bridge": "^8.2"
+    },
+    "suggest": {
+        "symfony/http-client": "For HttpRecording, to record and replay the HTTP exchanges of integration tests (8.2 or later)",
+        "symfony/phpunit-bridge": "For HttpRecording and the #[UseRecord] attribute of integration tests (8.2 or later)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phil\\DevTools\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Phil\\DevTools\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/phil-dev"
+    ],
+    "config": {
+        "allow-plugins": {
+            "bamarni/composer-bin-plugin": true
+        },
+        "process-timeout": 0,
+        "sort-packages": true
+    },
+    "extra": {
+        "bamarni-bin": {
+            "bin-links": false,
+            "forward-command": true,
+            "target-directory": "vendor-bin"
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "cs": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff",
+        "cs:fix": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer fix",
+        "phpstan": [
+            "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress",
+            "@php bin/phil-dev witnesses"
+        ],
+        "rector": "vendor-bin/rector/vendor/bin/rector process --dry-run",
+        "rector:fix": "vendor-bin/rector/vendor/bin/rector process",
+        "deptrac": "@php bin/phil-dev deptrac",
+        "arkitect": "vendor-bin/arkitect/vendor/bin/phparkitect check --config=arkitect.php",
+        "test": "vendor/bin/phpunit",
+        "test:unit": "vendor/bin/phpunit --testsuite=Unit",
+        "test:integration": "vendor/bin/phpunit --testsuite=Integration",
+        "test:services": "@php bin/phil-dev services test",
+        "infection": "@php bin/phil-dev infection",
+        "infection:changed": "@php bin/phil-dev infection --changed",
+        "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
+        "deps": "vendor/bin/composer-dependency-analyser",
+        "docs": "@php bin/phil-dev check-docs",
+        "portes": [
+            "@deps",
+            "@cs",
+            "@phpstan",
+            "@rector",
+            "@deptrac",
+            "@arkitect",
+            "@test",
+            "@infection"
+        ],
+        "test:next": "@php bin/phil-dev php next",
+        "infection:next": "@php bin/phil-dev php next -- php bin/phil-dev infection"
+    },
+    "scripts-descriptions": {
+        "phpstan": "PHPStan at the maximum level, then the witnesses that prove each forbidden call is still reported.",
+        "deptrac": "The layers, generated from the composer.json and phil-dev.php of each package.",
+        "test:services": "The Integration suite against the MySQL, PostgreSQL and Gotenberg of phil-dev services.",
+        "infection": "Mutation testing of the whole code at 100 % of covered mutants.",
+        "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",
+        "docs": "The documentation checks of each package.",
+        "portes": "Every quality gate, in order.",
+        "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
+        "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release."
+    }
+}

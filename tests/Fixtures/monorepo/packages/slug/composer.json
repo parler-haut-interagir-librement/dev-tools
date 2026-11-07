@@ -1,0 +1,13 @@
+{
+    "name": "phil/slug",
+    "type": "library",
+    "require": {
+        "php": ">=8.5",
+        "phil/resource": "^0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Phil\\Slug\\": "src/"
+        }
+    }
+}

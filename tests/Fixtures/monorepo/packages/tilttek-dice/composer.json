@@ -1,0 +1,9 @@
+{
+    "name": "tilttek/dice",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Tilttek\\Dice\\": "src/"
+        }
+    }
+}

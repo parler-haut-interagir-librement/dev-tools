@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "phpbench/phpbench": "^1.4"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

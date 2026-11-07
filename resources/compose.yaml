@@ -1,0 +1,52 @@
+# The real servers the integration tests of PHIL and Tilttek packages run against: `phil-dev services up` starts them
+# under the project name `phil-dev-tools`, and `phil-dev services env` prints the variables the tests read.
+#
+# Every port is bound to 127.0.0.1 and can be moved by its variable. Port 3999 is left free on purpose: a Mercure hub
+# used by tests listens there.
+#
+# The data lives in tmpfs: the servers start empty each time, and stopping them leaves nothing behind.
+name: phil-dev-tools
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: phil_test
+      MYSQL_USER: phil
+      MYSQL_PASSWORD: phil
+      MYSQL_ROOT_PASSWORD: phil
+    ports:
+      - "127.0.0.1:${PHIL_DEV_MYSQL_PORT:-13306}:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uphil", "-pphil"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  postgresql:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: phil_test
+      POSTGRES_USER: phil
+      POSTGRES_PASSWORD: phil
+    ports:
+      - "127.0.0.1:${PHIL_DEV_POSTGRESQL_PORT:-15432}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "phil", "-d", "phil_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  gotenberg:
+    image: gotenberg/gotenberg:9
+    ports:
+      - "127.0.0.1:${PHIL_DEV_GOTENBERG_PORT:-3011}:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 60

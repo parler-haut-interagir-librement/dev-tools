@@ -1,0 +1,9 @@
+{
+    "php": [
+        {"version": "8.5", "status": "floor", "image": "php:8.5-cli"},
+        {"version": "8.6", "status": "next", "image": "php:8.6-rc-cli"}
+    ],
+    "symfony": [
+        {"version": "8.2", "status": "floor"}
+    ]
+}

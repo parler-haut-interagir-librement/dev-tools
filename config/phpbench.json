@@ -1,0 +1,16 @@
+{
+    "runner.bootstrap": "vendor/autoload.php",
+    "runner.file_pattern": "*Bench.php",
+    "runner.iterations": 5,
+    "runner.revs": 100,
+    "runner.warmup": 1,
+    "runner.retry_threshold": 5,
+    "report.generators": {
+        "phil": {
+            "generator": "expression",
+            "break": ["benchmark"],
+            "cols": ["benchmark", "subject", "set", "revs", "its", "mem_peak", "mode", "rstdev"]
+        }
+    },
+    "storage.xml_storage_path": "var/phpbench"
+}

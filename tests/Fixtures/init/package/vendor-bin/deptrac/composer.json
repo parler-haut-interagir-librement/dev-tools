@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "deptrac/deptrac": "^4.7"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
