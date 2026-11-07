@@ -21,9 +21,9 @@
         "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
         "deps": "vendor/bin/composer-dependency-analyser",
         "docs": "@php @bin@ check-docs",
-        "paquets": "@php @bin@ check-packages",
-        "paquets:next": "@php @bin@ php next -- php @bin@ check-packages",
-        "portes": [
+        "packages": "@php @bin@ check-packages",
+        "packages:next": "@php @bin@ php next -- php @bin@ check-packages",
+        "gates": [
             "@deps",
             "@cs",
             "@phpstan",
@@ -43,8 +43,8 @@
         "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
         "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.",
         "docs": "The documentation checks of each package.",
-        "paquets": "Each package installed on its own, with its dependency analysis and its tests.",
-        "paquets:next": "The same, on the next PHP of the matrix.",
-        "portes": "Every quality gate, in order."
+        "packages": "Each package installed on its own, with its dependency analysis and its tests.",
+        "packages:next": "The same, on the next PHP of the matrix.",
+        "gates": "Every quality gate, in order."
     }
 }

@@ -87,5 +87,5 @@ The root's `phil-dev.php` lists its own paths and the globs of its members. Two 
 - **Autoloading**: the root's `composer.json` loads the members' classes from their own `composer.json` with
   `"autoload-dev": {"files": ["vendor/phil/dev-tools/resources/autoload-members.php"]}`, instead of listing each
   namespace.
-- **Narrowing**: `PHIL_DEV_PACKAGES=tilttek-quests,tilttek-quests-bundle composer portes` runs every gate on those
+- **Narrowing**: `PHIL_DEV_PACKAGES=tilttek-quests,tilttek-quests-bundle composer gates` runs every gate on those
   members only; the generated rules still know every package, so the result is the same as in a full run.

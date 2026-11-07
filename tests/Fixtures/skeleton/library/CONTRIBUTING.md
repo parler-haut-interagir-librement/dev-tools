@@ -27,9 +27,9 @@ Open an issue before a large change, so that its design can be agreed first. The
    survives is a missing test, or code that nothing can reach.
 5. **Document it, in English.** Update the package's `doc/` and, when a topic is added, the documentation table of
    its README.
-6. **Pass the checks.** From the root of the monorepo, `composer portes` runs the quality checks on every package —
+6. **Pass the checks.** From the root of the monorepo, `composer gates` runs the quality checks on every package —
    the dependency analysis, PHP-CS-Fixer, PHPStan at its maximum level, Rector, Deptrac, Arkitect, PHPUnit and
-   Infection — and `composer paquets` installs each package on its own, checks its declared dependencies and runs
+   Infection — and `composer packages` installs each package on its own, checks its declared dependencies and runs
    its tests. A pull request is merged when every check passes.
 
 To check a package on its own, from its directory:

@@ -21,7 +21,7 @@
         "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
         "deps": "vendor/bin/composer-dependency-analyser",
         "docs": "@php @bin@ check-docs",
-        "portes": [
+        "gates": [
             "@deps",
             "@cs",
             "@phpstan",
@@ -41,6 +41,6 @@
         "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
         "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.",
         "docs": "The documentation checks of each package.",
-        "portes": "Every quality gate, in order."
+        "gates": "Every quality gate, in order."
     }
 }

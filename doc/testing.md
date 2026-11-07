@@ -4,7 +4,7 @@
 
 ```sh
 composer install
-composer portes
+composer gates
 ```
 
 `phil-dev` is checked by its own configurations: `phil-dev.php` at the root lists `src`, `tests`, `config` and

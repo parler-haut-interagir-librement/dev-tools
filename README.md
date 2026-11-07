@@ -47,7 +47,7 @@ several batches can work at once in their own worktrees.
 composer require --dev phil/dev-tools
 vendor/bin/phil-dev init
 composer update
-composer portes
+composer gates
 ```
 
 ## Requirements

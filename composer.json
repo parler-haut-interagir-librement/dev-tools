@@ -87,7 +87,7 @@
         "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
         "deps": "vendor/bin/composer-dependency-analyser",
         "docs": "@php bin/phil-dev check-docs",
-        "portes": [
+        "gates": [
             "@deps",
             "@cs",
             "@phpstan",
@@ -107,7 +107,7 @@
         "infection": "Mutation testing of the whole code at 100 % of covered mutants.",
         "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",
         "docs": "The documentation checks of each package.",
-        "portes": "Every quality gate, in order.",
+        "gates": "Every quality gate, in order.",
         "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
         "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release."
     }

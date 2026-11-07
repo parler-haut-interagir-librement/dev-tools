@@ -1,6 +1,6 @@
 # Quality gates
 
-`composer portes` runs them in this order, the order of a continuous integration job.
+`composer gates` runs them in this order, the order of a continuous integration job.
 
 ## The dependency analysis
 

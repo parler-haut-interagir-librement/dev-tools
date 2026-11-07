@@ -20,12 +20,12 @@ is given, and `phil-dev.php` is never replaced. [Commands](commands.md) describe
 
 | Script | What it runs |
 |---|---|
-| `composer portes` | Every gate in order: dependency analysis, code style, PHPStan, Rector, Deptrac, Arkitect, PHPUnit, Infection. |
+| `composer gates` | Every gate in order: dependency analysis, code style, PHPStan, Rector, Deptrac, Arkitect, PHPUnit, Infection. |
 | `composer cs:fix`, `composer rector:fix` | The fixes of PHP-CS-Fixer and Rector. |
 | `composer infection:changed` | Mutation testing of the files changed since the base ref, once per batch before its commit. |
-| `composer paquets` | Each package of a monorepo installed and tested on its own. |
+| `composer packages` | Each package of a monorepo installed and tested on its own. |
 | `composer docs` | The documentation checks of each package. |
-| `composer test:next`, `paquets:next`, `infection:next` | The same on the next PHP of the [version matrix](version-matrix.md). |
+| `composer test:next`, `packages:next`, `infection:next` | The same on the next PHP of the [version matrix](version-matrix.md). |
 | `composer test:services` | The Integration suite against the [real servers](services.md). |
 
 ## A new package

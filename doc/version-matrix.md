@@ -30,7 +30,7 @@ The matrix therefore holds one floor and at most one next version for each produ
 
 1. Add it to `config/matrix.json` with `"status": "next"` and, for PHP, its image (`php:8.6-rc-cli`).
 2. Build its image and run the tests: `vendor/bin/phil-dev php next --build`, then `composer test:next` and
-   `composer paquets:next` in a monorepo; for Symfony, `vendor/bin/phil-dev check-packages --symfony=next`.
+   `composer packages:next` in a monorepo; for Symfony, `vendor/bin/phil-dev check-packages --symfony=next`.
 3. Fix what fails on the next version without breaking the floor. A deprecation of the next version fails the tests.
 4. Move the image to the release (`php:8.6-cli`) when the version is released.
 

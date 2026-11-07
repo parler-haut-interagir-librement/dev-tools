@@ -56,8 +56,8 @@ final class InitializerTest extends TestCase
         self::assertSame(['allow-plugins' => ['bamarni/composer-bin-plugin' => true], 'process-timeout' => 0], $composer['config']);
         self::assertSame(['bamarni-bin' => ['bin-links' => false, 'forward-command' => true, 'target-directory' => 'vendor-bin']], $composer['extra']);
         self::assertIsArray($composer['scripts']);
-        self::assertArrayNotHasKey('paquets', $composer['scripts']);
-        self::assertSame(['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'], $composer['scripts']['portes']);
+        self::assertArrayNotHasKey('packages', $composer['scripts']);
+        self::assertSame(['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'], $composer['scripts']['gates']);
         self::assertSame('@php '.DevTools::binary($root).' infection --changed', $composer['scripts']['infection:changed']);
         self::assertSame(new Initializer($root)->descriptions(false), $composer['scripts-descriptions']);
     }
@@ -77,9 +77,9 @@ final class InitializerTest extends TestCase
         self::assertStringContainsString("<directory>tests</directory>\n            <directory>packages/*/tests/Unit</directory>", $files['phpunit.dist.xml']);
         self::assertStringContainsString("<directory>packages/*/tests/Integration</directory>\n            <directory>packages/*/tests/Functional</directory>", $files['phpunit.dist.xml']);
         self::assertStringContainsString("<include>\n            <directory>packages/*/src</directory>\n        </include>", $files['phpunit.dist.xml']);
-        self::assertArrayHasKey('paquets', $initializer->scripts(true));
-        self::assertArrayHasKey('paquets', $initializer->descriptions(true));
-        self::assertArrayNotHasKey('paquets', $initializer->descriptions(false));
+        self::assertArrayHasKey('packages', $initializer->scripts(true));
+        self::assertArrayHasKey('packages', $initializer->descriptions(true));
+        self::assertArrayNotHasKey('packages', $initializer->descriptions(false));
     }
 
     public function testAPackageWithoutTests(): void

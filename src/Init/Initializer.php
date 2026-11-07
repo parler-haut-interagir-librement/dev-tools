@@ -113,13 +113,13 @@ final readonly class Initializer
             'bench' => 'vendor-bin/phpbench/vendor/bin/phpbench run --report=phil',
             'deps' => 'vendor/bin/composer-dependency-analyser',
             'docs' => $bin.' check-docs',
-            'paquets' => $bin.' check-packages',
-            'paquets:next' => $bin.' php next -- php '.$binary.' check-packages',
-            'portes' => ['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'],
+            'packages' => $bin.' check-packages',
+            'packages:next' => $bin.' php next -- php '.$binary.' check-packages',
+            'gates' => ['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'],
         ];
 
         if (!$monorepo) {
-            unset($scripts['paquets'], $scripts['paquets:next']);
+            unset($scripts['packages'], $scripts['packages:next']);
         }
 
         return $scripts;
@@ -139,13 +139,13 @@ final readonly class Initializer
             'test:next' => 'The tests on the next PHP of the matrix, in its Docker image.',
             'infection:next' => 'Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.',
             'docs' => 'The documentation checks of each package.',
-            'paquets' => 'Each package installed on its own, with its dependency analysis and its tests.',
-            'paquets:next' => 'The same, on the next PHP of the matrix.',
-            'portes' => 'Every quality gate, in order.',
+            'packages' => 'Each package installed on its own, with its dependency analysis and its tests.',
+            'packages:next' => 'The same, on the next PHP of the matrix.',
+            'gates' => 'Every quality gate, in order.',
         ];
 
         if (!$monorepo) {
-            unset($descriptions['paquets'], $descriptions['paquets:next']);
+            unset($descriptions['packages'], $descriptions['packages:next']);
         }
 
         return $descriptions;

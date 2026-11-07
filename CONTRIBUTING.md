@@ -22,7 +22,7 @@ Open an issue before a large change, so that its design can be agreed first. The
    `config/matrix.json`.
 4. **Test it.** Every change comes with its tests, and the code is held to 100 % mutation coverage.
 5. **Document it, in English.** Update `doc/` and, when a topic is added, the documentation table of the README.
-6. **Pass the checks.** `composer portes` runs every gate on this package through its own configurations, and
+6. **Pass the checks.** `composer gates` runs every gate on this package through its own configurations, and
    `composer test:next` runs the tests on the next PHP of the matrix.
 
 ## Licence
