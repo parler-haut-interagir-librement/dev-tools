@@ -9,7 +9,8 @@ composer gates
 
 `phil-dev` is checked by its own configurations: `phil-dev.php` at the root lists `src`, `tests`, `config` and
 `bin/phil-dev`, and `init` wrote its thin files. The unit suite covers every class and command, with the processes
-recorded instead of run; the skeleton and the files `init` writes are compared with the golden copies of
+recorded instead of run, the programs of the `PATH` stood in by empty executables, and the built-in server of PHP
+standing in for FrankenPHP; the skeleton and the files `init` writes are compared with the golden copies of
 `tests/Fixtures/`. The witnesses of `tests/Witnesses/PhpStan` prove each forbidden call is reported, and Infection holds
 the code at 100 % of mutants killed.
 

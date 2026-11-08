@@ -21,6 +21,10 @@ in tmpfs: they start empty and leave nothing behind.
 
 Port 3999 stays free: a Mercure hub used by tests listens there. A variable already set is kept.
 
+The file also holds `frankenphp` (`dunglas/frankenphp:1-php8.5`, port 8090, moved by `PHIL_DEV_FRANKENPHP_PORT`), under
+the `bench` profile: `services up` leaves it out, and `phil-dev bench:worker` starts it with the worker script of a
+package; see [Benchmarks](benchmarks.md#worker-mode).
+
 ## In a test
 
 ```php

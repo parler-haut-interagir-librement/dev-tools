@@ -22,6 +22,13 @@ touches no file of the root: several batches can work at once in their own workt
 | Infection | none | `phil-dev infection` generates the configuration: Infection has no includes. |
 | PHPUnit | `phpunit.dist.xml` | Written whole by `init`, with globs for the packages of a monorepo. |
 | PHPBench | `phpbench.json` | Includes `config/phpbench.json`. |
+| Psalm | none | `phil-dev taint` generates the configuration of the taint analysis. |
+| TwigStan | none | `phil-dev twigstan` generates its configuration and its PHPStan configuration. |
+| Twig-CS-Fixer | none | The tool's standard, on the template directories. |
+| Biome | none | `phil-dev js` generates the configuration. |
+| churn-php | none | `phil-dev hotspots` generates the configuration. |
+| cspell, markdownlint, Vale | none | `phil-dev lint-docs` generates their configurations. |
+| CaptainHook | `captainhook.json` | Written whole by `init`. |
 
 PHPStan reads the workspace through a file generated under `var/phil-dev/`, because it keys its cache on the content of
 its configuration files and would otherwise miss a change in a `phil-dev.php`.
@@ -53,7 +60,18 @@ return [
     ],
     'deptrac' => ['allow' => ['^League\\\\Uri\\\\.*']],
     'arkitect' => ['namespaces' => ['Legacy'], 'rules' => static fn (): array => []],
-    'docs' => ['public' => false],
+    'docs' => ['public' => false, 'language' => 'en', 'words' => ['Melkor']],
+    'gates' => ['js' => false],
+    'phpunit' => ['parallel' => true],
+    'psalm' => ['excludes' => ['src/Generated'], 'suppress' => ['TaintedHtml' => ['src/RawRenderer.php']]],
+    'fuzz' => ['targets' => ['markup' => 'tests/Fuzz/markup.php'], 'budget' => 60],
+    'bench' => ['threshold' => 10, 'worker' => ['script' => 'tests/Bench/worker.php']],
+    'bc' => ['tags' => 'v*'],
+    'split' => ['repository' => 'git@github.com:parler-haut-interagir-librement/example.git'],
+    'twig' => ['paths' => ['templates'], 'loader' => 'tests/twig-loader.php'],
+    'js' => ['paths' => ['assets/controllers'], 'rules' => ['style' => ['noNonNullAssertion' => 'off']]],
+    'unused' => ['ignore' => ['symfony/polyfill-php86']],
+    'hotspots' => ['files' => 10, 'since' => 'One year ago'],
 ];
 ```
 
@@ -78,7 +96,24 @@ return [
 | | `rules` | A callable returning extra Arkitect rules. |
 | `docs` | `public` | Set once the package is split to its public repository: the CHANGELOG may then use every section. |
 | | `forbidden` | Root only: regular expressions of the terms no package names. |
-| `phpunit` | | Reserved. |
+| | `language` | `en`, the default, or `fr`: the language cspell reads; Vale reads English only. The root's is its members' default. |
+| | `words` | Words cspell accepts besides the shared list; the root's apply to every member. |
+| | `markdownlint` | Root only: markdownlint rules over the shared ones. |
+| `gates` | `audit`, `unused`, `normalize`, `twig`, `js` | Root only: `false` turns that gate off. |
+| `phpunit` | `parallel` | Root only: `false` runs the tests with PHPUnit instead of ParaTest. |
+| `psalm` | `excludes` | Paths the taint analysis leaves out. |
+| | `suppress` | An issue type, such as `TaintedHtml`, with the paths where it is a reviewed exception. |
+| `fuzz` | `targets` | A name and the PHP file of each fuzz target. |
+| | `budget`, `corpus` | The seconds each target is fuzzed for, 60 by default; the corpus directory, `tests/Fuzz/corpus` by default. |
+| `bench` | `threshold` | Root only: the slowdown `bench:compare` allows, in percent; 10 by default. |
+| | `worker` | The `script`, `requests` and `warmup` of the worker-mode benchmark. |
+| `bc` | `tags` | Root only: the glob of the tags `bc` compares with; every tag by default. |
+| `split` | `repository`, `branch`, `prefix` | Where a finished member is split to, its branch, and its directory in a target monorepo. |
+| `twig` | `paths`, `loader` | The template directories; a PHP file returning the `Twig\Environment` TwigStan compiles with. |
+| `js` | `paths`, `rules` | The script directories; Biome rules by group. |
+| | `biome` | Root only: the Biome version downloaded. |
+| `unused` | `ignore` | Packages composer-unused leaves out, used only through configuration. |
+| `hotspots` | `files`, `since` | Root only: how many files churn-php shows, and from when it reads the history. |
 
 ## A monorepo
 

@@ -14,6 +14,8 @@
 | `src/`, `tests/Unit/` | empty | the bundle class on `AbstractBundle` and its test |
 
 The versions come from the floor of the [version matrix](version-matrix.md), and the constraints allow the next one.
+The `composer.json` requires `roave/security-advisories` in `require-dev`, which keeps every version with an advisory
+out of an installation, and is written normalized, as the `deps:normalize` gate wants it.
 
 ## The wording
 

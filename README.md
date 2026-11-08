@@ -4,9 +4,12 @@
 documentation checks and the package skeleton.**
 
 phil/dev-tools holds, once, what every PHIL and Tilttek package checks itself with: the configurations of
-PHP-CS-Fixer, PHPStan, Rector, Deptrac, Arkitect, Infection, PHPUnit and PHPBench, the Composer scripts that run them,
-the documentation checks, the standalone check of each package, the real servers of the integration tests, the HTTP
-recordings that replay them offline, the matrix of PHP and Symfony versions, and the skeleton of a new package.
+PHP-CS-Fixer, PHPStan and its extensions, Rector, Deptrac, Arkitect, Infection, PHPUnit with ParaTest and PHPBench, the
+gates of the dependencies, of the Twig templates and of the scripts, the security checks — the taint analysis, fuzzing,
+the advisories and the bill of materials —, the backward-compatibility check, the Composer scripts that run them, the
+documentation checks, the standalone check of each package, the real servers of the integration tests, the HTTP
+recordings that replay them offline, the benchmarks, the hooks and the split of a monorepo, the matrix of PHP and
+Symfony versions, and the skeleton of a new package.
 
 A package installs it in `require-dev` and runs `vendor/bin/phil-dev init`, which writes thin configuration files that
 call the shared ones. Each package keeps its own paths and exceptions in a small `phil-dev.php`; in a monorepo, the
@@ -22,6 +25,10 @@ several batches can work at once in their own worktrees.
 | Per-package allowed dependencies, generated into Deptrac | Implemented and tested |
 | Real servers, HTTP recordings, member autoloading | Implemented and tested |
 | The version matrix, `php` and `matrix`, `check-packages --symfony` | Implemented and tested |
+| The gates `audit`, `unused`, `normalize`, `twig` and `js`, ParaTest, the PHPStan extensions | Implemented and tested |
+| `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implemented and tested |
+| `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service | Implemented and tested |
+| `split`, the CaptainHook configuration, `lint-docs`, `hotspots` | Implemented and tested |
 
 ## Documentation
 
@@ -30,7 +37,10 @@ several batches can work at once in their own worktrees.
 | [Installation and usage](doc/installation.md) | Installing, `init`, the Composer scripts, a new package. |
 | [Commands](doc/commands.md) | Every command and option of `phil-dev`. |
 | [Configuration](doc/configuration.md) | How the configurations are layered, and every section of `phil-dev.php`. |
-| [Quality gates](doc/quality-gates.md) | What each gate checks, the PHPStan witnesses, the Infection modes. |
+| [Quality gates](doc/quality-gates.md) | What each gate checks, which checks are scripts of their own, the PHPStan witnesses, the Infection modes. |
+| [Security checks](doc/security.md) | The advisories, the taint analysis of Psalm, fuzzing, the bill of materials. |
+| [Benchmarks](doc/benchmarks.md) | PHPBench, the regressions against a baseline, the worker mode of FrankenPHP. |
+| [The monorepo workflow](doc/workflow.md) | The hooks, the split of the finished packages, the prose of the documentation, the hotspots. |
 | [Dependencies](doc/dependencies.md) | The default every library may use, and what each package is allowed. |
 | [Real servers](doc/services.md) | MySQL, PostgreSQL and Gotenberg in Docker, and their variables. |
 | [HTTP recordings](doc/http-recordings.md) | Recording and replaying HTTP services with the recorder of Symfony 8.2. |
@@ -47,12 +57,15 @@ several batches can work at once in their own worktrees.
 composer require --dev phil/dev-tools
 vendor/bin/phil-dev init
 composer update
+composer deps:normalize:fix
+composer hooks
 composer gates
 ```
 
 ## Requirements
 
-PHP 8.5 or later; Docker for the real servers and the next PHP of the matrix.
+PHP 8.5 or later; Docker for the real servers, FrankenPHP and the next PHP of the matrix; git for the split; cspell,
+markdownlint-cli2 and Vale, or Node.js for the first two, to lint the prose of the documentation.
 
 ## Contributing
 
