@@ -1,0 +1,14 @@
+# Words that tell the reader something is easy, or that weaken a sentence without adding to it.
+extends: existence
+message: "Leave out '%s': say what the reader does, not how easy it is."
+level: warning
+ignorecase: true
+tokens:
+  - simply
+  - just
+  - obviously
+  - of course
+  - easily
+  - basically
+  - clearly
+  - straightforward

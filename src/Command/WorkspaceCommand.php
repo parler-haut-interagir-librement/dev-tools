@@ -9,6 +9,7 @@ use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Process\ProcessRunner;
 use Phil\DevTools\Workspace\Workspace;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * A command that works on the workspace of a root directory: `PHIL_DEV_ROOT`, or the directory it runs from.
@@ -33,19 +34,19 @@ abstract class WorkspaceCommand extends Command
     }
 
     /**
-     * Writes a generated file under `var/phil-dev/` of the root, and returns its path.
+     * Writes a generated file under `var/phil-dev/` of the root, in a subdirectory when its name has one, and returns its path.
      */
     protected function generate(string $name, string $content): string
     {
-        $directory = $this->workspace()->root->path('var/phil-dev');
+        $file = $this->workspace()->root->path('var/phil-dev/'.$name);
 
-        if (!is_dir($directory)) {
-            mkdir($directory, recursive: true);
+        if (!is_dir(\dirname($file))) {
+            mkdir(\dirname($file), recursive: true);
         }
 
-        file_put_contents($directory.'/'.$name, $content);
+        file_put_contents($file, $content);
 
-        return $directory.'/'.$name;
+        return $file;
     }
 
     /**
@@ -54,5 +55,43 @@ abstract class WorkspaceCommand extends Command
     protected function tool(string $tool, string $binary): string
     {
         return $this->workspace()->root->path('vendor-bin/'.$tool.'/vendor/bin/'.$binary);
+    }
+
+    /**
+     * Composer: the one running the script when `phil-dev` runs from a Composer script, else the one on the `PATH`.
+     *
+     * @return non-empty-list<string>
+     */
+    protected function composer(): array
+    {
+        $binary = getenv('COMPOSER_BINARY');
+
+        return \is_string($binary) && '' !== $binary ? [\PHP_BINARY, $binary] : ['composer'];
+    }
+
+    /**
+     * A whole number given as an option, a string of digits, or in a manifest, an integer; null for anything else.
+     */
+    protected static function wholeNumber(mixed $value): ?int
+    {
+        if (\is_int($value)) {
+            return $value;
+        }
+
+        return \is_string($value) && 1 === preg_match('/^\d+$/', $value) ? (int) $value : null;
+    }
+
+    /**
+     * Whether the gate is on: every gate is, unless the root's `phil-dev.php` turns it off under `gates`.
+     */
+    protected function gateIsOn(string $gate, OutputInterface $output): bool
+    {
+        if ($this->workspace()->root->manifest->flag('gates', $gate, true)) {
+            return true;
+        }
+
+        $output->writeln(\sprintf('The %s gate is turned off in phil-dev.php.', $gate));
+
+        return false;
     }
 }

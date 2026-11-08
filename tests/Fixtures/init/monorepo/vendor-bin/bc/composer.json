@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "roave/backward-compatibility-check": "^8.27"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

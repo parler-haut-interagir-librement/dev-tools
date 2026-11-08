@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Tests\Unit\Support;
 
+use Closure;
 use Override;
 use Phil\DevTools\Process\ProcessResult;
 use Phil\DevTools\Process\ProcessRunner;
@@ -13,8 +14,15 @@ use Phil\DevTools\Process\ProcessRunner;
  */
 final class RecordingRunner implements ProcessRunner
 {
-    /** @var list<array{command: list<string>, directory: string, environment: array<string, string>, capture: bool}> */
+    /** @var list<array{command: list<string>, directory: string, environment: array<string, string>, capture: bool, timeout: int|null}> */
     public array $runs = [];
+
+    /**
+     * Called with each command run, before its result is given: what the command would have done on disk.
+     *
+     * @var (Closure(list<string>): void)|null
+     */
+    public ?Closure $onRun = null;
 
     /**
      * @param list<ProcessResult> $results
@@ -24,9 +32,13 @@ final class RecordingRunner implements ProcessRunner
     }
 
     #[Override]
-    public function run(array $command, string $directory, array $environment = []): ProcessResult
+    public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult
     {
-        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => false];
+        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => false, 'timeout' => $timeout];
+
+        if ($this->onRun instanceof Closure) {
+            ($this->onRun)($command);
+        }
 
         return array_shift($this->results) ?? new ProcessResult(0);
     }
@@ -34,7 +46,7 @@ final class RecordingRunner implements ProcessRunner
     #[Override]
     public function capture(array $command, string $directory, array $environment = []): ProcessResult
     {
-        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => true];
+        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => true, 'timeout' => null];
 
         return array_shift($this->results) ?? new ProcessResult(0);
     }

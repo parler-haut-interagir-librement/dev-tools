@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "kocal/biome-js-bundle": "^2.1"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

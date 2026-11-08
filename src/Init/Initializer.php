@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Init;
 
+use Phil\DevTools\Config\CaptainHookConfig;
 use Phil\DevTools\DevTools;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
@@ -20,7 +21,10 @@ use Phil\DevTools\Workspace\Manifest;
 final readonly class Initializer
 {
     /** @var list<string> */
-    public const array TOOLS = ['arkitect', 'deptrac', 'infection', 'php-cs-fixer', 'phpbench', 'phpstan', 'rector'];
+    public const array TOOLS = [
+        'arkitect', 'bc', 'biome', 'captainhook', 'churn', 'composer-normalize', 'composer-unused', 'deptrac', 'fuzzer',
+        'infection', 'php-cs-fixer', 'phpbench', 'phpstan', 'psalm', 'rector', 'sbom', 'twig',
+    ];
 
     /**
      * The development dependencies every project needs besides the tools of `vendor-bin/`.
@@ -29,8 +33,21 @@ final readonly class Initializer
      */
     public const array DEV_REQUIRES = [
         'bamarni/composer-bin-plugin' => '^1.9',
+        'brianium/paratest' => '^7.27',
+        'ergebnis/phpunit-slow-test-detector' => '^2.27',
         'phpunit/phpunit' => '^13.4',
         'shipmonk/composer-dependency-analyser' => '^1.8',
+    ];
+
+    /**
+     * The gates `composer gates` runs, cheapest first: each is reliable and fast enough for every batch. The slow
+     * checks — taint, fuzz, sbom, bc, bench:compare, twigstan, docs:lint, hotspots — are scripts of their own.
+     *
+     * @var list<string>
+     */
+    public const array GATES = [
+        '@deps', '@deps:audit', '@deps:unused', '@deps:normalize', '@cs', '@twig', '@js', '@phpstan', '@rector',
+        '@deptrac', '@arkitect', '@test', '@infection',
     ];
 
     public function __construct(private string $root)
@@ -69,6 +86,7 @@ final readonly class Initializer
             'phpstan.neon' => $this->template('phpstan.neon.tpl', ['config' => $config]),
             'phpbench.json' => $this->template('phpbench.json.tpl', ['config' => $config, 'bench' => $monorepo ? 'packages' : 'tests']),
             'phpunit.dist.xml' => $this->phpunit($monorepo),
+            'captainhook.json' => new CaptainHookConfig(DevTools::binary($this->root))->json(),
         ];
 
         if (!$monorepo) {
@@ -102,24 +120,44 @@ final readonly class Initializer
             'rector:fix' => 'vendor-bin/rector/vendor/bin/rector process',
             'deptrac' => $bin.' deptrac',
             'arkitect' => 'vendor-bin/arkitect/vendor/bin/phparkitect check --config=arkitect.php',
-            'test' => 'vendor/bin/phpunit',
-            'test:unit' => 'vendor/bin/phpunit --testsuite=Unit',
-            'test:integration' => 'vendor/bin/phpunit --testsuite=Integration',
+            'twig' => $bin.' twig',
+            'twig:fix' => $bin.' twig --fix',
+            'twigstan' => $bin.' twigstan',
+            'js' => $bin.' js',
+            'js:fix' => $bin.' js --fix',
+            'test' => $bin.' test',
+            'test:unit' => $bin.' test --suite=Unit',
+            'test:integration' => $bin.' test --suite=Integration',
             'test:services' => $bin.' services test',
             'test:next' => $bin.' php next',
             'infection' => $bin.' infection',
             'infection:changed' => $bin.' infection --changed',
             'infection:next' => $bin.' php next -- php '.$binary.' infection',
-            'bench' => 'vendor-bin/phpbench/vendor/bin/phpbench run --report=phil',
+            'bench' => $bin.' bench',
+            'bench:baseline' => $bin.' bench --baseline',
+            'bench:compare' => $bin.' bench --compare',
+            'bench:worker' => $bin.' bench:worker',
             'deps' => 'vendor/bin/composer-dependency-analyser',
+            'deps:audit' => $bin.' audit',
+            'deps:unused' => $bin.' unused',
+            'deps:normalize' => $bin.' normalize',
+            'deps:normalize:fix' => $bin.' normalize --fix',
+            'taint' => $bin.' taint',
+            'fuzz' => $bin.' fuzz',
+            'sbom' => $bin.' sbom',
+            'bc' => $bin.' bc',
+            'hotspots' => $bin.' hotspots',
             'docs' => $bin.' check-docs',
+            'docs:lint' => $bin.' lint-docs',
+            'hooks' => 'vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json',
             'packages' => $bin.' check-packages',
             'packages:next' => $bin.' php next -- php '.$binary.' check-packages',
-            'gates' => ['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'],
+            'split' => $bin.' split',
+            'gates' => self::GATES,
         ];
 
         if (!$monorepo) {
-            unset($scripts['packages'], $scripts['packages:next']);
+            unset($scripts['packages'], $scripts['packages:next'], $scripts['split']);
         }
 
         return $scripts;
@@ -141,11 +179,30 @@ final readonly class Initializer
             'docs' => 'The documentation checks of each package.',
             'packages' => 'Each package installed on its own, with its dependency analysis and its tests.',
             'packages:next' => 'The same, on the next PHP of the matrix.',
-            'gates' => 'Every quality gate, in order.',
+            'gates' => 'Every quality gate, in order: the slow checks are scripts of their own.',
+            'test' => 'The tests with ParaTest, one process per core, or PHPUnit when ParaTest is missing.',
+            'twig' => 'The code style of the Twig templates, with Twig-CS-Fixer.',
+            'twigstan' => 'The Twig templates analysed by TwigStan; a script of its own.',
+            'js' => 'The Stimulus controllers and other scripts, checked by Biome.',
+            'bench:baseline' => 'The benchmarks, stored as the baseline of this machine.',
+            'bench:compare' => 'The benchmarks against the baseline, failing above the threshold of bench.threshold.',
+            'bench:worker' => 'A page served by FrankenPHP in worker mode, measured.',
+            'deps:audit' => 'The installed packages against the security advisories.',
+            'deps:unused' => 'The required packages the code never uses, with composer-unused.',
+            'deps:normalize' => 'Every composer.json checked against composer-normalize.',
+            'deps:normalize:fix' => 'Every composer.json normalized.',
+            'taint' => 'The taint analysis of Psalm on the production code; a script of its own.',
+            'fuzz' => 'The fuzz targets of the packages, each for its time budget; a script of its own.',
+            'sbom' => 'The CycloneDX bill of materials of each package, under var/phil-dev/sbom/.',
+            'bc' => 'The public API against the latest tag, for backward-compatibility breaks.',
+            'hotspots' => 'The files that change most and are the most complex, with churn-php.',
+            'docs:lint' => 'The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.',
+            'hooks' => 'Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.',
+            'split' => 'The finished packages split to their public repositories; dry run unless --push is given.',
         ];
 
         if (!$monorepo) {
-            unset($descriptions['packages'], $descriptions['packages:next']);
+            unset($descriptions['packages'], $descriptions['packages:next'], $descriptions['split']);
         }
 
         return $descriptions;
@@ -237,11 +294,23 @@ final readonly class Initializer
             'unit' => $this->directories($unit),
             'integration' => $this->directories($integration),
             'source' => $this->directories($source),
-            // The recorder of `#[UseRecord]` needs the extension of `symfony/phpunit-bridge`, when it is installed.
-            'extensions' => is_dir($this->root.'/vendor/symfony/phpunit-bridge')
-                ? "\n    <extensions>\n        <bootstrap class=\"Symfony\\Bridge\\PhpUnit\\SymfonyExtension\" />\n    </extensions>\n"
-                : '',
+            'extensions' => $this->extensions(),
         ]);
+    }
+
+    /**
+     * The PHPUnit extensions: the slow-test detector, a development dependency of every project, and the recorder of
+     * `#[UseRecord]`, which needs the extension of `symfony/phpunit-bridge` when it is installed.
+     */
+    private function extensions(): string
+    {
+        $extensions = ['        <bootstrap class="Ergebnis\\PHPUnit\\SlowTestDetector\\Extension" />'];
+
+        if (is_dir($this->root.'/vendor/symfony/phpunit-bridge')) {
+            $extensions[] = '        <bootstrap class="Symfony\\Bridge\\PhpUnit\\SymfonyExtension" />';
+        }
+
+        return "\n    <extensions>\n".implode("\n", $extensions)."\n    </extensions>\n";
     }
 
     /**

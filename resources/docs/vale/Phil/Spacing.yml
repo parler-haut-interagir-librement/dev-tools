@@ -1,0 +1,8 @@
+# Two spaces between words, or a space before a comma or a full stop.
+extends: existence
+message: "Remove the extra space in '%s'."
+level: warning
+nonword: true
+tokens:
+  - '[a-z][.?!,] {2,}[A-Za-z]'
+  - '[a-z] +[,.;:](?:\s|$)'

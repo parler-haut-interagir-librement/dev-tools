@@ -27,7 +27,10 @@ final readonly class Manifest
     public const string FILE = 'phil-dev.php';
 
     /** @var list<string> */
-    public const array SECTIONS = ['paths', 'packages', 'phpstan', 'rector', 'cs', 'infection', 'deptrac', 'arkitect', 'docs', 'phpunit'];
+    public const array SECTIONS = [
+        'paths', 'packages', 'phpstan', 'rector', 'cs', 'infection', 'deptrac', 'arkitect', 'docs', 'phpunit',
+        'gates', 'psalm', 'fuzz', 'bench', 'bc', 'split', 'twig', 'js', 'unused', 'hotspots',
+    ];
 
     /**
      * @param array<string, mixed> $data

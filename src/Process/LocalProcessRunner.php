@@ -12,11 +12,39 @@ use RuntimeException;
  */
 final class LocalProcessRunner implements ProcessRunner
 {
-    public function run(array $command, string $directory, array $environment = []): ProcessResult
+    /**
+     * How often a command with a timeout is looked at.
+     */
+    private const int POLL_MICROSECONDS = 50_000;
+
+    public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult
     {
         $process = $this->open($command, [], $directory, $environment, $pipes);
 
-        return new ProcessResult(proc_close($process));
+        if (null === $timeout) {
+            return new ProcessResult(proc_close($process));
+        }
+
+        $deadline = hrtime(true) + $timeout * 1_000_000_000;
+
+        while (true) {
+            $status = proc_get_status($process);
+
+            if (!$status['running']) {
+                proc_close($process);
+
+                return new ProcessResult($status['exitcode']);
+            }
+
+            if (hrtime(true) >= $deadline) {
+                proc_terminate($process);
+                proc_close($process);
+
+                return new ProcessResult(0, timedOut: true);
+            }
+
+            usleep(self::POLL_MICROSECONDS);
+        }
     }
 
     public function capture(array $command, string $directory, array $environment = []): ProcessResult
@@ -38,7 +66,7 @@ final class LocalProcessRunner implements ProcessRunner
      *
      * @return resource
      */
-    private function open(array $command, array $descriptors, string $directory, array $environment, ?array &$pipes)
+    private function open(array $command, array $descriptors, string $directory, array $environment, ?array &$pipes) // @phpstan-ignore typeCoverage.returnTypeCoverage (a process is a resource, which PHP has no type for)
     {
         // The point of this class: every process of phil-dev goes through here, without a shell.
         $process = proc_open($command, $descriptors, $pipes, $directory, [...getenv(), ...$environment]); // @phpstan-ignore disallowed.function

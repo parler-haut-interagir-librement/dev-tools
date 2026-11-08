@@ -98,7 +98,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
             if (true === $input->getOption('keep')) {
                 $output->writeln('   kept in '.$work);
             } else {
-                $this->remove($work);
+                Files::removeDirectory($work);
             }
         }
 
@@ -165,20 +165,5 @@ final class CheckPackagesCommand extends WorkspaceCommand
             $path = $target.substr($item->getPathname(), \strlen($package->dir));
             $item->isDir() ? mkdir($path) : copy($item->getPathname(), $path);
         }
-    }
-
-    private function remove(string $directory): void
-    {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        /** @var SplFileInfo $item */
-        foreach ($iterator as $item) {
-            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
-        }
-
-        rmdir($directory);
     }
 }

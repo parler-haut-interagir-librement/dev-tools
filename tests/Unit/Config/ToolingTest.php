@@ -199,4 +199,23 @@ final class ToolingTest extends TestCase
         $tooling->phpstanInclude('phpstan', ['parameters' => []]);
         self::assertSame(['parameters' => []], require $file);
     }
+
+    public function testTheTemplateAndScriptDirectories(): void
+    {
+        $root = $this->fixture('monorepo');
+        mkdir($root.'/templates');
+        mkdir($root.'/packages/slug-bundle/src/Resources/views', 0o777, true);
+        mkdir($root.'/packages/slug-bundle/assets');
+        mkdir($root.'/packages/slug/views');
+        mkdir($root.'/packages/slug/js');
+        mkdir($root.'/packages/slug/templates');
+        file_put_contents($root.'/packages/slug/phil-dev.php', "<?php return ['twig' => ['paths' => ['views', 'views', 'missing']], 'js' => ['paths' => ['js']]];");
+
+        $tooling = new Tooling(Workspace::load($root));
+
+        self::assertSame([$root.'/templates', $root.'/packages/slug/views', $root.'/packages/slug-bundle/src/Resources/views'], $tooling->templateDirectories());
+        self::assertSame([$root.'/packages/slug/js', $root.'/packages/slug-bundle/assets'], $tooling->scriptDirectories());
+        self::assertSame(['templates', 'src/Resources/views', 'Resources/views'], Tooling::TEMPLATE_DIRECTORIES);
+        self::assertSame(['assets'], Tooling::SCRIPT_DIRECTORIES);
+    }
 }

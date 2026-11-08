@@ -32,4 +32,16 @@ final class FilesTest extends TestCase
 
         Files::read($directory);
     }
+
+    public function testADirectoryIsRemovedWithEverythingInIt(): void
+    {
+        $directory = sys_get_temp_dir().'/phil-dev-files-'.getmypid();
+        mkdir($directory.'/a/b', 0o777, true);
+        file_put_contents($directory.'/a/b/c.txt', 'c');
+        file_put_contents($directory.'/d.txt', 'd');
+
+        Files::removeDirectory($directory);
+
+        self::assertDirectoryDoesNotExist($directory);
+    }
 }

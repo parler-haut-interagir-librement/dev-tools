@@ -1,0 +1,12 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "cyclonedx/cyclonedx-php-composer": "^6.2"
+    },
+    "config": {
+        "allow-plugins": {
+            "cyclonedx/cyclonedx-php-composer": true
+        },
+        "sort-packages": true
+    }
+}

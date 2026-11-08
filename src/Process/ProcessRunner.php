@@ -11,12 +11,14 @@ namespace Phil\DevTools\Process;
 interface ProcessRunner
 {
     /**
-     * Runs the command in the directory, its output going to the terminal.
+     * Runs the command in the directory, its output going to the terminal. With a timeout, in seconds, the command is
+     * stopped once it has run that long, and the result says so.
      *
      * @param non-empty-list<string> $command
      * @param array<string, string>  $environment variables added to the inherited environment
+     * @param positive-int|null      $timeout
      */
-    public function run(array $command, string $directory, array $environment = []): ProcessResult;
+    public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult;
 
     /**
      * Runs the command in the directory and captures its standard output, for a command whose output is read.

@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "captainhook/captainhook": "^5.29"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

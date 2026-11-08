@@ -1,6 +1,7 @@
 {
     "name": "phil/dev-tools",
     "description": "Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts, documentation checks and the package skeleton.",
+    "license": "MIT",
     "type": "library",
     "keywords": [
         "dev-tools",
@@ -9,8 +10,6 @@
         "skeleton",
         "static-analysis"
     ],
-    "license": "MIT",
-    "homepage": "https://ph-il.ca",
     "authors": [
         {
             "name": "Philippe Gamache",
@@ -19,6 +18,7 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://ph-il.ca",
     "require": {
         "php": ">=8.5",
         "ext-mbstring": "*",
@@ -26,6 +26,8 @@
     },
     "require-dev": {
         "bamarni/composer-bin-plugin": "^1.9",
+        "brianium/paratest": "^7.27",
+        "ergebnis/phpunit-slow-test-detector": "^2.27",
         "phpunit/phpunit": "^13.4",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "symfony/http-client": "^8.2",
@@ -35,6 +37,8 @@
         "symfony/http-client": "For HttpRecording, to record and replay the HTTP exchanges of integration tests (8.2 or later)",
         "symfony/phpunit-bridge": "For HttpRecording and the #[UseRecord] attribute of integration tests (8.2 or later)"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Phil\\DevTools\\": "src/"
@@ -65,31 +69,32 @@
             "dev-main": "0.1.x-dev"
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "scripts": {
+        "arkitect": "vendor-bin/arkitect/vendor/bin/phparkitect check --config=arkitect.php",
+        "bc": "@php bin/phil-dev bc",
+        "bench": "@php bin/phil-dev bench",
+        "bench:baseline": "@php bin/phil-dev bench --baseline",
+        "bench:compare": "@php bin/phil-dev bench --compare",
+        "bench:worker": "@php bin/phil-dev bench:worker",
         "cs": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff",
         "cs:fix": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer fix",
-        "phpstan": [
-            "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress",
-            "@php bin/phil-dev witnesses"
-        ],
-        "rector": "vendor-bin/rector/vendor/bin/rector process --dry-run",
-        "rector:fix": "vendor-bin/rector/vendor/bin/rector process",
-        "deptrac": "@php bin/phil-dev deptrac",
-        "arkitect": "vendor-bin/arkitect/vendor/bin/phparkitect check --config=arkitect.php",
-        "test": "vendor/bin/phpunit",
-        "test:unit": "vendor/bin/phpunit --testsuite=Unit",
-        "test:integration": "vendor/bin/phpunit --testsuite=Integration",
-        "test:services": "@php bin/phil-dev services test",
-        "infection": "@php bin/phil-dev infection",
-        "infection:changed": "@php bin/phil-dev infection --changed",
-        "bench": "vendor-bin/phpbench/vendor/bin/phpbench run --report=phil",
         "deps": "vendor/bin/composer-dependency-analyser",
+        "deps:audit": "@php bin/phil-dev audit",
+        "deps:normalize": "@php bin/phil-dev normalize",
+        "deps:normalize:fix": "@php bin/phil-dev normalize --fix",
+        "deps:unused": "@php bin/phil-dev unused",
+        "deptrac": "@php bin/phil-dev deptrac",
         "docs": "@php bin/phil-dev check-docs",
+        "docs:lint": "@php bin/phil-dev lint-docs",
+        "fuzz": "@php bin/phil-dev fuzz",
         "gates": [
             "@deps",
+            "@deps:audit",
+            "@deps:unused",
+            "@deps:normalize",
             "@cs",
+            "@twig",
+            "@js",
             "@phpstan",
             "@rector",
             "@deptrac",
@@ -97,18 +102,57 @@
             "@test",
             "@infection"
         ],
+        "hooks": "vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json",
+        "hotspots": "@php bin/phil-dev hotspots",
+        "infection": "@php bin/phil-dev infection",
+        "infection:changed": "@php bin/phil-dev infection --changed",
+        "infection:next": "@php bin/phil-dev php next -- php bin/phil-dev infection",
+        "js": "@php bin/phil-dev js",
+        "js:fix": "@php bin/phil-dev js --fix",
+        "phpstan": [
+            "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress",
+            "@php bin/phil-dev witnesses"
+        ],
+        "rector": "vendor-bin/rector/vendor/bin/rector process --dry-run",
+        "rector:fix": "vendor-bin/rector/vendor/bin/rector process",
+        "sbom": "@php bin/phil-dev sbom",
+        "taint": "@php bin/phil-dev taint",
+        "test": "@php bin/phil-dev test",
+        "test:integration": "@php bin/phil-dev test --suite=Integration",
         "test:next": "@php bin/phil-dev php next",
-        "infection:next": "@php bin/phil-dev php next -- php bin/phil-dev infection"
+        "test:services": "@php bin/phil-dev services test",
+        "test:unit": "@php bin/phil-dev test --suite=Unit",
+        "twig": "@php bin/phil-dev twig",
+        "twig:fix": "@php bin/phil-dev twig --fix",
+        "twigstan": "@php bin/phil-dev twigstan"
     },
     "scripts-descriptions": {
-        "phpstan": "PHPStan at the maximum level, then the witnesses that prove each forbidden call is still reported.",
+        "bc": "The public API against the latest tag, for backward-compatibility breaks.",
+        "bench:baseline": "The benchmarks, stored as the baseline of this machine.",
+        "bench:compare": "The benchmarks against the baseline, failing above the threshold of bench.threshold.",
+        "bench:worker": "A page served by FrankenPHP in worker mode, measured.",
+        "deps:audit": "The installed packages against the security advisories.",
+        "deps:normalize": "Every composer.json checked against composer-normalize.",
+        "deps:normalize:fix": "Every composer.json normalized.",
+        "deps:unused": "The required packages the code never uses, with composer-unused.",
         "deptrac": "The layers, generated from the composer.json and phil-dev.php of each package.",
-        "test:services": "The Integration suite against the MySQL, PostgreSQL and Gotenberg of phil-dev services.",
+        "docs": "The documentation checks of each package.",
+        "docs:lint": "The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.",
+        "fuzz": "The fuzz targets of the packages, each for its time budget; a script of its own.",
+        "gates": "Every quality gate, in order: the slow checks are scripts of their own.",
+        "hooks": "Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.",
+        "hotspots": "The files that change most and are the most complex, with churn-php.",
         "infection": "Mutation testing of the whole code at 100 % of covered mutants.",
         "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",
-        "docs": "The documentation checks of each package.",
-        "gates": "Every quality gate, in order.",
+        "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.",
+        "js": "The Stimulus controllers and other scripts, checked by Biome.",
+        "phpstan": "PHPStan at the maximum level, then the witnesses that prove each forbidden call is still reported.",
+        "sbom": "The CycloneDX bill of materials of each package, under var/phil-dev/sbom/.",
+        "taint": "The taint analysis of Psalm on the production code; a script of its own.",
+        "test": "The tests with ParaTest, one process per core, or PHPUnit when ParaTest is missing.",
         "test:next": "The tests on the next PHP of the matrix, in its Docker image.",
-        "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release."
+        "test:services": "The Integration suite against the MySQL, PostgreSQL and Gotenberg of phil-dev services.",
+        "twig": "The code style of the Twig templates, with Twig-CS-Fixer.",
+        "twigstan": "The Twig templates analysed by TwigStan; a script of its own."
     }
 }

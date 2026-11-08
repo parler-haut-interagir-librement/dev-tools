@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "nikic/php-fuzzer": "^0.0.11"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

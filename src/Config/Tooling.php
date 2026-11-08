@@ -31,6 +31,20 @@ final readonly class Tooling
         'rector.php',
     ];
 
+    /**
+     * Where a package keeps its Twig templates, when its manifest does not say (`twig.paths`).
+     *
+     * @var list<string>
+     */
+    public const array TEMPLATE_DIRECTORIES = ['templates', 'src/Resources/views', 'Resources/views'];
+
+    /**
+     * Where a package keeps its Stimulus controllers and other scripts, when its manifest does not say (`js.paths`).
+     *
+     * @var list<string>
+     */
+    public const array SCRIPT_DIRECTORIES = ['assets'];
+
     public function __construct(public Workspace $workspace)
     {
     }
@@ -152,15 +166,7 @@ final readonly class Tooling
                     continue;
                 }
 
-                $paths = [];
-
-                foreach (\is_array($value) ? $value : [$value] as $path) {
-                    if (!\is_string($path)) {
-                        throw new InvalidManifest(\sprintf('rector.skip.%s of %s must list paths.', $key, $package->name));
-                    }
-
-                    $paths[] = $this->absolute($package, $path);
-                }
+                $paths = $this->rulePaths($package, $key, $value);
 
                 $existing = $skips[$key] ?? [];
                 $skips[$key] = [...(\is_array($existing) ? $existing : []), ...$paths];
@@ -286,6 +292,26 @@ final readonly class Tooling
     }
 
     /**
+     * The directories of Twig templates of every package analysed, absolute, those that exist.
+     *
+     * @return list<string>
+     */
+    public function templateDirectories(): array
+    {
+        return $this->declaredDirectories('twig', self::TEMPLATE_DIRECTORIES);
+    }
+
+    /**
+     * The directories of scripts of every package analysed, absolute, those that exist.
+     *
+     * @return list<string>
+     */
+    public function scriptDirectories(): array
+    {
+        return $this->declaredDirectories('js', self::SCRIPT_DIRECTORIES);
+    }
+
+    /**
      * The extra Arkitect rules each analysed manifest declares under `arkitect.rules`: a callable that returns them.
      *
      * @return list<callable>
@@ -353,6 +379,30 @@ final readonly class Tooling
         return $file;
     }
 
+    /**
+     * The directories each analysed manifest lists under `<section>.paths`, else those of `$defaults` that exist.
+     *
+     * @param list<string> $defaults
+     *
+     * @return list<string>
+     */
+    private function declaredDirectories(string $section, array $defaults): array
+    {
+        $directories = [];
+
+        foreach ($this->workspace->analysed() as $package) {
+            foreach ($package->manifest->strings($section, 'paths', $defaults) as $relative) {
+                $directory = $package->directory($relative);
+
+                if (null !== $directory && !\in_array($directory, $directories, true)) {
+                    $directories[] = $directory;
+                }
+            }
+        }
+
+        return $directories;
+    }
+
     private function absolute(Package $package, string $path): string
     {
         if (str_starts_with($path, '/') || str_starts_with($path, '*')) {
@@ -360,6 +410,26 @@ final readonly class Tooling
         }
 
         return $package->path($path);
+    }
+
+    /**
+     * The paths a rule of `rector.skip` skips, absolute.
+     *
+     * @return list<string>
+     */
+    private function rulePaths(Package $package, string $rule, mixed $value): array
+    {
+        $paths = [];
+
+        foreach (\is_array($value) ? $value : [$value] as $path) {
+            if (!\is_string($path)) {
+                throw new InvalidManifest(\sprintf('rector.skip.%s of %s must list paths.', $rule, $package->name));
+            }
+
+            $paths[] = $this->absolute($package, $path);
+        }
+
+        return $paths;
     }
 
     private function isPath(string $value): bool

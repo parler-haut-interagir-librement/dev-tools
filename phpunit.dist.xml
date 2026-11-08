@@ -3,6 +3,8 @@
 <!--
     In a monorepo, the suites of every package are found by their glob: adding a package adds no line here.
     Unit runs without a kernel and touches nothing: it is the suite Infection replays once per mutant.
+    Every test names what it covers, with #[CoversClass] or #[CoversNothing]: coverage counts only what a test
+    sets out to test, and Infection replays only the tests that cover a mutant.
     Integration boots a kernel or talks to a real server; a test that needs a server reads its URL from the
     environment and is skipped without it (phil-dev services).
 -->
@@ -12,6 +14,7 @@
          failOnDeprecation="true"
          failOnNotice="true"
          failOnWarning="true"
+         requireCoverageMetadata="true"
          bootstrap="vendor/autoload.php"
          cacheDirectory="var/phpunit"
 >
@@ -40,6 +43,7 @@
     </source>
 
     <extensions>
+        <bootstrap class="Ergebnis\PHPUnit\SlowTestDetector\Extension" />
         <bootstrap class="Symfony\Bridge\PhpUnit\SymfonyExtension" />
     </extensions>
 </phpunit>

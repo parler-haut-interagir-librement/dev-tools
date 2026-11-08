@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Tests\Unit\Process;
 
+use Ergebnis\PHPUnit\SlowTestDetector\Attribute\MaximumDuration;
 use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Process\ProcessResult;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -42,5 +43,24 @@ final class LocalProcessRunnerTest extends TestCase
         self::assertSame('', $result->output);
         self::assertSame('ran', file_get_contents($file));
         unlink($file);
+    }
+
+    #[MaximumDuration(2000)]
+    public function testATimeoutStopsTheCommand(): void
+    {
+        $start = hrtime(true);
+        $result = new LocalProcessRunner()->run([\PHP_BINARY, '-r', 'sleep(30);'], sys_get_temp_dir(), timeout: 1);
+
+        self::assertTrue($result->timedOut);
+        self::assertTrue($result->successful());
+        self::assertLessThan(10_000_000_000, hrtime(true) - $start);
+    }
+
+    public function testACommandThatEndsBeforeItsTimeoutKeepsItsExitCode(): void
+    {
+        $result = new LocalProcessRunner()->run([\PHP_BINARY, '-r', 'exit(4);'], sys_get_temp_dir(), timeout: 30);
+
+        self::assertFalse($result->timedOut);
+        self::assertSame(4, $result->exitCode);
     }
 }

@@ -1,10 +1,8 @@
 {
     "name": "{{package}}",
     "description": "{{description}}",
-    "type": "library",
-    "keywords": [],
     "license": "MIT",
-    "homepage": "https://ph-il.ca",
+    "type": "library",
     "authors": [
         {
             "name": "Philippe Gamache",
@@ -13,12 +11,16 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://ph-il.ca",
     "require": {
         "php": ">={{php}}"
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.4"
+        "phpunit/phpunit": "^13.4",
+        "roave/security-advisories": "dev-latest"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "{{namespace_json}}\\": "src/"
@@ -33,7 +35,5 @@
         "branch-alias": {
             "dev-main": "0.1.x-dev"
         }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+    }
 }

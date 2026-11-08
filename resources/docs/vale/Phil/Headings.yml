@@ -1,0 +1,39 @@
+# Headings in sentence case, as every PHIL and Tilttek document writes them.
+extends: capitalization
+message: "Write the heading '%s' in sentence case."
+level: warning
+scope: heading
+match: $sentence
+exceptions:
+  - PHIL
+  - Tilttek
+  - Symfony
+  - Composer
+  - PHP
+  - PHPStan
+  - PHPUnit
+  - PHPBench
+  - ParaTest
+  - Psalm
+  - Rector
+  - Deptrac
+  - Arkitect
+  - Infection
+  - Docker
+  - FrankenPHP
+  - Twig
+  - TwigStan
+  - Stimulus
+  - Biome
+  - Vale
+  - CycloneDX
+  - CaptainHook
+  - MySQL
+  - PostgreSQL
+  - Gotenberg
+  - HTTP
+  - JSON
+  - YAML
+  - SBOM
+  - API
+  - CLI

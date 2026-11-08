@@ -31,13 +31,13 @@ final class InitializerTest extends TestCase
         $config = DevTools::relative($root, DevTools::directory().'/config');
 
         self::assertSame(
-            ['phil-dev.php', '.php-cs-fixer.dist.php', 'rector.php', 'arkitect.php', 'phpstan.neon', 'phpbench.json', 'phpunit.dist.xml', 'composer-dependency-analyser.php',
-                'vendor-bin/arkitect/composer.json', 'vendor-bin/deptrac/composer.json', 'vendor-bin/infection/composer.json', 'vendor-bin/php-cs-fixer/composer.json',
-                'vendor-bin/phpbench/composer.json', 'vendor-bin/phpstan/composer.json', 'vendor-bin/rector/composer.json', 'composer.json'],
+            ['phil-dev.php', '.php-cs-fixer.dist.php', 'rector.php', 'arkitect.php', 'phpstan.neon', 'phpbench.json', 'phpunit.dist.xml', 'captainhook.json', 'composer-dependency-analyser.php',
+                ...array_map(static fn (string $tool): string => 'vendor-bin/'.$tool.'/composer.json', Initializer::TOOLS), 'composer.json'],
             array_map(static fn (InitResult $result): string => $result->file, $results),
         );
+        self::assertCount(27, $results);
         self::assertSame([InitStatus::Created], array_values(array_unique(array_map(static fn (InitResult $result): InitStatus => $result->status, \array_slice($results, 0, -1)), \SORT_REGULAR)));
-        self::assertSame(InitStatus::Updated, $results[15]->status);
+        self::assertSame(InitStatus::Updated, $results[26]->status);
 
         self::assertStringContainsString("require __DIR__.'/".$config."/php-cs-fixer.php';", (string) file_get_contents($root.'/.php-cs-fixer.dist.php'));
         self::assertStringContainsString('    - '.$config.'/phpstan.neon', (string) file_get_contents($root.'/phpstan.neon'));
@@ -57,7 +57,10 @@ final class InitializerTest extends TestCase
         self::assertSame(['bamarni-bin' => ['bin-links' => false, 'forward-command' => true, 'target-directory' => 'vendor-bin']], $composer['extra']);
         self::assertIsArray($composer['scripts']);
         self::assertArrayNotHasKey('packages', $composer['scripts']);
-        self::assertSame(['@deps', '@cs', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'], $composer['scripts']['gates']);
+        self::assertSame(Initializer::GATES, $composer['scripts']['gates']);
+        self::assertSame(['@deps', '@deps:audit', '@deps:unused', '@deps:normalize', '@cs', '@twig', '@js', '@phpstan', '@rector', '@deptrac', '@arkitect', '@test', '@infection'], Initializer::GATES);
+        self::assertArrayNotHasKey('split', $composer['scripts']);
+        self::assertStringContainsString('{$STAGED_FILES|of-type:php}', (string) file_get_contents($root.'/captainhook.json'));
         self::assertSame('@php '.DevTools::binary($root).' infection --changed', $composer['scripts']['infection:changed']);
         self::assertSame(new Initializer($root)->descriptions(false), $composer['scripts-descriptions']);
     }
@@ -78,6 +81,8 @@ final class InitializerTest extends TestCase
         self::assertStringContainsString("<directory>packages/*/tests/Integration</directory>\n            <directory>packages/*/tests/Functional</directory>", $files['phpunit.dist.xml']);
         self::assertStringContainsString("<include>\n            <directory>packages/*/src</directory>\n        </include>", $files['phpunit.dist.xml']);
         self::assertArrayHasKey('packages', $initializer->scripts(true));
+        self::assertArrayHasKey('split', $initializer->scripts(true));
+        self::assertArrayHasKey('split', $initializer->descriptions(true));
         self::assertArrayHasKey('packages', $initializer->descriptions(true));
         self::assertArrayNotHasKey('packages', $initializer->descriptions(false));
     }
@@ -95,11 +100,12 @@ final class InitializerTest extends TestCase
     public function testTheRecorderExtensionWhenTheBridgeIsInstalled(): void
     {
         $root = $this->temporaryDirectory();
-        self::assertStringNotContainsString('<extensions>', new Initializer($root)->files(false)['phpunit.dist.xml']);
+        $slow = '        <bootstrap class="Ergebnis\\PHPUnit\\SlowTestDetector\\Extension" />';
+        self::assertStringEndsWith("    </source>\n\n    <extensions>\n".$slow."\n    </extensions>\n</phpunit>\n", new Initializer($root)->files(false)['phpunit.dist.xml']);
 
         mkdir($root.'/vendor/symfony/phpunit-bridge', 0o777, true);
 
-        self::assertStringEndsWith("    </source>\n\n    <extensions>\n        <bootstrap class=\"Symfony\\Bridge\\PhpUnit\\SymfonyExtension\" />\n    </extensions>\n</phpunit>\n", new Initializer($root)->files(false)['phpunit.dist.xml']);
+        self::assertStringEndsWith("    </source>\n\n    <extensions>\n".$slow."\n        <bootstrap class=\"Symfony\\Bridge\\PhpUnit\\SymfonyExtension\" />\n    </extensions>\n</phpunit>\n", new Initializer($root)->files(false)['phpunit.dist.xml']);
     }
 
     public function testItIsIdempotent(): void
@@ -125,8 +131,8 @@ final class InitializerTest extends TestCase
         self::assertSame(InitStatus::Kept, $results[0]->status);
         self::assertSame(InitStatus::Kept, $results[2]->status);
         self::assertSame('<?php // mine', file_get_contents($root.'/rector.php'));
-        self::assertSame(InitStatus::Updated, $results[15]->status);
-        self::assertSame(['scripts.cs'], $results[15]->kept);
+        self::assertSame(InitStatus::Updated, $results[26]->status);
+        self::assertSame(['scripts.cs'], $results[26]->kept);
 
         $forced = new Initializer($root)->run(false, true);
 
@@ -134,8 +140,8 @@ final class InitializerTest extends TestCase
         self::assertSame('<?php return [];', file_get_contents($root.'/phil-dev.php'));
         self::assertSame(InitStatus::Updated, $forced[2]->status);
         self::assertStringContainsString('rector.php', (string) file_get_contents($root.'/rector.php'));
-        self::assertSame(InitStatus::Updated, $forced[15]->status);
-        self::assertSame([], $forced[15]->kept);
+        self::assertSame(InitStatus::Updated, $forced[26]->status);
+        self::assertSame([], $forced[26]->kept);
     }
 
     public function testComposerJsonIsKeptWhenOnlyDifferencesRemain(): void
@@ -146,7 +152,7 @@ final class InitializerTest extends TestCase
 
         $results = new Initializer($root)->run(false, false);
 
-        self::assertSame(InitStatus::Kept, $results[15]->status);
+        self::assertSame(InitStatus::Kept, $results[26]->status);
     }
 
     public function testThePackageFiles(): void
@@ -173,7 +179,7 @@ final class InitializerTest extends TestCase
         $config = DevTools::relative($root, DevTools::directory().'/config');
 
         foreach ($initializer->files($monorepo) as $file => $content) {
-            self::assertStringEqualsFile($golden.'/'.$file, str_replace($config, '@config@', $content), $file);
+            self::assertStringEqualsFile($golden.'/'.$file, str_replace([$config, DevTools::binary($root)], ['@config@', '@bin@'], $content), $file);
         }
 
         $scripts = json_encode(['scripts' => $initializer->scripts($monorepo), 'descriptions' => $initializer->descriptions($monorepo)], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR)."\n";

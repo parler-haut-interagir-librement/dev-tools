@@ -3,16 +3,27 @@
         "php": ">={{php}}",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-doctrine": "^2.0",
         "phpstan/phpstan-phpunit": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.1",
         "phpstan/phpstan-symfony": "^2.1",
-        "spaze/phpstan-disallowed-calls": "^4.15"
+        "spaze/phpstan-disallowed-calls": "^4.15",
+        "symplify/phpstan-rules": "^14.19",
+        "tomasvotruba/cognitive-complexity": "^1.3",
+        "tomasvotruba/type-coverage": "^2.5"
     },
     "config": {
         "allow-plugins": {
             "phpstan/extension-installer": true
         },
         "sort-packages": true
+    },
+    "extra": {
+        "phpstan/extension-installer": {
+            "ignore": [
+                "symplify/phpstan-rules"
+            ]
+        }
     }
 }

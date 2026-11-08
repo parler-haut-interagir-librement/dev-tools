@@ -44,7 +44,9 @@ final class DeptracCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'generate');
 
         self::assertSame(0, $tester->execute([]));
-        self::assertSame($root."/var/phil-dev/deptrac.yaml\n".$root."/var/phil-dev/infection.json\n", $tester->getDisplay());
+        self::assertSame(implode('', array_map(static fn (string $file): string => $root.'/var/phil-dev/'.$file."\n", ['deptrac.yaml', 'infection.json', 'psalm.xml', 'biome.json', 'churn.yml'])), $tester->getDisplay());
         self::assertFileExists($root.'/var/phil-dev/infection.json');
+        self::assertStringContainsString('<psalm ', (string) file_get_contents($root.'/var/phil-dev/psalm.xml'));
+        self::assertStringContainsString('directoriesToScan:', (string) file_get_contents($root.'/var/phil-dev/churn.yml'));
     }
 }

@@ -1,0 +1,9 @@
+{
+    "require": {
+        "php": ">=8.5",
+        "vimeo/psalm": "^7.1"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

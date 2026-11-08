@@ -50,3 +50,22 @@ services:
       interval: 2s
       timeout: 5s
       retries: 60
+
+  # Only for phil-dev bench:worker, which starts it with the project mounted at /app and the worker script of a
+  # package: the profile keeps it out of phil-dev services up.
+  frankenphp:
+    image: dunglas/frankenphp:1-php8.5
+    profiles: ["bench"]
+    environment:
+      SERVER_NAME: ":80"
+      SERVER_ROOT: "${PHIL_DEV_WORKER_DIRECTORY:-/app/public}"
+      FRANKENPHP_CONFIG: "worker ${PHIL_DEV_WORKER_SCRIPT:-/app/public/index.php}"
+    volumes:
+      - "${PHIL_DEV_WORKER_ROOT:-.}:/app"
+    ports:
+      - "127.0.0.1:${PHIL_DEV_FRANKENPHP_PORT:-8090}:80"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 80) ? 0 : 1);"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
