@@ -1,14 +1,17 @@
 # A PHP of the version matrix (config/matrix.json) for the tests of PHIL and Tilttek packages: `phil-dev php <version>`
-# builds it from the image the matrix names, and runs a command in it with the project mounted at /app.
+# builds it from the image the matrix names, and runs a command in it with the project mounted at /app and the
+# neighbouring directories its path repositories name mounted read-only beside it.
 ARG PHP_IMAGE=php:8.5-cli
 FROM ${PHP_IMAGE}
 
-# The extensions the packages need, besides those the image builds in (openssl, sodium); git and unzip for Composer.
+# The extensions the packages need, besides those the image builds in (openssl, sodium, pdo_sqlite): GD reads and
+# writes JPEG, PNG, WebP and AVIF. git and unzip for Composer; the sqlite3 command for the tests that inspect a
+# database file.
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends git unzip libicu-dev libonig-dev libzip-dev libpq-dev libpng-dev \
-        libjpeg62-turbo-dev libfreetype6-dev; \
-    docker-php-ext-configure gd --with-freetype --with-jpeg; \
+    apt-get install -y --no-install-recommends git unzip sqlite3 libicu-dev libonig-dev libzip-dev libpq-dev \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif; \
     docker-php-ext-install -j"$(nproc)" intl mbstring zip pdo_mysql pdo_pgsql gd; \
     rm -rf /var/lib/apt/lists/*
 

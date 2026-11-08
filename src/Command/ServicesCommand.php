@@ -57,8 +57,8 @@ final class ServicesCommand extends WorkspaceCommand
             'up' => $this->runner->run([...$compose, 'up', '--detach', '--wait'], $root)->exitCode,
             'down' => $this->runner->run([...$compose, 'down', '--volumes'], $root)->exitCode,
             'env' => $this->printEnvironment($output),
-            'record' => $this->runner->run([$root.'/vendor/bin/phpunit', '--testsuite=Integration', ...$arguments], $root, [...TestServices::environment(), HttpRecording::MODE_VARIABLE => 'record'])->exitCode,
-            default => $this->runner->run([$root.'/vendor/bin/phpunit', '--testsuite=Integration', ...$arguments], $root, TestServices::environment())->exitCode,
+            'record' => $this->runner->run([$root.'/vendor/bin/phpunit', '--testsuite=Integration', ...$arguments], $root, [...$this->testEnvironment(), ...TestServices::environment(), HttpRecording::MODE_VARIABLE => 'record'])->exitCode,
+            default => $this->runner->run([$root.'/vendor/bin/phpunit', '--testsuite=Integration', ...$arguments], $root, [...$this->testEnvironment(), ...TestServices::environment()])->exitCode,
         };
     }
 

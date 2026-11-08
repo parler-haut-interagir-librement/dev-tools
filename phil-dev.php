@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Phil\DevTools\Command\WorkspaceCommand;
 use Phil\DevTools\Matrix\Version;
 use Phil\DevTools\Process\LocalProcessRunner;
 
@@ -23,12 +24,15 @@ return [
     ],
     'deptrac' => [
         // The recorder of HttpRecording is the PHPUnit bridge's: the helper only exists for the tests of packages.
-        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*'],
+        // The member autoloader adds its prefixes to Composer's ClassLoader, which every Composer project holds.
+        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$'],
     ],
     'infection' => [
         'mutators' => [
             // The two numbers of a version, matched as digits when the matrix is read, multiply the same as strings.
             'CastInt' => ['ignore' => [Version::class.'::id']],
+            // The root a command runs on exists, so realpath() never returns false for it.
+            'CastString' => ['ignore' => [WorkspaceCommand::class.'::testEnvironment']],
             // A timeout a nanosecond longer or shorter, reached at its instant or the one after, cannot be told apart.
             'IncrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
             'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],

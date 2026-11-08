@@ -45,7 +45,7 @@ final class ServicesCommandTest extends CommandTestCase
 
         self::assertSame(0, $this->tester($root, 'services')->execute(['action' => 'test', 'arguments' => ['--filter=Mysql', '--stop-on-failure']]));
         self::assertSame([$root.'/vendor/bin/phpunit --testsuite=Integration --filter=Mysql --stop-on-failure'], $this->runner->commands());
-        self::assertSame(TestServices::environment(), $this->runner->runs[0]['environment']);
+        self::assertSame(['TMPDIR' => realpath($root).'/var/tmp', ...TestServices::environment()], $this->runner->runs[0]['environment']);
     }
 
     public function testRecord(): void
@@ -54,7 +54,7 @@ final class ServicesCommandTest extends CommandTestCase
 
         self::assertSame(0, $this->tester($root, 'services')->execute(['action' => 'record', 'arguments' => ['--filter=Gotenberg', '--debug']]));
         self::assertSame([$root.'/vendor/bin/phpunit --testsuite=Integration --filter=Gotenberg --debug'], $this->runner->commands());
-        self::assertSame([...TestServices::environment(), 'SYMFONY_HTTP_RECORDER' => 'record'], $this->runner->runs[0]['environment']);
+        self::assertSame(['TMPDIR' => realpath($root).'/var/tmp', ...TestServices::environment(), 'SYMFONY_HTTP_RECORDER' => 'record'], $this->runner->runs[0]['environment']);
     }
 
     public function testAnUnknownAction(): void

@@ -64,7 +64,7 @@ final class InfectionCommand extends WorkspaceCommand
         /** @var list<string> $arguments */
         $arguments = $input->getArgument('arguments');
 
-        return $this->runner->run([...$command, ...$arguments], $this->workspace()->root->dir)->exitCode;
+        return $this->runner->run([...$command, ...$arguments], $this->workspace()->root->dir, $this->testEnvironment())->exitCode;
     }
 
     /**

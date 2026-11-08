@@ -72,6 +72,11 @@ linked —, installs it, runs `composer-dependency-analyser` with the package's 
 package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is reported and the
 next package is checked. `--keep` keeps the copies.
 
+The path repositories install each member at the branch its branch alias names (`dev-main`, aliased `0.1.x-dev`),
+whatever branch the checkout is on: from a worktree on `b/topic`, Composer would otherwise read `dev-b/topic`, which no
+alias covers and no `^0.1@dev` of a sibling accepts. Each step runs with `TMPDIR` inside the copy, so that its test
+kernels never share a cache with another checkout's.
+
 `--symfony=VERSION` (a version of the matrix, `floor` or `next`) pins, in the copy, every `symfony/*` requirement
 written at the floor (`^8.2`) to `VERSION.*` and lets release candidates in: the package is tested on that Symfony
 without touching its `composer.json`. See [The version matrix](version-matrix.md).
@@ -96,6 +101,10 @@ Runs the suites of `phpunit.dist.xml` with ParaTest, one process per core, when 
 PHPUnit. The root's `'phpunit' => ['parallel' => false]` keeps PHPUnit, for tests that share a resource they cannot
 share at once. `--suite` runs one suite; arguments after `--` go to the runner. Infection always replays the Unit suite
 with PHPUnit.
+
+`test`, `infection` and `services test|record` run with `TMPDIR` under `var/tmp/` of the root, unless it already points
+inside the root: the test kernels that keep their cache under the system's temporary directory get one per checkout,
+and a clone and its worktrees can run their tests at the same time.
 
 ## audit, unused, normalize, twig, js
 

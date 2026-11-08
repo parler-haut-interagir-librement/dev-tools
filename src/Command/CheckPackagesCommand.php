@@ -9,6 +9,7 @@ use Override;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
 use Phil\DevTools\Workspace\Package;
+use Phil\DevTools\Workspace\Workspace;
 use RecursiveCallbackFilterIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -29,7 +30,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
     The packages of the monorepo are found on no public repository until they are published: the copy
     gets a path repository on each glob of the root's packages, copied rather than linked, as a vcs
-    repository would once the package has moved. It needs the network for everything else.
+    repository would once the package has moved, each at the branch its branch alias names (dev-main), whatever
+    branch the checkout is on. It needs the network for everything else. The tests of each copy run with TMPDIR
+    inside the copy.
     TXT)]
 final class CheckPackagesCommand extends WorkspaceCommand
 {
@@ -57,6 +60,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $matrix = Matrix::load();
         $target = \is_string($symfony) ? $matrix->find('symfony', $symfony)->version : null;
         $floor = $matrix->floor('symfony')->version;
+        $versions = $this->siblingVersions($workspace);
 
         foreach ($workspace->targets($names) as $package) {
             $output->writeln('== '.$package->name);
@@ -76,7 +80,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
             $steps = [];
 
             foreach ($workspace->isMonorepo() ? $workspace->packageGlobs() : [] as $index => $glob) {
-                $repository = json_encode(['type' => 'path', 'url' => $workspace->root->path($glob), 'options' => ['symlink' => false]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+                $repository = json_encode(['type' => 'path', 'url' => $workspace->root->path($glob), 'options' => ['symlink' => false, 'versions' => $versions]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
                 $steps[] = ['composer', 'config', 'repositories.siblings'.$index, $repository];
             }
 
@@ -86,9 +90,12 @@ final class CheckPackagesCommand extends WorkspaceCommand
             $steps[] = [] === array_filter(['phpunit.xml', 'phpunit.dist.xml', 'phpunit.xml.dist'], static fn (string $file): bool => is_file($work.'/'.$file))
                 ? ['vendor/bin/phpunit', '--no-configuration', 'tests']
                 : ['vendor/bin/phpunit'];
+            // The test kernels of the copy keep their cache in it, never beside those of another checkout.
+            $environment = ['TMPDIR' => $work.'/var/tmp'];
+            mkdir($environment['TMPDIR'], recursive: true);
 
             foreach ($steps as $step) {
-                if (!$this->runner->run($step, $work)->successful()) {
+                if (!$this->runner->run($step, $work, $environment)->successful()) {
                     $failures[] = \sprintf('%s: %s failed', $package->name, implode(' ', \array_slice($step, 0, 2)));
 
                     break;
@@ -113,6 +120,28 @@ final class CheckPackagesCommand extends WorkspaceCommand
         }
 
         return self::FAILURE;
+    }
+
+    /**
+     * The version each member is installed at from the path repositories: its `dev-main` branch, which its branch
+     * alias (`0.1.x-dev`) applies to. Composer would otherwise read the branch the checkout is on — `dev-b/topic` in a
+     * worktree — which no alias covers, and no `^0.1@dev` of a sibling accepts.
+     *
+     * @return array<string, string>
+     */
+    private function siblingVersions(Workspace $workspace): array
+    {
+        $versions = [];
+
+        foreach ($workspace->members as $member) {
+            $composer = json_decode(Files::read($member->path('composer.json')), true);
+            $extra = \is_array($composer) ? $composer['extra'] ?? null : null;
+            $aliases = \is_array($extra) ? $extra['branch-alias'] ?? null : null;
+            $branch = \is_array($aliases) ? array_key_first($aliases) : null;
+            $versions[$member->name] = \is_string($branch) && str_starts_with($branch, 'dev-') ? $branch : 'dev-main';
+        }
+
+        return $versions;
     }
 
     /**

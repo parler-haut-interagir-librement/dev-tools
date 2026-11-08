@@ -50,6 +50,55 @@ final class PhpCommandTest extends CommandTestCase
         self::assertStringStartsWith('docker build ', $this->runner->commands()[0]);
     }
 
+    public function testItMountsTheNeighboursOfThePathRepositories(): void
+    {
+        $base = (string) realpath($this->temporaryDirectory());
+        $root = $base.'/work/project';
+        mkdir($root.'/packages', recursive: true);
+        mkdir($base.'/lib/packages', recursive: true);
+        mkdir($base.'/other');
+        mkdir($base.'/dev-tools');
+        mkdir($base.'/work/app/x', recursive: true);
+        mkdir($base.'/work/dev-tools');
+        symlink($base.'/other', $root.'/linked');
+        $this->put($root.'/composer.json', json_encode(['name' => 'phil/x', 'repositories' => [
+            'odd',
+            ['type' => 'vcs', 'url' => '../../lib'],
+            ['type' => 'path', 'url' => 3],
+            ['type' => 'path', 'url' => '../missing'],
+            ['type' => 'path', 'url' => '../../..'],
+            ['type' => 'path', 'url' => '../app'],
+            ['type' => 'path', 'url' => '../app/x'],
+            ['type' => 'path', 'url' => './packages/*'],
+            ['type' => 'path', 'url' => 'linked/*'],
+            ['type' => 'path', 'url' => '*'],
+            ['type' => 'path', 'url' => '../../lib/packages/*', 'options' => ['symlink' => true]],
+            ['type' => 'path', 'url' => '../../lib/packages/{a,b}'],
+            ['type' => 'path', 'url' => '../dev-tools'],
+            ['type' => 'path', 'url' => $base.'/dev-tools'],
+            ['type' => 'path', 'url' => '../project/packages/a?'],
+            ['type' => 'path', 'url' => '../../other/*/src'],
+        ]], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
+        $floor = Matrix::load()->floor('php');
+
+        $this->tester($root, 'php', [new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertSame(
+            'docker run --rm --volume '.$root.':/app --volume '.$base.'/lib/packages:/lib/packages:ro --volume '.$base.'/work/dev-tools:/dev-tools:ro --volume '.$base.'/dev-tools:'.$base.'/dev-tools:ro --volume '.$root.'/packages:/project/packages:ro --volume '.$base.'/other:/other:ro --workdir /app phil-dev/php:'.$floor->version.' php vendor/bin/phpunit',
+            $this->runner->commands()[1],
+        );
+    }
+
+    public function testNoRepositoriesMountNothingMore(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/x", "repositories": {"a": {"type": "path", "url": "/"}}}');
+
+        $this->tester($root, 'php', [new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertStringStartsWith('docker run --rm --volume '.$root.':/app --workdir /app ', $this->runner->commands()[1]);
+    }
+
     public function testTheMatrix(): void
     {
         $tester = $this->tester($this->temporaryDirectory(), 'matrix');

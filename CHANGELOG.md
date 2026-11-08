@@ -25,7 +25,9 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `phil-dev init`: the thin configuration files, `captainhook.json`, `vendor-bin/` for each tool, the Composer scripts
   and their descriptions, ParaTest and the slow-test detector, without replacing what differs unless forced, and never
   `phil-dev.php`; a `phpunit.dist.xml` that requires the coverage metadata of every test.
-- `phil-dev test`: the tests through ParaTest, or PHPUnit without it or with `phpunit.parallel: false`.
+- `phil-dev test`: the tests through ParaTest, or PHPUnit without it or with `phpunit.parallel: false`; `test`,
+  `infection` and `services test|record` with `TMPDIR` under the root's `var/tmp/`, a cache per checkout for the test
+  kernels.
 - The gates `audit` (`composer audit`), `unused` (composer-unused), `normalize` (composer-normalize, with `--fix`),
   `twig` (Twig-CS-Fixer) and `js` (Biome, downloaded through `kocal/biome-js-bundle`), each turned off by `gates` in
   the root's manifest, and `twigstan`, with its generated configuration and the shared Twig loader.
@@ -47,7 +49,9 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
   normalized `composer.json` and `roave/security-advisories`.
 - `phil-dev check-docs`: the file set, the links, the tables, the bold, the README index and sections, one "Added"
   section until the packages are public, the licence holder's wording and the forbidden terms.
-- `phil-dev check-packages`: each package installed and tested on its own, on another Symfony version with `--symfony`.
+- `phil-dev check-packages`: each package installed and tested on its own, on another Symfony version with `--symfony`;
+  the siblings at the branch their branch alias names, from a worktree as from the main checkout; `TMPDIR` inside each
+  copy.
 - `phil-dev infection`, on the whole code or on the files changed since a base ref; `phil-dev deptrac`,
   `phil-dev witnesses` and `phil-dev generate`.
 - `phil-dev services` and `resources/compose.yaml`: MySQL 8, PostgreSQL 17 and Gotenberg 9 for the integration tests,
@@ -55,7 +59,9 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `HttpRecording` and `phil-dev services record`: the HTTP exchanges of integration tests recorded and replayed offline
   through the recorder of Symfony 8.2, with their secrets masked.
 - `config/matrix.json`, `Matrix`, `phil-dev matrix` and `phil-dev php`: the floor and the next versions of PHP and
-  Symfony, the PHP range of PHPStan, and the commands run in the Docker image of a PHP version.
-- `MemberAutoloader`: the classes of a monorepo's members loaded from their own `composer.json`.
+  Symfony, the PHP range of PHPStan, and the commands run in the Docker image of a PHP version, with GD for WebP and
+  AVIF, the `sqlite3` command, and the neighbouring directories of the path repositories mounted read-only.
+- `MemberAutoloader`: the classes of a monorepo's members loaded from their own `composer.json`, their prefixes added to
+  Composer's `ClassLoader`.
 - The documentation in `doc/`, one file per topic, indexed by the README.
 - `CONTRIBUTING.md`, `SECURITY.md` and `CODE_OF_CONDUCT.md`.

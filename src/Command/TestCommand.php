@@ -15,6 +15,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     Runs the test suites of phpunit.dist.xml in parallel with ParaTest, one process per core, when
     vendor/bin/paratest exists; else with PHPUnit. The root's phpunit.parallel: false keeps PHPUnit, for
     tests that share a resource they cannot share at once. Infection always replays the Unit suite with PHPUnit.
+
+    The tests run with TMPDIR under var/tmp of the root, unless it already points inside the root: the test
+    kernels that keep their cache under the system's temporary directory get one per checkout.
     TXT)]
 final class TestCommand extends WorkspaceCommand
 {
@@ -42,6 +45,6 @@ final class TestCommand extends WorkspaceCommand
         /** @var list<string> $arguments */
         $arguments = $input->getArgument('arguments');
 
-        return $this->runner->run([...$command, ...$arguments], $root->dir)->exitCode;
+        return $this->runner->run([...$command, ...$arguments], $root->dir, $this->testEnvironment())->exitCode;
     }
 }

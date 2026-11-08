@@ -50,6 +50,32 @@ abstract class WorkspaceCommand extends Command
     }
 
     /**
+     * The variables a process that runs the tests gets: `TMPDIR` under `var/tmp/` of the root, so that the test kernels
+     * of two checkouts of one repository — a clone and its worktrees — never share a cache directory under the system's
+     * temporary directory. A `TMPDIR` that already points inside the root is kept.
+     *
+     * @return array<string, string>
+     */
+    protected function testEnvironment(): array
+    {
+        $root = (string) realpath($this->root());
+        $current = getenv('TMPDIR');
+
+        // An empty TMPDIR is the system's temporary directory, whatever directory realpath() would make of it.
+        if (\is_string($current) && '' !== $current && str_starts_with(realpath($current).'/', $root.'/')) {
+            return [];
+        }
+
+        $directory = $root.'/var/tmp';
+
+        if (!is_dir($directory)) {
+            mkdir($directory, recursive: true);
+        }
+
+        return ['TMPDIR' => $directory];
+    }
+
+    /**
      * The binary of a tool installed under `vendor-bin/`.
      */
     protected function tool(string $tool, string $binary): string

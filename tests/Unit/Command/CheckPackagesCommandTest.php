@@ -19,12 +19,15 @@ final class CheckPackagesCommandTest extends CommandTestCase
         $root = $this->fixture('monorepo');
         $this->put($root.'/packages/slug/vendor/autoload.php', '');
         $this->put($root.'/packages/slug/composer.lock', '{}');
+        $this->put($root.'/packages/slug-bundle/composer.json', '{"name": "phil/slug-bundle", "extra": {"branch-alias": {"dev-trunk": "1.0.x-dev"}}}');
+        $this->put($root.'/packages/tilttek-dice/composer.json', '{"name": "tilttek/dice", "extra": {"branch-alias": {"0.1": "0.1.x-dev"}}}');
         $tester = $this->tester($root, 'check-packages');
 
         self::assertSame(0, $tester->execute(['packages' => ['slug']]));
         self::assertSame("== phil/slug\nEvery package installs and passes on its own.\n", $tester->getDisplay());
 
-        $repository = json_encode(['type' => 'path', 'url' => $root.'/packages/*', 'options' => ['symlink' => false]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+        $versions = ['phil/slug' => 'dev-main', 'phil/slug-bundle' => 'dev-trunk', 'tilttek/dice' => 'dev-main'];
+        $repository = json_encode(['type' => 'path', 'url' => $root.'/packages/*', 'options' => ['symlink' => false, 'versions' => $versions]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
         self::assertSame([
             'composer config repositories.siblings0 '.$repository,
             'composer install --no-interaction --no-progress --quiet',
@@ -34,6 +37,8 @@ final class CheckPackagesCommandTest extends CommandTestCase
 
         $work = $this->runner->runs[0]['directory'];
         self::assertStringStartsWith('phil-dev-', basename($work));
+        self::assertSame(['TMPDIR' => $work.'/var/tmp'], $this->runner->runs[3]['environment']);
+        self::assertSame($this->runner->runs[0]['environment'], $this->runner->runs[3]['environment']);
         self::assertDirectoryDoesNotExist($work);
     }
 
@@ -57,6 +62,7 @@ final class CheckPackagesCommandTest extends CommandTestCase
         self::assertFileDoesNotExist($work.'/vendor');
         self::assertFileDoesNotExist($work.'/composer.lock');
         self::assertFileExists($work.'/src/vendor/kept.php');
+        self::assertDirectoryExists($work.'/var/tmp');
 
         foreach (array_unique(array_column($this->runner->runs, 'directory')) as $directory) {
             $this->adopt($directory);

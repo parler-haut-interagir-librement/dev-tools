@@ -19,6 +19,7 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertSame(3, $tester->execute(['arguments' => ['--filter=X']]));
         self::assertSame([$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --filter=X'], $this->runner->commands());
         self::assertSame($root, $this->runner->runs[0]['directory']);
+        self::assertSame(['TMPDIR' => realpath($root).'/var/tmp'], $this->runner->runs[0]['environment']);
         self::assertStringContainsString('"minCoveredMsi": 100', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
     }
 

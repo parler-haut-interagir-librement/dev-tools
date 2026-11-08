@@ -50,10 +50,15 @@ vendor/bin/phil-dev check-packages --symfony=next
 ```
 
 `phil-dev php` builds `resources/php/Dockerfile` from the image of the version — with intl, sodium, openssl, zip,
-pdo_mysql, pdo_pgsql, mbstring and gd, Composer, and pcov, or Xdebug in coverage mode where pcov does not build yet —
-and runs the command with the project mounted at `/app`. Every deprecation is reported and fails the tests, which run
-with `failOnDeprecation`. The project's `vendor/` is shared with the host: a path repository pointing outside the
-project is not visible in the container.
+pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring and gd with JPEG, PNG, WebP and AVIF, the `sqlite3` command, Composer, and
+pcov, or Xdebug in coverage mode where pcov does not build yet — and runs the command with the project mounted at
+`/app`. Every deprecation is reported and fails the tests, which run with `failOnDeprecation`. The project's `vendor/`
+is shared with the host.
+
+Each directory outside the project that a path repository of its `composer.json` names is mounted read-only where its
+relative URL reaches from `/app` — `../../Phil/phil-prerelease/packages/*` at `/Phil/phil-prerelease/packages`, since
+`..` stops at the container's root — or at its own absolute path: a monorepo that installs the packages of a
+neighbouring one, and `phil/dev-tools` beside it, install and run in the container as on the host.
 
 `check-packages --symfony` pins, in each temporary copy, the `symfony/*` requirements written at the floor to the version
 chosen, and installs with release candidates allowed, so that a package is tested on the next Symfony without touching

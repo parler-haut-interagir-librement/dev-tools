@@ -5,7 +5,7 @@
 | `Console\Application` | `phil-dev` and its commands. |
 | `Command\*Command` | One class per command; `WorkspaceCommand` gives them the root and the process runner. |
 | `Workspace\Workspace`, `Package`, `PackageRole`, `Manifest` | The root, the members and the installed packages, with their `composer.json` and `phil-dev.php`. |
-| `Workspace\MemberAutoloader` | Loads the members' classes from their own `composer.json`. |
+| `Workspace\MemberAutoloader` | Adds the members' PSR-4 prefixes, from their own `composer.json`, to Composer's `ClassLoader`. |
 | `Config\Tooling` | What the shared configurations of PHP-CS-Fixer, Rector, PHPStan and Arkitect read. |
 | `Config\DeptracConfig`, `Layer`, `LayerKind` | The generated Deptrac configuration. |
 | `Config\InfectionConfig` | The generated Infection configuration. |
