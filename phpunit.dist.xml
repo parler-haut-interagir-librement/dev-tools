@@ -2,8 +2,8 @@
 
 <!--
     In a monorepo, the suites of every package are found by their glob: adding a package adds no line here.
-    Unit runs without a kernel and touches nothing: it is the suite Infection replays once per mutant. Its bootstrap
-    moves the working directory to a throwaway one, so a mutant that loses its root never writes in the checkout.
+    Unit runs without a kernel and touches nothing: it is the suite Infection replays once per mutant. An extension
+    runs each test from a throwaway directory, so a test or a mutant that loses its root never writes in the checkout.
     Every test names what it covers, with #[CoversClass] or #[CoversNothing]: coverage counts only what a test
     sets out to test, and Infection replays only the tests that cover a mutant.
     Integration boots a kernel or talks to a real server; a test that needs a server reads its URL from the
@@ -16,7 +16,7 @@
          failOnNotice="true"
          failOnWarning="true"
          requireCoverageMetadata="true"
-         bootstrap="tests/bootstrap.php"
+         bootstrap="vendor/autoload.php"
          cacheDirectory="var/phpunit"
 >
     <php>
@@ -46,5 +46,6 @@
     <extensions>
         <bootstrap class="Ergebnis\PHPUnit\SlowTestDetector\Extension" />
         <bootstrap class="Symfony\Bridge\PhpUnit\SymfonyExtension" />
+        <bootstrap class="Phil\DevTools\Tests\Unit\Support\ThrowawayWorkingDirectory" />
     </extensions>
 </phpunit>
