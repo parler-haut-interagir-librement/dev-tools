@@ -15,9 +15,9 @@ use Symplify\PHPStanRules\Rules\NoMissnamedDocTagRule;
 use Symplify\PHPStanRules\Rules\PreventParentMethodVisibilityOverrideRule;
 
 /*
- * The rules of symplify/phpstan-rules every PHIL and Tilttek package follows, one by one, as La Page à Melkor chose
- * them: the whole sets would forbid what the packages do on purpose, such as a setter that returns itself or a
- * shared trait. `phpstan/extension-installer` is told to ignore the package, which would load every set, so its
+ * The rules of symplify/phpstan-rules every PHIL and Tilttek package follows, chosen one by one: the whole sets would
+ * forbid what the packages do on purpose, such as a setter that returns itself or a shared trait.
+ * `phpstan/extension-installer` is told to ignore the package, which would load every set, so its
  * services are included from where it is installed.
  *
  * A project whose `vendor-bin/phpstan` does not have the package yet gets none of these rules.

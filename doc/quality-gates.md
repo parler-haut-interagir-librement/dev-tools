@@ -79,7 +79,7 @@ Three extensions add to it:
 - `tomasvotruba/cognitive-complexity`: 25 for a method, 100 for a class. A method above the bar is split, or carries
   its exception in its package's `phil-dev.php`, with the reason.
 
-`config/phpstan-symplify.php` adds the rules of `symplify/phpstan-rules` La Page à Melkor chose, one by one: a class is
+`config/phpstan-symplify.php` adds a selection of the rules of `symplify/phpstan-rules`, one by one: a class is
 final or abstract, no global constant, exceptions in an `Exception` namespace, attributes in an `Attribute`
 namespace, interfaces in a `Contract` namespace — a marker interface of exceptions stays with them —, unique enum
 values, no narrowed visibility of a parent method, one class per file, no `static::CONSTANT`, no method call on an

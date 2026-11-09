@@ -15,7 +15,7 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - The shared configurations of PHP-CS-Fixer, Rector, Arkitect, PHPStan and PHPBench, read through `Tooling`, with the
   forbidden calls of PHPStan, their identifiers and their witnesses.
 - PHPStan in bleeding edge, with `phpstan-deprecation-rules`, the type coverage at 100 %, the cognitive complexity at
-  25 per method and 100 per class, and the rules of `symplify/phpstan-rules` La Page à Melkor chose, in
+  25 per method and 100 per class, and a selection of the rules of `symplify/phpstan-rules`, in
   `config/phpstan-symplify.php`.
 - The rules of `kocal/phpstan-symfony-ux` on Live Components and Twig Components, in `config/phpstan-symfony-ux.php`,
   without effect on a project that has no Symfony UX.

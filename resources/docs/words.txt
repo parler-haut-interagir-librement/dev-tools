@@ -35,7 +35,6 @@ lockfile
 markdownlint
 markdownlint-cli2
 mbstring
-Melkor
 Mercure
 monorepo
 monorepos

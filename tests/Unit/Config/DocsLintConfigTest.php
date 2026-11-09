@@ -35,7 +35,7 @@ final class DocsLintConfigTest extends TestCase
 
     public function testEnglishByDefault(): void
     {
-        $workspace = Workspace::load($this->root("<?php return ['docs' => ['words' => ['PHIL', 'Melkor', 'PHIL', 'Élise']]];"));
+        $workspace = Workspace::load($this->root("<?php return ['docs' => ['words' => ['PHIL', 'Example', 'PHIL', 'Élise']]];"));
         $config = new DocsLintConfig($workspace);
 
         self::assertSame('en', $config->language($workspace->root));
@@ -44,10 +44,10 @@ final class DocsLintConfigTest extends TestCase
             'language' => 'en,en-GB',
             'dictionaryDefinitions' => [['name' => 'phil', 'path' => DevTools::resource('docs/words.txt'), 'addWords' => false]],
             'dictionaries' => ['phil'],
-            'words' => ['PHIL', 'Melkor', 'Élise'],
+            'words' => ['PHIL', 'Example', 'Élise'],
             'ignoreRegExpList' => ['/```[\s\S]*?```/g', '/`[^`\n]+`/g', '/\]\([^)]*\)/g'],
         ], json_decode($config->cspell($workspace->root), true, flags: \JSON_THROW_ON_ERROR));
-        self::assertStringContainsString("\n    \"words\": [\n        \"PHIL\",\n        \"Melkor\",\n        \"Élise\"\n    ],\n", $config->cspell($workspace->root));
+        self::assertStringContainsString("\n    \"words\": [\n        \"PHIL\",\n        \"Example\",\n        \"Élise\"\n    ],\n", $config->cspell($workspace->root));
         self::assertStringContainsString('"path": "'.DevTools::resource('docs/words.txt').'"', $config->cspell($workspace->root));
         self::assertStringEndsWith("}\n", $config->cspell($workspace->root));
     }

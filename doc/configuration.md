@@ -60,7 +60,7 @@ return [
     ],
     'deptrac' => ['allow' => ['^League\\\\Uri\\\\.*']],
     'arkitect' => ['namespaces' => ['Legacy'], 'rules' => static fn (): array => []],
-    'docs' => ['public' => false, 'language' => 'en', 'words' => ['Melkor']],
+    'docs' => ['public' => false, 'language' => 'en', 'words' => ['Example']],
     'gates' => ['js' => false],
     'phpunit' => ['parallel' => true],
     'psalm' => ['excludes' => ['src/Generated'], 'suppress' => ['TaintedHtml' => ['src/RawRenderer.php']]],
