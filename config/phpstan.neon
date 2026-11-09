@@ -4,6 +4,7 @@
 # `phpstan/extension-installer` loads phpstan-doctrine, phpstan-phpunit, phpstan-symfony, phpstan-strict-rules,
 # phpstan-deprecation-rules, type-coverage and cognitive-complexity on its own. `phpstan-disallowed.php` adds the sets
 # of forbidden calls; `phpstan-symplify.php` the rules of symplify/phpstan-rules every package follows;
+# `phpstan-symfony-ux.php` the rules of kocal/phpstan-symfony-ux on Live Components and Twig Components;
 # `phpstan-workspace.php` adds the paths of the root and of each package, and the exceptions their
 # `phil-dev.php` declare.
 #
@@ -12,6 +13,7 @@ includes:
     - phar://phpstan.phar/conf/bleedingEdge.neon
     - phpstan-disallowed.php
     - phpstan-symplify.php
+    - phpstan-symfony-ux.php
     - phpstan-workspace.php
 
 parameters:
@@ -51,6 +53,13 @@ parameters:
             - '*/tests/Witnesses/*'
 
     ignoreErrors:
+        # A readonly component that only holds its injected services receives no prop, and Rector's readonly class rule
+        # asks for that keyword: the check that a readonly class cannot be mounted would contradict it. Readonly
+        # properties stay forbidden.
+        -
+            identifier: symfonyUX.twigComponent.forbiddenReadonlyClass
+            reportUnmatched: false
+
         # The marker interface of a package's exceptions lives with them, in its Exception namespace, as the rule on
         # exception namespaces asks; the Contract namespace is for the interfaces of services.
         -

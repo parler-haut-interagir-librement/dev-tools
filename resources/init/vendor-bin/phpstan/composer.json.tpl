@@ -1,6 +1,7 @@
 {
     "require": {
         "php": ">={{php}}",
+        "kocal/phpstan-symfony-ux": "^1.4",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-deprecation-rules": "^2.0",

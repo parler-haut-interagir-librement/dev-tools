@@ -85,6 +85,22 @@ namespace, interfaces in a `Contract` namespace — a marker interface of except
 values, no narrowed visibility of a parent method, one class per file, no `static::CONSTANT`, no method call on an
 array, no misnamed doc tag. `phpstan/extension-installer` ignores the package, which would load every set.
 
+`config/phpstan-symfony-ux.php` adds the rules of `kocal/phpstan-symfony-ux`, one by one, so that a new rule of the
+package is a decision. They look at a class only when it carries `#[AsTwigComponent]` or `#[AsLiveComponent]`, and a
+project without Symfony UX is not affected:
+
+| On | The rules check |
+|---|---|
+| Live Components | the `method` and `fetchCredentials` of the attribute; `#[LiveAction]` and `#[LiveListener]` methods are public; the methods of `hydrateWith`, `dehydrateWith` and `modifier` exist, with the right signature; a `LiveResponse` comes from a live action or listener |
+| Every component | the class is final, its name does not end with `Component`, `exposePublicProps` is `false`, no `class` or `attributes` property, no readonly property outside the constructor, no protected method, public properties in camelCase; `#[PreMount]`, `#[PostMount]` and `FromMethod` have the right signature |
+
+With `exposePublicProps: false`, a template reads `this.limit`, not `limit`. A readonly component class that only
+holds its injected services stays allowed: Rector asks for that keyword, so
+`symfonyUX.twigComponent.forbiddenReadonlyClass` is ignored in `config/phpstan.neon`. `ForbiddenAttributesPropertyRule`
+needs the class of the attribute: it is loaded only when the project it runs from has Symfony UX, since a package with
+an optional component would otherwise stop PHPStan. A project whose `vendor-bin/phpstan` does not have the package gets
+none of these rules.
+
 The forbidden calls are the sets of `spaze/phpstan-disallowed-calls` — dangerous, execution, insecure, loose and
 non-timing-safe calls — and these, each with its identifier:
 

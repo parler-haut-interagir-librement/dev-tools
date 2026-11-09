@@ -32,7 +32,7 @@
 | File | Role |
 |---|---|
 | `config/php-cs-fixer.php`, `rector.php`, `arkitect.php` | The shared configurations the thin files call. |
-| `config/phpstan.neon`, `phpstan-disallowed.neon` and `.php`, `phpstan-symplify.php`, `phpstan-workspace.php` | The shared PHPStan configuration. |
+| `config/phpstan.neon`, `phpstan-disallowed.neon` and `.php`, `phpstan-symplify.php`, `phpstan-symfony-ux.php`, `phpstan-workspace.php` | The shared PHPStan configuration. |
 | `config/twig-loader.php` | The Twig environment TwigStan compiles with, when no package names its own. |
 | `config/phpstan-witnesses.neon` and `.php` | The analysis of the witnesses. |
 | `config/phpbench.json` | The shared PHPBench configuration. |
