@@ -33,6 +33,27 @@ final class DocsLintConfigTest extends TestCase
         self::assertSame([], new DocsLintConfig(Workspace::load($this->root('<?php return [];')))->files(Workspace::load($this->root('<?php return [];'))->root));
     }
 
+    public function testTheFrenchFilesAreReadApart(): void
+    {
+        $root = $this->root('<?php return [];');
+
+        foreach (['README.md', 'README.fr.md', 'doc/a.md', 'doc/fr/a.md', 'doc/fr/sub/b.md', 'doc/fr-glossary.md'] as $file) {
+            $this->put($root.'/'.$file, '');
+        }
+
+        $workspace = Workspace::load($root);
+        $config = new DocsLintConfig($workspace);
+        $french = json_decode($config->cspell($workspace->root, true), true, flags: \JSON_THROW_ON_ERROR);
+        $english = json_decode($config->cspell($workspace->root), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame([$root.'/README.md', $root.'/doc/a.md'], $config->files($workspace->root));
+        self::assertSame([$root.'/README.fr.md', $root.'/doc/fr/a.md', $root.'/doc/fr/sub/b.md', $root.'/doc/fr-glossary.md'], $config->translations($workspace->root));
+        self::assertIsArray($french);
+        self::assertIsArray($english);
+        self::assertSame('fr,en,en-GB', $french['language']);
+        self::assertSame('en,en-GB', $english['language']);
+    }
+
     public function testEnglishByDefault(): void
     {
         $workspace = Workspace::load($this->root("<?php return ['docs' => ['words' => ['PHIL', 'Example', 'PHIL', 'Élise']]];"));

@@ -7,6 +7,8 @@
 | `init [--force] [--monorepo\|--package]` | Writes the thin configuration files and the Composer scripts. |
 | `new <vendor/name> [--bundle] [--description=…] [--dir=…] [--year=…]` | Writes the skeleton of a new package. |
 | `check-docs [packages…] [--forbid=REGEX…]` | Checks the documentation of each package. |
+| `check-translations [packages…]` | Compares the English documentation of each package with its French mirror. |
+| `stamp-translations <packages>… [--file=PATH…]` | Records, in each French mirror, the English document it now follows. |
 | `check-packages [packages…] [--symfony=VERSION] [--keep]` | Installs each package on its own, then runs its dependency analysis and its tests. |
 | `infection [--changed[=REF]] [-- arguments]` | Mutation testing, of the whole code or of the files changed since a ref. |
 | `deptrac` | Generates the Deptrac configuration and checks the layers. |
@@ -62,6 +64,15 @@ each is in the templates. A directory that exists and is not empty is refused.
 Runs the checks of [The package skeleton](skeleton.md#the-documentation-checks) on each member of a monorepo, or on
 the package at the root; `PHIL_DEV_PACKAGES` or the arguments narrow the members. The terms no package names are the
 regular expressions of the root's `docs.forbidden` and of each `--forbid`.
+
+## check-translations, stamp-translations
+
+`check-translations` compares `README.md` and `doc/**/*.md` with `README.fr.md` and `doc/fr/**`: a document without its
+mirror, a mirror without its document, the number of headings of each level and the code blocks fail; a translation
+behind its English is reported. A package whose `docs.translations`, else the root's, is `advisory` never fails, and is
+summed up on one line; `-v` lists its findings. `stamp-translations` writes the SHA-256 of the English on the first line
+of each mirror of the packages it names; `--file` narrows it to documents given by their English or French path. See
+[Quality gates](quality-gates.md#the-french-mirror-of-the-documentation).
 
 ## check-packages
 

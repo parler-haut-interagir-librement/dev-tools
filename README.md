@@ -29,6 +29,7 @@ several batches can work at once in their own worktrees.
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implemented and tested |
 | `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service | Implemented and tested |
 | `split`, the CaptainHook configuration, `lint-docs`, `hotspots` | Implemented and tested |
+| `check-translations`, `stamp-translations`, the French mirror of `new` | Implemented and tested |
 
 ## Documentation
 
@@ -37,7 +38,7 @@ several batches can work at once in their own worktrees.
 | [Installation and usage](doc/installation.md) | Installing, `init`, the Composer scripts, a new package. |
 | [Commands](doc/commands.md) | Every command and option of `phil-dev`. |
 | [Configuration](doc/configuration.md) | How the configurations are layered, and every section of `phil-dev.php`. |
-| [Quality gates](doc/quality-gates.md) | What each gate checks, which checks are scripts of their own, the PHPStan witnesses, the Infection modes. |
+| [Quality gates](doc/quality-gates.md) | What each gate checks, which checks are scripts of their own, the PHPStan witnesses, the Infection modes, the French mirror. |
 | [Security checks](doc/security.md) | The advisories, the taint analysis of Psalm, fuzzing, the bill of materials. |
 | [Benchmarks](doc/benchmarks.md) | PHPBench, the regressions against a baseline, the worker mode of FrankenPHP. |
 | [The monorepo workflow](doc/workflow.md) | The hooks, the split of the finished packages, the prose of the documentation, the hotspots. |
@@ -46,6 +47,7 @@ several batches can work at once in their own worktrees.
 | [HTTP recordings](doc/http-recordings.md) | Recording and replaying HTTP services with the recorder of Symfony 8.2. |
 | [The version matrix](doc/version-matrix.md) | The PHP and Symfony versions, adding at RC1 and enforcing at x.y.3. |
 | [The package skeleton](doc/skeleton.md) | What `new` writes, the wording, the CHANGELOG rule, the documentation checks. |
+| [The French glossary](doc/fr-glossary.md) | The words and the tone of the French documentation, in French. |
 | [The add-on convention](doc/add-ons.md) | Tagged services, extension points and when they are stable. |
 | [Extension points](doc/extension-points.md) | What a project may change in this package. |
 | [Testing](doc/testing.md) | This package's tests, and the test helpers. |

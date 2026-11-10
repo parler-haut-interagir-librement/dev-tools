@@ -60,7 +60,7 @@ return [
     ],
     'deptrac' => ['allow' => ['^League\\\\Uri\\\\.*']],
     'arkitect' => ['namespaces' => ['Legacy'], 'rules' => static fn (): array => []],
-    'docs' => ['public' => false, 'language' => 'en', 'words' => ['Example']],
+    'docs' => ['public' => false, 'language' => 'en', 'words' => ['Example'], 'translations' => 'blocking'],
     'gates' => ['js' => false],
     'phpunit' => ['parallel' => true],
     'psalm' => ['excludes' => ['src/Generated'], 'suppress' => ['TaintedHtml' => ['src/RawRenderer.php']]],
@@ -99,6 +99,7 @@ return [
 | | `language` | `en`, the default, or `fr`: the language cspell reads; Vale reads English only. The root's is its members' default. |
 | | `words` | Words cspell accepts besides the shared list; the root's apply to every member. |
 | | `markdownlint` | Root only: markdownlint rules over the shared ones. |
+| | `translations` | `blocking`, the default, or `advisory`: whether the failures of `check-translations` stop the gate. A package's value wins over the root's; see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up). |
 | `gates` | `audit`, `unused`, `normalize`, `twig`, `js` | Root only: `false` turns that gate off. |
 | `phpunit` | `parallel` | Root only: `false` runs the tests with PHPUnit instead of ParaTest. |
 | `psalm` | `excludes` | Paths the taint analysis leaves out. |

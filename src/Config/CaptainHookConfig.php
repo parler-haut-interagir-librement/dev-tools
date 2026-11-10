@@ -9,8 +9,8 @@ use RuntimeException;
 
 /**
  * The CaptainHook configuration `init` writes: before each commit, the fast gates on the staged files only — the code
- * style and PHPStan on the PHP files, the code style of the Twig templates, the normalized `composer.json` and the
- * documentation checks. Each action runs only when a file of its type is staged; the slow gates stay in
+ * style and PHPStan on the PHP files, the code style of the Twig templates, the normalized `composer.json`, the
+ * documentation checks and those of its translations. Each action runs only when a file of its type is staged; the slow gates stay in
  * `composer gates`.
  */
 final readonly class CaptainHookConfig
@@ -44,6 +44,7 @@ final readonly class CaptainHookConfig
                     $this->action('vendor-bin/twig/vendor/bin/twig-cs-fixer lint --no-cache {$STAGED_FILES|of-type:twig}', 'twig'),
                     $this->action('php '.$this->binary.' normalize', 'json'),
                     $this->action('php '.$this->binary.' check-docs', 'md'),
+                    $this->action('php '.$this->binary.' check-translations', 'md'),
                 ],
             ],
         ];

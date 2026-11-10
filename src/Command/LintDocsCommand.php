@@ -13,11 +13,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'lint-docs', description: 'Lints the prose of the documentation with cspell, markdownlint and Vale', help: <<<'TXT'
-    Runs, on the README, CHANGELOG, CONTRIBUTING, SECURITY and doc/ of each package, with the configurations
-    generated under var/phil-dev/docs/:
+    Runs, on the README, CHANGELOG, CONTRIBUTING, SECURITY, doc/ and French mirrors of each package, with the
+    configurations generated under var/phil-dev/docs/:
 
-      cspell        the spelling, in English, or in French and English for a package whose docs.language is fr,
-                    with the shared words and those of docs.words;
+      cspell        the spelling, in English, or in French and English for the mirrors and for a package whose
+                    docs.language is fr, with the shared words and those of docs.words;
       markdownlint  the Markdown, with lines of 120 columns outside code and tables;
       Vale          the style of the English documentation.
 
@@ -65,14 +65,21 @@ final class LintDocsCommand extends WorkspaceCommand
 
             $output->writeln('== '.$package->name);
             $runs = [];
+            $translations = $config->translations($package);
+            $slug = str_replace('/', '-', $package->name);
 
             if (null !== $cspell) {
-                $cspellConfig = $this->generate('docs/cspell-'.str_replace('/', '-', $package->name).'.json', $config->cspell($package));
+                $cspellConfig = $this->generate('docs/cspell-'.$slug.'.json', $config->cspell($package));
                 $runs[] = [...$cspell, 'lint', '--no-progress', '--config', $cspellConfig, ...$files];
             }
 
+            if (null !== $cspell && [] !== $translations) {
+                $frenchConfig = $this->generate('docs/cspell-'.$slug.'-fr.json', $config->cspell($package, true));
+                $runs[] = [...$cspell, 'lint', '--no-progress', '--config', $frenchConfig, ...$translations];
+            }
+
             if (null !== $markdownlint) {
-                $runs[] = [...$markdownlint, '--config', $markdownlintConfig, ...$files];
+                $runs[] = [...$markdownlint, '--config', $markdownlintConfig, ...$files, ...$translations];
             }
 
             if (null !== $vale && 'en' === $config->language($package)) {

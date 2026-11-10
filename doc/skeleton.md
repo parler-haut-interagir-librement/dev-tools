@@ -11,6 +11,7 @@
 | `composer.json` | `library`, `"php": ">=` the floor | `symfony-bundle`, with `symfony/config` and `symfony/dependency-injection` at the floor |
 | `composer-dependency-analyser.php`, `phil-dev.php` | yes | yes |
 | `doc/` | installation, extension points, testing, reference | the same, and configuration |
+| `README.fr.md`, `doc/fr/` | the French mirror of the README and of `doc/`, stamped with its English | the same |
 | `src/`, `tests/Unit/` | empty | the bundle class on `AbstractBundle` and its test |
 
 The versions come from the floor of the [version matrix](version-matrix.md), and the constraints allow the next one.
@@ -19,8 +20,10 @@ out of an installation, and is written normalized, as the `deps:normalize` gate 
 
 ## The wording
 
-The documentation is in English. A package never names a site that uses it, nor the application it was first written
-for: what is specific to one application is configuration. The licence holder is "Philippe Gamache, doing business as
+The documentation is in English, with its French mirror in `README.fr.md` and `doc/fr/`, which follows
+[the glossary](fr-glossary.md); a change of the English updates the French in the same commit. A package never names
+a site that uses it, nor the application it was first written for: what is specific to one application is
+configuration. The licence holder is "Philippe Gamache, doing business as
 Le Gnome Archiviste; a Parler Haut Interagir Librement project" for `phil/*`, and "…; a Tilttek project" for
 `tilttek/*`, whose contribution guide says it follows the rules of the PHIL packages in their monorepo.
 
@@ -39,9 +42,11 @@ into the entry it changes, never written as "Changed" or "Fixed". Once a package
   `composer-dependency-analyser.php`, `doc/extension-points.md`, and the `doc/`, `src/` and `tests/` directories;
 - every relative link of the Markdown files, outside code blocks;
 - every table row has as many cells as its header, and `**` pairs balance in each paragraph;
-- the README lists every document of `doc/` and has the Documentation, Requirements, Contributing and License sections;
+- the README lists every English document of `doc/` and has the Documentation, Requirements, Contributing and License
+  sections, and `README.fr.md`, when there is one, lists every document of `doc/fr/`;
 - the CHANGELOG rule above;
 - the licence holder's wording of the vendor, in `LICENSE` and the README;
 - the terms no package names: the regular expressions of the root's `docs.forbidden`, and `--forbid`.
 
-The skeleton passes them as it is written.
+The skeleton passes them as it is written, and those of `phil-dev check-translations`: see
+[Quality gates](quality-gates.md#the-french-mirror-of-the-documentation).

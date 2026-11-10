@@ -50,6 +50,27 @@ final class DocsCheckerTest extends TestCase
         self::assertSame(['[missing-file] LICENSE: every package has it'], $this->check($dir));
     }
 
+    public function testTheFrenchMirrorHasItsOwnIndex(): void
+    {
+        $dir = $this->package();
+        $french = (string) file_get_contents($dir.'/README.fr.md');
+        $this->put($dir.'/doc/diagram.png', '');
+        $this->put($dir.'/doc/fr/diagram.png', '');
+        $this->put($dir.'/doc/fr/topic.md', "# Sujet\n\n[Mort](nulle-part.md)\n");
+
+        self::assertSame(['[broken-link] doc/fr/topic.md:3: nulle-part.md', '[doc-index] README.fr.md: doc/fr/topic.md is not listed'], $this->check($dir));
+
+        $this->put($dir.'/doc/fr/topic.md', "# Sujet\n");
+        $this->put($dir.'/README.fr.md', $french."\n[Sujet](doc/fr/topic.md#a) et [lien mort](absent.md)\n");
+
+        self::assertSame(['[broken-link] README.fr.md:'.(substr_count($french, "\n") + 2).': absent.md'], $this->check($dir));
+
+        unlink($dir.'/README.fr.md');
+        $this->put($dir.'/doc/fr/orphan.md', '');
+
+        self::assertSame([], $this->check($dir));
+    }
+
     public function testLinks(): void
     {
         $dir = $this->package();

@@ -27,6 +27,8 @@ return [
         // The member autoloader adds its prefixes to Composer's ClassLoader, which every Composer project holds.
         'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$'],
     ],
+    // The tooling's own documentation has no French mirror yet.
+    'docs' => ['translations' => 'advisory'],
     'infection' => [
         'mutators' => [
             // The two numbers of a version, matched as digits when the matrix is read, multiply the same as strings.

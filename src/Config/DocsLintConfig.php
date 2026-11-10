@@ -6,6 +6,7 @@ namespace Phil\DevTools\Config;
 
 use JsonException;
 use Phil\DevTools\DevTools;
+use Phil\DevTools\Docs\Mirrors;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
@@ -46,7 +47,8 @@ final readonly class DocsLintConfig
     }
 
     /**
-     * The Markdown files of the package, absolute: those of `ROOT_FILES` that exist, and every `.md` under `doc/`.
+     * The Markdown files of the package in its own language, absolute: those of `ROOT_FILES` that exist, and every
+     * `.md` under `doc/` but the French ones.
      *
      * @return list<string>
      */
@@ -57,19 +59,33 @@ final readonly class DocsLintConfig
 
         if (null !== $doc) {
             $found = glob($doc.'/{,*/}*.md', \GLOB_BRACE);
-            array_push($files, ...(false === $found ? [] : $found));
+            $own = array_filter(false === $found ? [] : $found, static fn (string $file): bool => !Mirrors::isFrench(substr($file, \strlen($package->dir) + 1)));
+            array_push($files, ...$own);
         }
 
         return $files;
     }
 
-    public function cspell(Package $package): string
+    /**
+     * The French files of the package, absolute: its mirrors, read with the French dictionary and never by Vale.
+     *
+     * @return list<string>
+     */
+    public function translations(Package $package): array
+    {
+        return array_map($package->path(...), Mirrors::french($package));
+    }
+
+    /**
+     * @param bool $translations whether the configuration reads the French mirrors, whatever the package's language
+     */
+    public function cspell(Package $package, bool $translations = false): string
     {
         $words = [
             ...$this->workspace->root->manifest->strings('docs', 'words'),
             ...($package->isRoot() ? [] : $package->manifest->strings('docs', 'words')),
         ];
-        $french = 'fr' === $this->language($package);
+        $french = $translations || 'fr' === $this->language($package);
 
         return $this->json(array_filter([
             'version' => '0.2',

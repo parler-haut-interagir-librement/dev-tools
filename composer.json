@@ -86,6 +86,7 @@
         "deptrac": "@php bin/phil-dev deptrac",
         "docs": "@php bin/phil-dev check-docs",
         "docs:lint": "@php bin/phil-dev lint-docs",
+        "docs:translations": "@php bin/phil-dev check-translations",
         "fuzz": "@php bin/phil-dev fuzz",
         "gates": [
             "@deps",
@@ -138,6 +139,7 @@
         "deptrac": "The layers, generated from the composer.json and phil-dev.php of each package.",
         "docs": "The documentation checks of each package.",
         "docs:lint": "The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.",
+        "docs:translations": "The French mirror of the documentation of each package, blocking or advisory by docs.translations.",
         "fuzz": "The fuzz targets of the packages, each for its time budget; a script of its own.",
         "gates": "Every quality gate, in order: the slow checks are scripts of their own.",
         "hooks": "Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.",

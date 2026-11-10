@@ -20,6 +20,10 @@
 | `Init\Initializer`, `ComposerJson`, `InitResult`, `InitStatus` | What `init` writes. |
 | `Skeleton\PackageName`, `SkeletonWriter` | What `new` writes. |
 | `Docs\DocsChecker`, `Finding` | The documentation checks. |
+| `Docs\TranslationChecker` | The checks of the French mirror, and whether a package's failures block. |
+| `Docs\Mirrors` | Where the French mirror of a document lives, and which documents have one. |
+| `Docs\SourceStamp` | The SHA-256 of the English source on the first line of a mirror. |
+| `Docs\MarkdownStructure` | The headings by level and the fenced code blocks of a Markdown text. |
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, with a timeout when one is given. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |
@@ -37,7 +41,8 @@
 | `config/phpstan-witnesses.neon` and `.php` | The analysis of the witnesses. |
 | `config/phpbench.json` | The shared PHPBench configuration. |
 | `config/matrix.json` | The version matrix. |
-| `resources/init/`, `resources/skeleton/` | The templates of `init` and `new`. |
+| `resources/init/`, `resources/skeleton/` | The templates of `init` and `new`, the French mirror of the documentation included. |
+| `doc/fr-glossary.md` | The words and the tone of the French documentation. |
 | `resources/compose.yaml` | The real servers, and FrankenPHP for the worker-mode benchmark. |
 | `resources/biome/download.php` | Downloads Biome through `kocal/biome-js-bundle`, without a Symfony kernel. |
 | `resources/docs/words.txt`, `resources/docs/vale/Phil/` | The shared words of cspell, and the Vale style. |

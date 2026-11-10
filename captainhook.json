@@ -64,6 +64,17 @@
                         ]
                     }
                 ]
+            },
+            {
+                "action": "php bin/phil-dev check-translations",
+                "conditions": [
+                    {
+                        "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",
+                        "args": [
+                            "md"
+                        ]
+                    }
+                ]
             }
         ]
     }

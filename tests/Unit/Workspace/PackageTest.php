@@ -16,6 +16,22 @@ final class PackageTest extends TestCase
 {
     use TemporaryDirectory;
 
+    public function testTheFilesUnderADirectory(): void
+    {
+        $dir = $this->temporaryDirectory();
+        $this->put($dir.'/composer.json', '{"name": "phil/x"}');
+
+        foreach (['doc/b.md', 'doc/a/c.md', 'doc/vendor/no.md', 'doc/var/no.md', 'doc/node_modules/no.md', 'doc/.hidden/no.md', 'vendor/no.md', 'doc/.dotfile', 'doc/my-var/yes.md', 'doc/xvendor/yes.md'] as $file) {
+            $this->put($dir.'/'.$file, '');
+        }
+
+        $package = Package::fromDirectory($dir, '', PackageRole::Root);
+
+        self::assertSame(['doc/.dotfile', 'doc/a/c.md', 'doc/b.md', 'doc/my-var/yes.md', 'doc/xvendor/yes.md'], $package->filesUnder('doc'));
+        self::assertSame(['composer.json', 'doc/.dotfile', 'doc/a/c.md', 'doc/b.md', 'doc/my-var/yes.md', 'doc/xvendor/yes.md'], $package->filesUnder(''));
+        self::assertSame([], $package->filesUnder('missing'));
+    }
+
     public function testItReadsItsComposerJson(): void
     {
         $dir = $this->temporaryDirectory();

@@ -26,6 +26,7 @@ final class CaptainHookConfigTest extends TestCase
                 ['action' => 'vendor-bin/twig/vendor/bin/twig-cs-fixer lint --no-cache {$STAGED_FILES|of-type:twig}', 'conditions' => $of('twig')],
                 ['action' => 'php vendor/bin/phil-dev normalize', 'conditions' => $of('json')],
                 ['action' => 'php vendor/bin/phil-dev check-docs', 'conditions' => $of('md')],
+                ['action' => 'php vendor/bin/phil-dev check-translations', 'conditions' => $of('md')],
             ],
         ], $config['pre-commit']);
     }

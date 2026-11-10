@@ -149,6 +149,7 @@ final readonly class Initializer
             'hotspots' => $bin.' hotspots',
             'docs' => $bin.' check-docs',
             'docs:lint' => $bin.' lint-docs',
+            'docs:translations' => $bin.' check-translations',
             'hooks' => 'vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json',
             'packages' => $bin.' check-packages',
             'packages:next' => $bin.' php next -- php '.$binary.' check-packages',
@@ -197,6 +198,7 @@ final readonly class Initializer
             'bc' => 'The public API against the latest tag, for backward-compatibility breaks.',
             'hotspots' => 'The files that change most and are the most complex, with churn-php.',
             'docs:lint' => 'The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.',
+            'docs:translations' => 'The French mirror of the documentation of each package, blocking or advisory by docs.translations.',
             'hooks' => 'Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.',
             'split' => 'The finished packages split to their public repositories; dry run unless --push is given.',
         ];

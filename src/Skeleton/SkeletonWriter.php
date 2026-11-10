@@ -6,6 +6,8 @@ namespace Phil\DevTools\Skeleton;
 
 use FilesystemIterator;
 use Phil\DevTools\DevTools;
+use Phil\DevTools\Docs\Mirrors;
+use Phil\DevTools\Docs\SourceStamp;
 use Phil\DevTools\Exception\InvalidPackageName;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
@@ -15,7 +17,7 @@ use SplFileInfo;
 
 /**
  * Writes the skeleton of a new package: the file set every package has, for a library or for a bundle, in English,
- * with the wording of its vendor.
+ * with the wording of its vendor, and the French mirror of its README and `doc/`, stamped with its English source.
  */
 final readonly class SkeletonWriter
 {
@@ -88,6 +90,11 @@ final readonly class SkeletonWriter
 
         sort($written);
 
+        foreach (array_filter($written, Mirrors::isMirror(...)) as $mirror) {
+            $source = Files::read($directory.'/'.Mirrors::sourceOf($mirror));
+            file_put_contents($directory.'/'.$mirror, SourceStamp::apply(Files::read($directory.'/'.$mirror), $source));
+        }
+
         return $written;
     }
 
@@ -101,21 +108,39 @@ final readonly class SkeletonWriter
         $php = $matrix->floor('php')->version;
         $symfony = $matrix->floor('symfony')->version;
 
+        $registration = "```php\n".$namespace.'\\'.$name->bundleClass()."::class => ['all' => true],\n```";
+
         $installation = $name->bundle
-            ? "Then register the bundle in `config/bundles.php`:\n\n```php\n".$namespace.'\\'.$name->bundleClass()."::class => ['all' => true],\n```\n\nThe package needs PHP ".$php.' or later and Symfony '.$symfony.' or later.'
+            ? "Then register the bundle in `config/bundles.php`:\n\n".$registration."\n\nThe package needs PHP ".$php.' or later and Symfony '.$symfony.' or later.'
             : 'The package needs PHP '.$php.' or later.';
+
+        $installationFr = $name->bundle
+            ? "Enregistrez ensuite le bundle dans `config/bundles.php` :\n\n".$registration."\n\nLe paquet exige PHP ".$php.' ou une version plus récente, et Symfony '.$symfony.' ou une version plus récente.'
+            : 'Le paquet exige PHP '.$php.' ou une version plus récente.';
 
         $extensionPoints = $name->bundle
             ? "| Replace a service | Alias the interface the bundle registers to your own service |\n| Add to the bundle | Tag a service with a tag this page lists; the bundle collects every service so tagged |"
             : '| Change a behaviour | Implement the interface the package takes, and pass your implementation |';
 
+        $extensionPointsFr = $name->bundle
+            ? "| Remplacer un service | Créez un alias de l'interface que le bundle enregistre vers votre propre service |\n| Ajouter au bundle | Étiquetez un service avec une étiquette que cette page énumère ; le bundle recueille tous les services ainsi étiquetés |"
+            : "| Changer un comportement | Implémentez l'interface que le paquet reçoit, et passez-lui votre implémentation |";
+
         $reference = $name->bundle
             ? '| `'.$namespace.'\\'.$name->bundleClass().'` | The bundle: its configuration `'.$name->alias().'` and its services. |'
             : '| — | The package has no public type yet. |';
 
+        $referenceFr = $name->bundle
+            ? '| `'.$namespace.'\\'.$name->bundleClass().'` | Le bundle : sa configuration `'.$name->alias().'` et ses services. |'
+            : "| — | Le paquet n'a pas encore de type public. |";
+
         $intro = $name->bundle && $libraryExists
             ? $name->package().' integrates `'.$name->library().'` with Symfony. The library alone suits an application without Symfony.'
             : $name->package().' is a Symfony bundle.';
+
+        $introFr = $name->bundle && $libraryExists
+            ? $name->package().' intègre `'.$name->library().'` à Symfony. La bibliothèque seule convient à une application sans Symfony.'
+            : $name->package().' est un bundle Symfony.';
 
         return [
             '{{package}}' => $name->package(),
@@ -126,14 +151,18 @@ final readonly class SkeletonWriter
             '{{alias}}' => $name->alias(),
             '{{library}}' => $name->library(),
             '{{intro}}' => $intro,
+            '{{intro_fr}}' => $introFr,
             '{{year}}' => $this->year,
             '{{php}}' => $php,
             '{{symfony}}' => $symfony,
             '{{holder}}' => self::HOLDERS[$name->vendor],
             '{{contributing_intro}}' => self::INTRODUCTIONS[$name->vendor],
             '{{installation}}' => $installation,
+            '{{installation_fr}}' => $installationFr,
             '{{extension_points}}' => $extensionPoints,
+            '{{extension_points_fr}}' => $extensionPointsFr,
             '{{reference}}' => $reference,
+            '{{reference_fr}}' => $referenceFr,
         ];
     }
 }

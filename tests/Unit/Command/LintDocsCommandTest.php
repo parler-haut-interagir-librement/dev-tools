@@ -34,6 +34,42 @@ final class LintDocsCommandTest extends CommandTestCase
         self::assertStringContainsString('"language": "en,en-GB"', (string) file_get_contents($docs.'/cspell-phil-example.json'));
     }
 
+    public function testTheFrenchMirrorsAreReadInFrenchAndNotByVale(): void
+    {
+        $root = $this->package();
+        $this->put($root.'/README.md', '# Example');
+        $this->put($root.'/README.fr.md', '# Exemple');
+        $path = $this->executables(['cspell', 'markdownlint-cli2', 'vale']);
+        $tester = $this->tester($root, 'lint-docs', [new ProcessResult(0), new ProcessResult(0), new ProcessResult(0), new ProcessResult(0)]);
+
+        self::assertSame(0, $this->withEnvironment('PATH', $path, static fn (): int => $tester->execute([])));
+
+        $docs = $root.'/var/phil-dev/docs';
+        self::assertSame([
+            $path.'/cspell lint --no-progress --config '.$docs.'/cspell-phil-example.json '.$root.'/README.md',
+            $path.'/cspell lint --no-progress --config '.$docs.'/cspell-phil-example-fr.json '.$root.'/README.fr.md',
+            $path.'/markdownlint-cli2 --config '.$docs.'/.markdownlint-cli2.jsonc '.$root.'/README.md '.$root.'/README.fr.md',
+            $path.'/vale --config='.$docs.'/vale.ini '.$root.'/README.md',
+        ], $this->runner->commands());
+        self::assertStringContainsString('"language": "fr,en,en-GB"', (string) file_get_contents($docs.'/cspell-phil-example-fr.json'));
+    }
+
+    public function testEveryFrenchFileThroughNpx(): void
+    {
+        $root = $this->package();
+        $this->put($root.'/README.md', '# Example');
+        $this->put($root.'/README.fr.md', '# Exemple');
+        $this->put($root.'/doc/fr/a.md', '# A');
+        $path = $this->executables(['npx']);
+        $tester = $this->tester($root, 'lint-docs', [new ProcessResult(0), new ProcessResult(0), new ProcessResult(0)]);
+
+        self::assertSame(0, $this->withEnvironment('PATH', $path, static fn (): int => $tester->execute([])));
+        self::assertSame(
+            $path.'/npx --yes cspell@10 lint --no-progress --config '.$root.'/var/phil-dev/docs/cspell-phil-example-fr.json '.$root.'/README.fr.md '.$root.'/doc/fr/a.md',
+            $this->runner->commands()[1],
+        );
+    }
+
     public function testNpxStandsInAndValeIsSkipped(): void
     {
         $root = $this->package(['docs' => ['language' => 'fr']]);

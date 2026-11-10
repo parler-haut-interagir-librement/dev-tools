@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Workspace;
 
+use FilesystemIterator;
 use JsonException;
 use Phil\DevTools\Exception\WorkspaceNotFound;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * One package of a workspace: its directory, what its `composer.json` declares and its `phil-dev.php`.
@@ -151,6 +155,37 @@ final readonly class Package
         $absolute = $this->path($relative);
 
         return is_dir($absolute) ? $absolute : null;
+    }
+
+    /**
+     * The files under a directory of the package, relative to the package, sorted; `vendor/`, `var/`, `node_modules/`
+     * and dot directories left out.
+     *
+     * @return list<string>
+     */
+    public function filesUnder(string $directory): array
+    {
+        $root = $this->path($directory);
+
+        if (!is_dir($root)) {
+            return [];
+        }
+
+        $files = [];
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
+
+        /** @var SplFileInfo $info */
+        foreach ($iterator as $info) {
+            $relative = substr($info->getPathname(), \strlen($this->dir) + 1);
+
+            if (1 !== preg_match('#(^|/)(vendor|var|node_modules|\.[^/]+)/#', $relative)) {
+                $files[] = $relative;
+            }
+        }
+
+        sort($files);
+
+        return $files;
     }
 
     /**

@@ -32,8 +32,9 @@ final class CheckDocsCommandTest extends CommandTestCase
             packages/cards: [forbidden-term] src/Card.php:1: "SecretSite" matches /SecretSite/
             packages/dice: [missing-file] SECURITY.md: every package has it
             packages/dice: [broken-link] README.md:35: SECURITY.md
+            packages/dice: [broken-link] README.fr.md:37: SECURITY.md
             packages/dice: [broken-link] CONTRIBUTING.md:12: SECURITY.md
-            5 findings.
+            6 findings.
 
             TEXT, $tester->getDisplay());
     }

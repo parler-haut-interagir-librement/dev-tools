@@ -19,7 +19,7 @@ final class ApplicationTest extends TestCase
         self::assertSame(DevTools::NAME, $application->getName());
         self::assertSame(DevTools::VERSION, $application->getVersion());
 
-        foreach (['init', 'new', 'check-docs', 'check-packages', 'infection', 'deptrac', 'witnesses', 'generate', 'services'] as $command) {
+        foreach (['init', 'new', 'check-docs', 'check-translations', 'stamp-translations', 'check-packages', 'infection', 'deptrac', 'witnesses', 'generate', 'services'] as $command) {
             self::assertTrue($application->has($command), $command);
         }
     }

@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'new', description: 'Writes the skeleton of a new package, a library or a bundle', help: <<<'TXT'
     Writes the file set every package has — README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE,
     SECURITY, composer.json, composer-dependency-analyser.php, phil-dev.php, doc/, src/ and tests/ — with
-    the wording of its vendor. In a monorepo it goes to packages/<name> (packages/tilttek-<name> for
+    the wording of its vendor, and the French mirror of its documentation, README.fr.md and doc/fr/. In a monorepo it goes to packages/<name> (packages/tilttek-<name> for
     Tilttek), where the shared configurations find it without any change at the root.
     TXT)]
 final class NewCommand extends WorkspaceCommand

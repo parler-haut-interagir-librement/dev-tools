@@ -14,7 +14,8 @@ prose of the documentation and the hotspots of the code.
 
 `init` writes `captainhook.json`. Before each commit, CaptainHook, in its own `vendor-bin/captainhook/`, runs the fast
 gates on the staged files only, each when a file of its type is staged: PHP-CS-Fixer and PHPStan on the PHP files,
-Twig-CS-Fixer on the templates, `phil-dev normalize` for a `composer.json`, `phil-dev check-docs` for a Markdown file.
+Twig-CS-Fixer on the templates, `phil-dev normalize` for a `composer.json`, `phil-dev check-docs` and `phil-dev check-translations` for a Markdown
+file.
 The slow gates — Deptrac, the tests, Infection — stay in `composer gates`. `composer hooks` installs the hooks once
 per clone; a worktree shares them.
 
@@ -43,18 +44,18 @@ Nothing is pushed without `--push`: the command says what it would push. It neve
 
 ## The prose of the documentation
 
-`phil-dev lint-docs [packages…]` reads the `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md` and `doc/` of
-each package with three linters, through the configurations it writes under `var/phil-dev/docs/`:
+`phil-dev lint-docs [packages…]` reads the `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `doc/` and
+French mirror of each package with three linters, through the configurations it writes under `var/phil-dev/docs/`:
 
 | Linter | What it checks | Configuration |
 |---|---|---|
-| cspell | The spelling. | English, with the words of `resources/docs/words.txt` and of `docs.words`. |
+| cspell | The spelling. | English, or French for the mirrors, with the words of `resources/docs/words.txt` and of `docs.words`. |
 | markdownlint | The Markdown. | The default rules, lines of 120 columns outside code and tables, `docs.markdownlint` over them. |
 | Vale | The style of the English documentation. | The `Vale` style without its spelling, and the `Phil` style of `resources/docs/vale/`. |
 
 The documentation of a package is in English unless its manifest says `'docs' => ['language' => 'fr']`, as the French
 corpora do: cspell then reads the French dictionary as well, and Vale, whose rules are written for English, leaves it
-out. The root's `docs.language` is the default of its members.
+out. The root's `docs.language` is the default of its members. Vale reads no French mirror either.
 
 These linters are not PHP tools. Each is used when it is on the `PATH`; cspell and markdownlint-cli2 also through
 `npx` when Node.js is installed. A linter missing is skipped with a note. The French dictionary is

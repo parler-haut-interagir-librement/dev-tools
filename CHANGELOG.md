@@ -44,13 +44,20 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `phil-dev split`: the finished members split to their repositories or merged into another monorepo, with
   splitsh-lite or git subtree, a dry run without `--push`.
 - `CaptainHookConfig`: the fast gates on the staged files before each commit, installed by `composer hooks`.
-- `DocsLintConfig` and `phil-dev lint-docs`: cspell, in English or French, markdownlint and Vale with the shared words
-  and style of `resources/docs/`; `Executables`, the programs of the `PATH`.
+- `DocsLintConfig` and `phil-dev lint-docs`: cspell, in English or French, the French mirrors in French, markdownlint
+  and Vale with the shared words and style of `resources/docs/`; `Executables`, the programs of the `PATH`.
 - `ChurnConfig` and `phil-dev hotspots`: the hotspots of the code, with churn-php.
 - `phil-dev new`: the skeleton of a library or a bundle, with the wording of its vendor, the versions of the matrix, a
-  normalized `composer.json` and `roave/security-advisories`.
+  normalized `composer.json` and `roave/security-advisories`, and the French mirror of its README and `doc/`, stamped
+  with its English source.
 - `phil-dev check-docs`: the file set, the links, the tables, the bold, the README index and sections, one "Added"
-  section until the packages are public, the licence holder's wording and the forbidden terms.
+  section until the packages are public, the licence holder's wording and the forbidden terms; `README.fr.md`, when
+  there is one, indexes `doc/fr/`.
+- `phil-dev check-translations` and `TranslationChecker`: `README.md` and `doc/` against `README.fr.md` and `doc/fr/`,
+  a document or a mirror alone, the headings of each level and the code blocks failing, a translation behind its
+  English reported, by the SHA-256 of `SourceStamp` on its first line; `docs.translations` for a blocking or advisory
+  package; `phil-dev stamp-translations`; the `composer docs:translations` script and its pre-commit hook.
+- `doc/fr-glossary.md`: the words and the tone of the French documentation.
 - `phil-dev check-packages`: each package installed and tested on its own, on another Symfony version with `--symfony`;
   the siblings at the branch their branch alias names, from a worktree as from the main checkout; `TMPDIR` inside each
   copy.

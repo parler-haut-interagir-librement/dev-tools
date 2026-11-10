@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Docs;
 
-use FilesystemIterator;
 use Phil\DevTools\Workspace\Package;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use SplFileInfo;
 
 /**
  * The documentation checks every PHIL and Tilttek package passes: the file set, its links, its tables, its index, a
@@ -56,7 +52,7 @@ final readonly class DocsChecker
     private const array README_SECTIONS = ['## Documentation', '## Requirements', '## Contributing', '## License'];
 
     /** @var list<string> */
-    private const array ROOT_DOCUMENTS = ['README.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CODE_OF_CONDUCT.md'];
+    private const array ROOT_DOCUMENTS = ['README.md', 'README.fr.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CODE_OF_CONDUCT.md'];
 
     /** @var list<string> */
     private const array SCANNED_EXTENSIONS = ['md', 'php', 'json', 'yaml', 'yml', 'twig', 'xml', 'neon', 'txt', 'tpl', 'dist'];
@@ -116,7 +112,7 @@ final readonly class DocsChecker
             }
         }
 
-        foreach ($this->filesUnder($package, 'doc') as $file) {
+        foreach ($package->filesUnder('doc') as $file) {
             if (str_ends_with($file, '.md')) {
                 $files[] = $file;
             }
@@ -233,21 +229,35 @@ final readonly class DocsChecker
     }
 
     /**
-     * Every document of `doc/` is listed by the README.
+     * The README lists every English document of `doc/`, and `README.fr.md`, when there is one, every document of
+     * `doc/fr/`.
      *
      * @return list<Finding>
      */
     private function checkIndex(Package $package): array
     {
-        $readme = $package->path('README.md');
+        $documents = array_filter($package->filesUnder('doc'), static fn (string $file): bool => str_ends_with($file, '.md'));
 
-        if (!is_file($readme)) {
+        return [
+            ...$this->unlisted($package, 'README.md', array_filter($documents, static fn (string $file): bool => !Mirrors::isMirror($file))),
+            ...$this->unlisted($package, Mirrors::README, array_filter($documents, Mirrors::isMirror(...))),
+        ];
+    }
+
+    /**
+     * @param array<int, string> $documents
+     *
+     * @return list<Finding>
+     */
+    private function unlisted(Package $package, string $readme, array $documents): array
+    {
+        if (!is_file($package->path($readme))) {
             return [];
         }
 
         $listed = [];
 
-        foreach (explode("\n", $this->read($readme)) as $line) {
+        foreach (explode("\n", $this->read($package->path($readme))) as $line) {
             foreach ($this->targets($line) as $target) {
                 $listed[] = explode('#', $target)[0];
             }
@@ -255,9 +265,9 @@ final readonly class DocsChecker
 
         $findings = [];
 
-        foreach ($this->filesUnder($package, 'doc') as $file) {
-            if (str_ends_with($file, '.md') && !\in_array($file, $listed, true)) {
-                $findings[] = new Finding('doc-index', 'README.md', null, $file.' is not listed');
+        foreach ($documents as $file) {
+            if (!\in_array($file, $listed, true)) {
+                $findings[] = new Finding('doc-index', $readme, null, $file.' is not listed');
             }
         }
 
@@ -358,7 +368,7 @@ final readonly class DocsChecker
     {
         $findings = [];
 
-        foreach ($this->filesUnder($package, '') as $file) {
+        foreach ($package->filesUnder('') as $file) {
             if ('LICENSE' !== $file && !\in_array(pathinfo($file, \PATHINFO_EXTENSION), self::SCANNED_EXTENSIONS, true)) {
                 continue;
             }
@@ -373,37 +383,6 @@ final readonly class DocsChecker
         }
 
         return $findings;
-    }
-
-    /**
-     * The files under a directory of the package, relative to the package, sorted; `vendor/`, `var/` and dot
-     * directories left out.
-     *
-     * @return list<string>
-     */
-    private function filesUnder(Package $package, string $directory): array
-    {
-        $root = $package->path($directory);
-
-        if (!is_dir($root)) {
-            return [];
-        }
-
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS));
-
-        /** @var SplFileInfo $info */
-        foreach ($iterator as $info) {
-            $relative = substr($info->getPathname(), \strlen($package->dir) + 1);
-
-            if (1 !== preg_match('#(^|/)(vendor|var|node_modules|\.[^/]+)/#', $relative)) {
-                $files[] = $relative;
-            }
-        }
-
-        sort($files);
-
-        return $files;
     }
 
     /**

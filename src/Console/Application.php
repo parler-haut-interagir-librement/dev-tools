@@ -9,6 +9,7 @@ use Phil\DevTools\Command\BcCommand;
 use Phil\DevTools\Command\BenchCommand;
 use Phil\DevTools\Command\CheckDocsCommand;
 use Phil\DevTools\Command\CheckPackagesCommand;
+use Phil\DevTools\Command\CheckTranslationsCommand;
 use Phil\DevTools\Command\DeptracCommand;
 use Phil\DevTools\Command\FuzzCommand;
 use Phil\DevTools\Command\GenerateCommand;
@@ -24,6 +25,7 @@ use Phil\DevTools\Command\PhpCommand;
 use Phil\DevTools\Command\SbomCommand;
 use Phil\DevTools\Command\ServicesCommand;
 use Phil\DevTools\Command\SplitCommand;
+use Phil\DevTools\Command\StampTranslationsCommand;
 use Phil\DevTools\Command\TaintCommand;
 use Phil\DevTools\Command\TestCommand;
 use Phil\DevTools\Command\TwigCommand;
@@ -49,6 +51,8 @@ final class Application extends Console
             new InitCommand($root, $runner),
             new NewCommand($root, $runner),
             new CheckDocsCommand($root, $runner),
+            new CheckTranslationsCommand($root, $runner),
+            new StampTranslationsCommand($root, $runner),
             new CheckPackagesCommand($root, $runner),
             new InfectionCommand($root, $runner),
             new DeptracCommand($root, $runner),

@@ -7,6 +7,8 @@ namespace Phil\DevTools\Tests\Unit\Skeleton;
 use FilesystemIterator;
 use Phil\DevTools\DevTools;
 use Phil\DevTools\Docs\DocsChecker;
+use Phil\DevTools\Docs\SourceStamp;
+use Phil\DevTools\Docs\TranslationChecker;
 use Phil\DevTools\Exception\InvalidPackageName;
 use Phil\DevTools\Skeleton\PackageName;
 use Phil\DevTools\Skeleton\SkeletonWriter;
@@ -31,9 +33,11 @@ final class SkeletonWriterTest extends TestCase
         $files = new SkeletonWriter('2027')->write(PackageName::parse('phil/opening-hours'), $dir, 'Opening hours as values.');
 
         self::assertSame([
-            'CHANGELOG.md', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', 'README.md', 'SECURITY.md',
+            'CHANGELOG.md', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', 'README.fr.md', 'README.md', 'SECURITY.md',
             'composer-dependency-analyser.php', 'composer.json',
-            'doc/extension-points.md', 'doc/installation.md', 'doc/reference.md', 'doc/testing.md',
+            'doc/extension-points.md',
+            'doc/fr/extension-points.md', 'doc/fr/installation.md', 'doc/fr/reference.md', 'doc/fr/testing.md',
+            'doc/installation.md', 'doc/reference.md', 'doc/testing.md',
             'phil-dev.php', 'src/.gitkeep', 'tests/Unit/.gitkeep',
         ], $files);
 
@@ -49,6 +53,8 @@ final class SkeletonWriterTest extends TestCase
 
         // The skeleton passes the documentation checks as it is.
         self::assertSame([], new DocsChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
+        self::assertSame([], new TranslationChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
+        self::assertSame(SourceStamp::fingerprint((string) file_get_contents($dir.'/README.md')), SourceStamp::read((string) file_get_contents($dir.'/README.fr.md')));
     }
 
     public function testABundle(): void
@@ -70,6 +76,9 @@ final class SkeletonWriterTest extends TestCase
         self::assertStringContainsString('integrates `tilttek/quests` with Symfony', (string) file_get_contents($dir.'/README.md'));
         self::assertStringContainsString('"type": "symfony-bundle"', (string) file_get_contents($dir.'/composer.json'));
         self::assertSame([], new DocsChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
+        self::assertSame([], new TranslationChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
+        self::assertStringContainsString('intègre `tilttek/quests` à Symfony', (string) file_get_contents($dir.'/README.fr.md'));
+        self::assertFileExists($dir.'/doc/fr/configuration.md');
     }
 
     public function testABundleWithoutItsLibrary(): void
@@ -79,6 +88,7 @@ final class SkeletonWriterTest extends TestCase
         new SkeletonWriter('2026')->write(PackageName::parse('phil/menu-bundle'), $dir, 'Menus.');
 
         self::assertStringContainsString('phil/menu-bundle is a Symfony bundle.', (string) file_get_contents($dir.'/README.md'));
+        self::assertStringContainsString('phil/menu-bundle est un bundle Symfony.', (string) file_get_contents($dir.'/README.fr.md'));
     }
 
     public function testNoTemplateIsLeftUnfilled(): void

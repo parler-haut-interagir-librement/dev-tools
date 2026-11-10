@@ -16,6 +16,8 @@ enough for every batch; the slower checks are scripts of their own.
 | The backward-compatibility check | `bc` | its own script: it installs two revisions |
 | The benchmarks against their baseline | `bench:compare` | its own script: see [Benchmarks](benchmarks.md) |
 | The prose of the documentation, the hotspots | `docs:lint`, `hotspots` | their own scripts: see [The monorepo workflow](workflow.md) |
+| The file set and the links of the documentation | `docs` | its own script and the hooks: see [The package skeleton](skeleton.md#the-documentation-checks) |
+| The French mirror of the documentation | `docs:translations` | its own script and the hooks: see [below](#the-french-mirror-of-the-documentation) |
 
 The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig` and `js` with
 `'gates' => ['<name>' => false]`: the gate then says it is off and passes. The fast gates also run on the staged files
@@ -156,3 +158,74 @@ in the package's manifest with its reason, never excused by lowering the bar.
 | Once per batch, before its commit | the files changed since the base ref, on the floor PHP | `composer infection:changed` |
 | Weekly and before each release | the whole code, on the floor PHP | `composer infection` |
 | Weekly and before each release | the whole code, on the next PHP | `composer infection:next` |
+
+## The French mirror of the documentation
+
+Every package is documented in English and in French. The English does not move: `README.md` and `doc/<name>.md`. The
+French sits beside it, in `README.fr.md` and `doc/fr/<name>.md`, with the same names and the same tree. `phil-dev
+check-translations`, or `composer docs:translations`, compares the two for each package; `PHIL_DEV_PACKAGES` or the
+names given to it narrow them.
+
+| Code | Means | Effect |
+|---|---|---|
+| `translation-missing` | An English document without its mirror. | Fails. |
+| `translation-orphan` | A mirror without its English document. | Fails. |
+| `translation-headings` | Not as many headings of a level as the English, fenced code left out. | Fails. |
+| `translation-code` | A fenced code block, info string included, that differs from the English, or not as many blocks. | Fails. |
+| `translation-late` | The English has changed since the translation, or the mirror has no stamp. | Reported. |
+
+A late translation whose structure has drifted fails too, on its headings or its code. `doc/fr-glossary.md`, written
+in French, has no English document.
+
+### How a late translation is found
+
+The first line of a mirror is an HTML comment, which no reader sees, with the SHA-256 of the English file it was
+translated from:
+
+```markdown
+<!-- phil-dev source-sha256=c5c7ca5b657240367e91e4363fc79313246bb93458625263129fda313c8c3214 -->
+```
+
+The gate hashes the English again and compares. The dates of files say nothing, since a checkout rewrites them. The
+history of git would be no better: a shallow clone and a split repository lack it, and a commit that touches both
+files does not say that the French caught up. The content needs neither, and the same check gives the same answer on
+every machine. Line endings are normalized before hashing, so that a checkout that converts them changes nothing.
+
+Once the French has caught up, record it:
+
+```sh
+phil-dev stamp-translations phil/example
+phil-dev stamp-translations phil/example --file=doc/installation.md
+```
+
+The command names its packages, so that no run marks a whole monorepo as translated, and `--file`, with the English or
+the French path, keeps a document still to translate out of it. A stamp says that this English was read: stamp only
+what was translated.
+
+### While the existing packages catch up
+
+`docs.translations` in `phil-dev.php` says whether a package's failures stop the gate: `blocking`, the default, or
+`advisory`. A package's own value wins over the root's. An advisory package never fails: it is summed up on one line,
+and `-v` lists its findings.
+
+To let a monorepo catch up, set the root to advisory:
+
+```php
+return [
+    'docs' => ['translations' => 'advisory'],
+];
+```
+
+Once a package is translated and passes, turn the gate on for it in its own `phil-dev.php`:
+
+```php
+return [
+    'paths' => ['src', 'tests'],
+    'docs' => ['translations' => 'blocking'],
+];
+```
+
+`phil-dev new` writes that line in every new package, which is bilingual from its first commit. When the last package
+has caught up, the key goes from the root.
+
+The French follows [the glossary](fr-glossary.md): its words, its tone and what stays in English.

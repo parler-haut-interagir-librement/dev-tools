@@ -15,7 +15,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'check-docs', description: 'Checks the documentation of each package', help: <<<'TXT'
     Checks, in each package: the file set (README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE,
     SECURITY, composer-dependency-analyser.php, doc/ with extension-points.md, src/, tests/), the relative
-    links, the shape of the tables, the balance of bold, the README's index of doc/ and its sections, a
+    links, the shape of the tables, the balance of bold, the README's index of doc/ and its sections, the
+    index of doc/fr/ in README.fr.md, a
     CHANGELOG with one "Added" section until the packages are public (docs.public), the licence holder's wording for the
     vendor, and the terms no package names (docs.forbidden of the root's phil-dev.php, and --forbid).
 
