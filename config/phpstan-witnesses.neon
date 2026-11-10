@@ -1,8 +1,10 @@
-# The witnesses of the forbidden calls: files under `tests/Witnesses/PhpStan` that MUST fail. `phil-dev witnesses`
-# runs this analysis and passes only when PHPStan reports, in each witness, the identifier its docblock announces.
+# The witnesses of the forbidden calls and of the rule on component names: files under `tests/Witnesses/PhpStan` that
+# MUST fail. `phil-dev witnesses` runs this analysis and passes only when PHPStan reports, in each witness, the
+# identifier its docblock announces.
 # The level is the lowest: what is measured here is the rule, not the rest of the file.
 includes:
     - phpstan-disallowed.php
+    - phpstan-symfony-ux.php
     - phpstan-witnesses.php
 
 parameters:

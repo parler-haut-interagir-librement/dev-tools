@@ -87,21 +87,61 @@ namespace, interfaces in a `Contract` namespace — a marker interface of except
 values, no narrowed visibility of a parent method, one class per file, no `static::CONSTANT`, no method call on an
 array, no misnamed doc tag. `phpstan/extension-installer` ignores the package, which would load every set.
 
-`config/phpstan-symfony-ux.php` adds the rules of `kocal/phpstan-symfony-ux`, one by one, so that a new rule of the
-package is a decision. They look at a class only when it carries `#[AsTwigComponent]` or `#[AsLiveComponent]`, and a
-project without Symfony UX is not affected:
+`config/phpstan-symfony-ux.php` adds the rule of this package on the names of components, then the rules of
+`kocal/phpstan-symfony-ux`, one by one, so that a new rule of that package is a decision. They look at a class only
+when it carries `#[AsTwigComponent]` or `#[AsLiveComponent]`, and a project without Symfony UX is not affected.
+
+### A component's name ends with `Component`
+
+`ClassNameMustEndWithComponentRule`, identifier `phil.componentClassName`, requires that a class carrying
+`#[AsTwigComponent]` or `#[AsLiveComponent]` has a name that ends with `Component`, with that exact case.
+
+A suffix tells the role of a class at a glance, in a file list, a stack trace or an import, the way `Interface`, `Trait`
+and `Abstract…` do for theirs: `AlertComponent` is read as a component before its file is opened. It also keeps the
+name clear of the words PHP reserves: a list component cannot be called `List`, while `ListComponent` is a valid name.
+The name the templates use stays what the attribute says, so `<twig:Alert />` keeps working.
+
+Refused, with the message `Class Alert carries #[AsTwigComponent]: its name must end with "Component", such as
+AlertComponent.`, reported on the line of the class name:
+
+```php
+#[AsTwigComponent('Alert')]
+final class Alert
+{
+}
+```
+
+Accepted:
+
+```php
+#[AsTwigComponent('Alert')]
+final class AlertComponent
+{
+}
+```
+
+The rule compares the resolved name of the attribute, an alias or a different case included, and never loads its class:
+a project without Symfony UX runs it as any other, and a package with an optional component does not stop PHPStan.
+An attribute of the same short name from another namespace, and an anonymous class, are left alone. The rule replaces
+`ClassNameMustNotEndWithComponentRule` of `kocal/phpstan-symfony-ux`, which asks the opposite and is left out of
+`config/phpstan-symfony-ux.php`. The rule is loaded even when `vendor-bin/phpstan` does not have that package, and its
+witness, `tests/Witnesses/PhpStan/Alert.php`, proves that the shared configuration still loads it.
+
+### The rules of `kocal/phpstan-symfony-ux`
 
 | On | The rules check |
 |---|---|
 | Live Components | the `method` and `fetchCredentials` of the attribute; `#[LiveAction]` and `#[LiveListener]` methods are public; the methods of `hydrateWith`, `dehydrateWith` and `modifier` exist, with the right signature; a `LiveResponse` comes from a live action or listener |
-| Every component | the class is final, its name does not end with `Component`, `exposePublicProps` is `false`, no `class` or `attributes` property, no readonly property outside the constructor, no protected method, public properties in camelCase; `#[PreMount]`, `#[PostMount]` and `FromMethod` have the right signature |
+| Every component | the class is final, `exposePublicProps` is `false`, no `class` or `attributes` property, no readonly property outside the constructor, no protected method, public properties in camelCase; `#[PreMount]`, `#[PostMount]` and `FromMethod` have the right signature |
 
 With `exposePublicProps: false`, a template reads `this.limit`, not `limit`. A readonly component class that only
 holds its injected services stays allowed: Rector asks for that keyword, so
 `symfonyUX.twigComponent.forbiddenReadonlyClass` is ignored in `config/phpstan.neon`. `ForbiddenAttributesPropertyRule`
 needs the class of the attribute: it is loaded only when the project it runs from has Symfony UX, since a package with
 an optional component would otherwise stop PHPStan. A project whose `vendor-bin/phpstan` does not have the package gets
-none of these rules.
+none of these rules, and keeps the rule on the suffix.
+
+### The forbidden calls and their witnesses
 
 The forbidden calls are the sets of `spaze/phpstan-disallowed-calls` — dangerous, execution, insecure, loose and
 non-timing-safe calls — and these, each with its identifier:

@@ -25,7 +25,8 @@ return [
     'deptrac' => [
         // The recorder of HttpRecording is the PHPUnit bridge's: the helper only exists for the tests of packages.
         // The member autoloader adds its prefixes to Composer's ClassLoader, which every Composer project holds.
-        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$'],
+        // The PHPStan rules of this package run inside PHPStan, on the classes of its parser.
+        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*'],
     ],
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory'],

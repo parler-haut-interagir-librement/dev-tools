@@ -18,7 +18,10 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
   25 per method and 100 per class, and a selection of the rules of `symplify/phpstan-rules`, in
   `config/phpstan-symplify.php`.
 - The rules of `kocal/phpstan-symfony-ux` on Live Components and Twig Components, in `config/phpstan-symfony-ux.php`,
-  without effect on a project that has no Symfony UX.
+  without effect on a project that has no Symfony UX, except `ClassNameMustNotEndWithComponentRule`.
+- `PhpStan\Rules\ClassNameMustEndWithComponentRule`, identifier `phil.componentClassName`: a class carrying
+  `#[AsTwigComponent]` or `#[AsLiveComponent]` has a name ending with `Component`, the attribute compared by its name so
+  that a project without Symfony UX runs it; loaded by `config/phpstan-symfony-ux.php`, with its witness.
 - `DeptracConfig`: the Deptrac layers of every package, generated from its `composer.json` and `phil-dev.php`, with a
   shared default of Symfony components, contracts, polyfills and PSR interfaces, the dependencies each package is
   allowed, libraries that never see a bundle, and `Forbidden` closed by a negative lookahead.

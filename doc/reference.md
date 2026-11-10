@@ -25,6 +25,7 @@
 | `Docs\SourceStamp` | The SHA-256 of the English source on the first line of a mirror. |
 | `Docs\MarkdownStructure` | The headings by level and the fenced code blocks of a Markdown text. |
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
+| `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, with a timeout when one is given. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |
 | `Bench\WorkerBench`, `WorkerBenchResult` | The requests of the worker-mode benchmark and their percentiles. |
@@ -48,3 +49,34 @@
 | `resources/docs/words.txt`, `resources/docs/vale/Phil/` | The shared words of cspell, and the Vale style. |
 | `resources/php/Dockerfile` | The image of a PHP of the matrix. |
 | `resources/autoload-members.php` | The member autoloader, for a monorepo's `autoload-dev`. |
+
+## PHPStan rules
+
+The rules of this package run inside PHPStan, which loads them from `config/phpstan-symfony-ux.php`, part of the shared
+`config/phpstan.neon` every project includes. They depend on nothing else at run time.
+
+| Rule | Identifier | Requires |
+|---|---|---|
+| `ClassNameMustEndWithComponentRule` | `phil.componentClassName` | A class carrying `#[AsTwigComponent]` or `#[AsLiveComponent]` has a name ending with `Component`, with that exact case. |
+
+A suffix tells the role of a class at a glance, as `Interface`, `Trait` and `Abstract…` do, and keeps a name clear of
+the words PHP reserves: `ListComponent` is a valid class name, `List` is not. The rule replaces
+`ClassNameMustNotEndWithComponentRule` of `kocal/phpstan-symfony-ux`, which asks the opposite and is no longer loaded.
+It compares the resolved name of the attribute without loading its class, so a project without Symfony UX runs it
+safely.
+
+```php
+// Refused: Class Alert carries #[AsTwigComponent]: its name must end with "Component", such as AlertComponent.
+#[AsTwigComponent('Alert')]
+final class Alert
+{
+}
+
+// Accepted.
+#[AsTwigComponent('Alert')]
+final class AlertComponent
+{
+}
+```
+
+See [Quality gates](quality-gates.md#a-components-name-ends-with-component) for the details.

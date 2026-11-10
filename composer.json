@@ -28,6 +28,7 @@
         "bamarni/composer-bin-plugin": "^1.9",
         "brianium/paratest": "^7.27",
         "ergebnis/phpunit-slow-test-detector": "^2.27",
+        "phpstan/phpstan": "^2.3",
         "phpunit/phpunit": "^13.4",
         "shipmonk/composer-dependency-analyser": "^1.8",
         "symfony/http-client": "^8.2",

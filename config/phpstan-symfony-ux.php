@@ -9,7 +9,6 @@ use Kocal\PHPStanSymfonyUX\Rules\LiveComponent\LivePropHydrationMethodsRule;
 use Kocal\PHPStanSymfonyUX\Rules\LiveComponent\LivePropModifierMethodRule;
 use Kocal\PHPStanSymfonyUX\Rules\LiveComponent\LiveResponseMustBeReturnedByLiveActionRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\ClassMustBeFinalRule;
-use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\ClassNameMustNotEndWithComponentRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\ExposePublicPropsMustBeFalseRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\ForbiddenAttributesPropertyRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\ForbiddenClassPropertyRule;
@@ -19,21 +18,25 @@ use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\MethodsVisibilityRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\PostMountMethodSignatureRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\PreMountMethodSignatureRule;
 use Kocal\PHPStanSymfonyUX\Rules\TwigComponent\PublicPropertiesMustBeCamelCaseRule;
+use Phil\DevTools\PhpStan\Rules\ClassNameMustEndWithComponentRule;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /*
- * The rules of kocal/phpstan-symfony-ux on Live Components and Twig Components, one by one: a new rule of the package
- * is a decision, not a side effect of an update. Each one only looks at a class carrying `#[AsTwigComponent]` or
- * `#[AsLiveComponent]`, and matches the attribute by its name: a project without Symfony UX is not affected.
+ * The rules on Live Components and Twig Components: the rule of this package on the suffix of their names, then those of
+ * kocal/phpstan-symfony-ux, one by one: a new rule of that package is a decision, not a side effect of an update. Each
+ * one only looks at a class carrying `#[AsTwigComponent]` or `#[AsLiveComponent]`, and matches the attribute by its name:
+ * a project without Symfony UX is not affected.
  *
- * A project whose `vendor-bin/phpstan` does not have the package yet gets none of these rules. `phpstan.neon` keeps
+ * `ClassNameMustNotEndWithComponentRule` of that package asks the opposite of the suffix rule, and stays out. A project
+ * whose `vendor-bin/phpstan` does not have the package yet gets the suffix rule alone. `phpstan.neon` keeps
  * `forbiddenReadonlyClass` out, which contradicts Rector.
  */
 if (!class_exists(ClassMustBeFinalRule::class)) {
-    return [];
+    return ['rules' => [ClassNameMustEndWithComponentRule::class]];
 }
 
 $rules = [
+    ClassNameMustEndWithComponentRule::class,
     AsLiveComponentArgumentsMustBeValidRule::class,
     LiveActionMethodsVisibilityRule::class,
     LiveListenerMethodsVisibilityRule::class,
@@ -41,7 +44,6 @@ $rules = [
     LivePropModifierMethodRule::class,
     LiveResponseMustBeReturnedByLiveActionRule::class,
     ClassMustBeFinalRule::class,
-    ClassNameMustNotEndWithComponentRule::class,
     ExposePublicPropsMustBeFalseRule::class,
     ForbiddenClassPropertyRule::class,
     ForbiddenReadonlyRule::class,
