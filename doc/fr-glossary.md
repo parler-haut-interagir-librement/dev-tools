@@ -60,6 +60,7 @@ du Québec, neutre et technique : on le lit sans accent de région et sans jargo
 ## Du code et de l'architecture
 
 | Anglais | Français | Remarque |
+| scope | portée | La portée d'une feuille de style : le sélecteur auquel chaque règle est limitée. |
 |---|---|---|
 | aggregate | agrégat | |
 | array | tableau | |
