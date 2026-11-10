@@ -40,8 +40,9 @@ into the entry it changes, never written as "Changed" or "Fixed". Once a package
 
 - the file set: `README.md`, `CHANGELOG.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `LICENSE`, `SECURITY.md`,
   `composer-dependency-analyser.php`, `doc/extension-points.md`, and the `doc/`, `src/` and `tests/` directories;
-- every relative link of the Markdown files, outside code blocks;
-- every table row has as many cells as its header, and `**` pairs balance in each paragraph;
+- every relative link of the Markdown files, outside code blocks and code spans;
+- every table row has as many cells as its header, an escaped pipe `\|` not a separator, and `**` pairs balance in
+  each paragraph, code spans left out — a run of backticks closes only on a run of as many, as in CommonMark;
 - the README lists every English document of `doc/` and has the Documentation, Requirements, Contributing and License
   sections, and `README.fr.md`, when there is one, lists every document of `doc/fr/`;
 - the CHANGELOG rule above;

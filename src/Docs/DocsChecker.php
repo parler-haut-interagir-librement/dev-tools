@@ -149,7 +149,7 @@ final readonly class DocsChecker
         $base = \dirname($package->path($file));
 
         foreach ($lines as $number => $line) {
-            foreach ($this->targets($line) as $target) {
+            foreach ($this->targets($this->withoutCode($line)) as $target) {
                 // A URL with a scheme, or a fragment of this document.
                 if (1 === preg_match('#^(?:[a-z][a-z0-9+.-]*:|\#)#i', $target)) {
                     continue;
@@ -258,7 +258,7 @@ final readonly class DocsChecker
         $listed = [];
 
         foreach (explode("\n", $this->read($package->path($readme))) as $line) {
-            foreach ($this->targets($line) as $target) {
+            foreach ($this->targets($this->withoutCode($line)) as $target) {
                 $listed[] = explode('#', $target)[0];
             }
         }
@@ -416,14 +416,24 @@ final readonly class DocsChecker
         return $lines;
     }
 
+    /**
+     * The cell separators of a table row: an escaped pipe is not one, a pipe after an escaped backslash is, and what a
+     * code span holds is left out.
+     */
     private function cells(string $line): int
     {
-        return substr_count(rtrim(trim(str_replace('\\|', '', $this->withoutCode($line))), '|'), '|');
+        $escaped = preg_replace('/\\\\[\\\\|]/u', '__', $line) ?? $line;
+
+        return substr_count(rtrim(trim($this->withoutCode($escaped)), '|'), '|');
     }
 
+    /**
+     * The text with its code spans emptied. As in CommonMark, a run of backticks opens a span that only the next run of
+     * exactly as many backticks closes; a run without one is literal.
+     */
     private function withoutCode(string $text): string
     {
-        return preg_replace('/`[^`]*`/u', '``', $text) ?? $text;
+        return preg_replace('/(?<![`\\\\])(`+)(?!`).*?(?<!`)\1(?!`)/su', '``', $text) ?? $text;
     }
 
     private function read(string $path): string

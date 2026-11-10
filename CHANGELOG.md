@@ -53,8 +53,8 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `phil-dev new`: the skeleton of a library or a bundle, with the wording of its vendor, the versions of the matrix, a
   normalized `composer.json` and `roave/security-advisories`, and the French mirror of its README and `doc/`, stamped
   with its English source.
-- `phil-dev check-docs`: the file set, the links, the tables, the bold, the README index and sections, one "Added"
-  section until the packages are public, the licence holder's wording and the forbidden terms; `README.fr.md`, when
+- `phil-dev check-docs`: the file set, the links, the tables, the bold — code spans of any run of backticks and
+  escaped pipes left out —, the README index and sections, one "Added" section until the packages are public, the licence holder's wording and the forbidden terms; `README.fr.md`, when
   there is one, indexes `doc/fr/`.
 - `phil-dev check-translations` and `TranslationChecker`: `README.md` and `doc/` against `README.fr.md` and `doc/fr/`,
   a document or a mirror alone, the headings of each level and the code blocks failing, a translation behind its

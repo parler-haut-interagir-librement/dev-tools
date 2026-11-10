@@ -170,6 +170,71 @@ final class DocsCheckerTest extends TestCase
         ], $this->check($dir));
     }
 
+    public function testCodeSpansAreLeftOutOfLinks(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/doc/spans.md', <<<'MD'
+            `[text](address)`, ``[a `b`](two.md)``, ```` ``` [c](three.md) ```` and ![a](a.png) in prose.
+            `` `x` `` then [Real](real.md), and an unclosed `` [d](open.md) run.
+            MD);
+        $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Spans](doc/spans.md)');
+
+        self::assertSame([
+            '[broken-link] doc/spans.md:1: a.png',
+            '[broken-link] doc/spans.md:2: real.md',
+            '[broken-link] doc/spans.md:2: open.md',
+        ], $this->check($dir));
+    }
+
+    public function testCodeSpansOfSeveralBackticksAreLeftOutOfBold(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/doc/spans.md', <<<'MD'
+            One `` `**` `` and ```` ``` ** ```` here.
+
+            | Markdown | UJO |
+            |---|---|
+            | `` `**` `` | ```` ``**`` ```` |
+
+            Open ``**`` and **here.
+            MD);
+        $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Spans](doc/spans.md)');
+
+        self::assertSame(['[unbalanced-bold] doc/spans.md:7: Open ``**`` and **here.'], $this->check($dir));
+    }
+
+    public function testCodeSpansOfSeveralBackticksAreLeftOutOfTables(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/doc/spans.md', <<<'MD'
+            | Markdown | UJO |
+            |---|---|
+            | ```` ``` ```` or `~~~` fence | `code` |
+            | `` `a|b` `` | `` c|d `` |
+            | ``a`|`b`` | three | cells |
+            MD);
+        $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Spans](doc/spans.md)');
+
+        self::assertSame(['[table-shape] doc/spans.md:5: 3 cells, the header has 2'], $this->check($dir));
+    }
+
+    public function testAnEscapedPipeIsNotACellSeparator(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/doc/pipes.md', <<<'MD'
+            | Syntax | Meaning |
+            |---|---|
+            | `{漢字\|かんじ}` | a ruby |
+            | `[[Page\|text]]`, `{{Mark\|…}}` | a link \| a mark |
+            | `\` before a character | `\\` at the end of a line |
+            | a \\| b | c |
+            MD);
+        $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Pipes](doc/pipes.md)');
+
+        // An escaped backslash does not escape the pipe after it.
+        self::assertSame(['[table-shape] doc/pipes.md:6: 3 cells, the header has 2'], $this->check($dir));
+    }
+
     public function testTheReadmeSectionsAndIndex(): void
     {
         $dir = $this->package();
