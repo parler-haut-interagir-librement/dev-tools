@@ -52,7 +52,13 @@ final class PhpCommandTest extends CommandTestCase
 
     public function testItMountsTheNeighboursOfThePathRepositories(): void
     {
-        $base = (string) realpath($this->temporaryDirectory());
+        // Under /tmp, not the temporary directory: in the container of a PHP of the matrix, that one is under var/tmp of
+        // the project mounted at /app, where an absolute path is what /app already shows and is never mounted.
+        $base = (string) realpath((string) tempnam('/tmp', 'phil-dev-test-'));
+        unlink($base);
+        mkdir($base);
+        $this->adopt($base);
+        self::assertStringStartsNotWith('/app/', $base.'/');
         $root = $base.'/work/project';
         mkdir($root.'/packages', recursive: true);
         mkdir($base.'/lib/packages', recursive: true);
