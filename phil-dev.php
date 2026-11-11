@@ -30,7 +30,7 @@ return [
         'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*'],
     ],
     // The tooling's own documentation has no French mirror yet.
-    'docs' => ['translations' => 'advisory'],
+    'docs' => ['translations' => 'advisory', 'public' => true],
     'infection' => [
         'mutators' => [
             // The two numbers of a version, matched as digits when the matrix is read, multiply the same as strings.

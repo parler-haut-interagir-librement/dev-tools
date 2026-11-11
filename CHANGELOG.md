@@ -2,10 +2,10 @@
 
 All notable changes to `phil/dev-tools` will be documented in this file.
 
-Updates should follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles. Until the packages are launched
-publicly, split to their public repositories, this file keeps one "Added" section that describes the current state.
+Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
+[Semantic Versioning](https://semver.org/).
 
-## NEXT - YYYY-MM-DD
+## 0.1.0-alpha - 2026-11-11
 
 ### Added
 
