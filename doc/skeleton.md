@@ -1,7 +1,7 @@
 # The package skeleton
 
 `phil-dev new <vendor/name> [--bundle]` writes the file set every package has, from the templates of
-`resources/skeleton/`, written from scratch on the model of the PHIL and Tilttek packages.
+`resources/skeleton/`, modelled on the PHIL and Tilttek packages.
 
 | File | Library | Bundle |
 |---|---|---|

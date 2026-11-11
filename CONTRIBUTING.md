@@ -14,7 +14,7 @@ issues and pull requests on its repository.
 
 Open an issue before a large change, so that its design can be agreed first. Then:
 
-1. **Write the code from scratch.** No code is copied from another project, even under a compatible licence:
+1. **Write your own code.** No code is copied from another project, even under a compatible licence:
    another project may serve as a reference to read, never as a source to copy, translate or port.
 2. **Keep it independent of any application.** Its code, comments and documentation never name an application that
    uses it; what is specific to one project is configuration.
