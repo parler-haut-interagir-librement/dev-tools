@@ -15,6 +15,7 @@ use Phil\DevTools\Exception\InvalidManifest;
  *
  * ```php
  * return [
+ *     'status' => 'planned',
  *     'paths' => ['src', 'tests'],
  *     'phpstan' => ['ignoreErrors' => [['identifier' => 'argument.type', 'path' => 'src/Legacy.php']]],
  *     'infection' => ['mutators' => ['IncrementInteger' => ['ignoreSourceCodeByRegex' => ['private const int MAX_.*']]]],
@@ -29,7 +30,7 @@ final readonly class Manifest
     /** @var list<string> */
     public const array SECTIONS = [
         'paths', 'packages', 'phpstan', 'rector', 'cs', 'infection', 'deptrac', 'arkitect', 'docs', 'phpunit',
-        'gates', 'psalm', 'fuzz', 'bench', 'bc', 'split', 'twig', 'js', 'unused', 'hotspots',
+        'gates', 'psalm', 'fuzz', 'bench', 'bc', 'split', 'twig', 'js', 'unused', 'hotspots', 'status',
     ];
 
     /**
@@ -148,5 +149,23 @@ final readonly class Manifest
         }
 
         return $value;
+    }
+
+    /**
+     * Where the package stands: `status`, `active` when it is absent.
+     */
+    public function status(): PackageStatus
+    {
+        $value = $this->get('status');
+
+        if (null === $value) {
+            return PackageStatus::Active;
+        }
+
+        if (!\is_string($value)) {
+            throw new InvalidManifest('"status" is "active" or "planned".');
+        }
+
+        return PackageStatus::tryFrom($value) ?? throw new InvalidManifest(\sprintf('"status" is "active" or "planned", not "%s".', $value));
     }
 }

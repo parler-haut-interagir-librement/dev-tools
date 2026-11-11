@@ -82,6 +82,14 @@ final readonly class Package
         return PackageRole::Root === $this->role;
     }
 
+    /**
+     * Whether the package is being written: `'status' => 'planned'` in its `phil-dev.php`.
+     */
+    public function isPlanned(): bool
+    {
+        return PackageStatus::Planned === $this->manifest->status();
+    }
+
     public function isBundle(): bool
     {
         if ('symfony-bundle' === $this->type) {

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Phil\DevTools\Command\WorkspaceCommand;
+use Phil\DevTools\Config\PhpUnitConfig;
 use Phil\DevTools\Matrix\Version;
 use Phil\DevTools\Process\LocalProcessRunner;
 
@@ -34,8 +35,9 @@ return [
         'mutators' => [
             // The two numbers of a version, matched as digits when the matrix is read, multiply the same as strings.
             'CastInt' => ['ignore' => [Version::class.'::id']],
-            // The root a command runs on exists, so realpath() never returns false for it.
-            'CastString' => ['ignore' => [WorkspaceCommand::class.'::testEnvironment']],
+            // The root a command runs on exists, so realpath() never returns false for it; a document DOM has loaded
+            // always saves.
+            'CastString' => ['ignore' => [WorkspaceCommand::class.'::testEnvironment', PhpUnitConfig::class.'::withoutSkipped']],
             // A timeout a nanosecond longer or shorter, reached at its instant or the one after, cannot be told apart.
             'IncrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
             'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],

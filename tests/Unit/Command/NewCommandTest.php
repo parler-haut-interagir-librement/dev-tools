@@ -56,4 +56,38 @@ final class NewCommandTest extends CommandTestCase
         self::assertFileExists($root.'/lib/cards/composer.json');
         self::assertFileExists($root.'/dice/composer.json');
     }
+
+    public function testAPlannedPackage(): void
+    {
+        $root = $this->temporaryDirectory();
+        mkdir($root.'/packages');
+
+        self::assertSame(0, $this->tester($root, 'new')->execute([
+            'package' => 'tilttek/cards',
+            '--planned' => true,
+            '--requires' => 'tilttek/dice, phil/geo, ',
+            '--title' => 'Cards',
+            '--description' => 'Decks of cards. Shuffled, dealt and drawn.',
+            '--description-fr' => 'Des paquets de cartes. Mêlés, distribués et piochés.',
+        ]));
+
+        $dir = $root.'/packages/tilttek-cards';
+        self::assertStringStartsWith("# Cards\n\n**Decks of cards.**\n", (string) file_get_contents($dir.'/README.md'));
+        self::assertStringContainsString('Des paquets de cartes. Mêlés, distribués et piochés.', (string) file_get_contents($dir.'/README.fr.md'));
+        self::assertStringContainsString("'status' => 'planned'", (string) file_get_contents($dir.'/phil-dev.php'));
+        self::assertStringContainsString('"tilttek/dice": "^0.1@dev"', (string) file_get_contents($dir.'/composer.json'));
+        self::assertStringContainsString('"phil/geo": "^0.1@dev"', (string) file_get_contents($dir.'/composer.json'));
+        self::assertFileExists($dir.'/tests/Unit/PackageTest.php');
+    }
+
+    public function testAnActivePackageByDefault(): void
+    {
+        $root = $this->temporaryDirectory();
+
+        $this->tester($root, 'new')->execute(['package' => 'phil/cards', '--requires' => '']);
+
+        self::assertStringNotContainsString("'status'", (string) file_get_contents($root.'/cards/phil-dev.php'));
+        self::assertStringStartsWith("# phil/cards\n", (string) file_get_contents($root.'/cards/README.md'));
+        self::assertFileExists($root.'/cards/tests/Unit/.gitkeep');
+    }
 }

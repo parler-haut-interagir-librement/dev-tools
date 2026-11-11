@@ -7,12 +7,14 @@ namespace Phil\DevTools\Tests\Unit\Workspace;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Tests\Unit\Support\TemporaryDirectory;
 use Phil\DevTools\Workspace\Manifest;
+use Phil\DevTools\Workspace\PackageStatus;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Manifest::class)]
 #[CoversClass(InvalidManifest::class)]
+#[CoversClass(PackageStatus::class)]
 final class ManifestTest extends TestCase
 {
     use TemporaryDirectory;
@@ -42,6 +44,29 @@ final class ManifestTest extends TestCase
         self::assertTrue($manifest->flag('docs', 'other', true));
         self::assertNull($manifest->get('cs'));
         self::assertNull($manifest->get('paths', 'key'));
+    }
+
+    public function testAPackageIsActiveUnlessItsStatusSaysPlanned(): void
+    {
+        self::assertSame(PackageStatus::Active, new Manifest()->status());
+        self::assertSame(PackageStatus::Active, new Manifest(['status' => 'active'])->status());
+        self::assertSame(PackageStatus::Planned, new Manifest(['status' => 'planned'])->status());
+    }
+
+    public function testAnUnknownStatusIsRefused(): void
+    {
+        $this->expectException(InvalidManifest::class);
+        $this->expectExceptionMessageIsOrContains('"status" is "active" or "planned", not "someday".');
+
+        new Manifest(['status' => 'someday'])->status();
+    }
+
+    public function testAStatusThatIsNoStringIsRefused(): void
+    {
+        $this->expectException(InvalidManifest::class);
+        $this->expectExceptionMessageIsOrContains('"status" is "active" or "planned".');
+
+        new Manifest(['status' => ['planned']])->status();
     }
 
     public function testAFileThatReturnsNoArrayIsRefused(): void

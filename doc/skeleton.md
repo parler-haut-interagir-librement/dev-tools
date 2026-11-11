@@ -1,6 +1,6 @@
 # The package skeleton
 
-`phil-dev new <vendor/name> [--bundle]` writes the file set every package has, from the templates of
+`phil-dev new <vendor/name> [--bundle] [--planned]` writes the file set every package has, from the templates of
 `resources/skeleton/`, modelled on the PHIL and Tilttek packages.
 
 | File | Library | Bundle |
@@ -17,6 +17,28 @@
 The versions come from the floor of the [version matrix](version-matrix.md), and the constraints allow the next one.
 The `composer.json` requires `roave/security-advisories` in `require-dev`, which keeps every version with an advisory
 out of an installation, and is written normalized, as the `deps:normalize` gate wants it.
+
+`--title` sets the title of the README and of its mirror, the package name by default; `--description-fr` the French
+description, the English one by default. `--requires=phil/geo,tilttek/dice` adds those packages to `require`, at
+`^0.1@dev` unless a constraint follows a colon, and names them in `composer-dependency-analyser.php` as unused until
+the code uses them.
+
+## A planned package
+
+`phil-dev new <vendor/name> --planned --description="…"` writes a package being written, which incubates with the
+other members until its code is there:
+
+| File | What `--planned` changes |
+|---|---|
+| `phil-dev.php` | `'status' => 'planned'`, which `--skip-planned` and `PHIL_DEV_SKIP_PLANNED=1` read; see [Configuration](configuration.md#planned-packages). |
+| `README.md`, `README.fr.md` | The first sentence of the description in bold, then "Being written", the whole description of what the package will do, and a Status row for that code. |
+| `doc/reference.md`, `doc/fr/reference.md` | For a library: the package is being written and has no public type yet. |
+| `composer.json` | The first sentence of the description as its `description`. |
+| `CHANGELOG.md` | A first "Added" entry: the description of what the package will do, while its code is being written. |
+| `tests/Unit/` | For a library, `PackageTest`, the smoke test that its namespace is autoloaded from `src/`; a bundle's test of its bundle class is its smoke test. |
+
+The package passes the documentation checks, the translation checks and its own tests as it is written. Once its code
+is there, its `status` line goes, and its README and CHANGELOG describe the code instead of the plan.
 
 ## The wording
 

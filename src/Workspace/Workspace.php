@@ -19,10 +19,19 @@ use Phil\DevTools\Exception\WorkspaceNotFound;
  * `PHIL_DEV_PACKAGES` — a comma-separated list of directory names or Composer names — narrows what is analysed to
  * those members, so that several batches can each run the tools on their own packages at the same time. Every package
  * stays known, so the generated rules are the same.
+ *
+ * The planned members — `'status' => 'planned'` in their `phil-dev.php` — are analysed like the others, unless the
+ * workspace is asked to skip them: `PHIL_DEV_SKIP_PLANNED=1`, or `--skip-planned` on a command. A skipped member stays
+ * known, and a command still works on it when it is named. The root is never skipped.
  */
 final readonly class Workspace
 {
     public const string PACKAGES_VARIABLE = 'PHIL_DEV_PACKAGES';
+
+    public const string SKIP_PLANNED_VARIABLE = 'PHIL_DEV_SKIP_PLANNED';
+
+    /** @var list<string> */
+    private const array YES = ['1', 'true', 'yes', 'on'];
 
     /**
      * @param list<Package>     $members
@@ -34,13 +43,15 @@ final readonly class Workspace
         public array $members,
         public array $installed,
         private ?array $only,
+        private bool $skipPlanned,
     ) {
     }
 
     /**
-     * @param list<string>|null $only the members to analyse; null reads `PHIL_DEV_PACKAGES`
+     * @param list<string>|null $only        the members to analyse; null reads `PHIL_DEV_PACKAGES`
+     * @param bool|null         $skipPlanned whether the planned members are left out; null reads `PHIL_DEV_SKIP_PLANNED`
      */
-    public static function load(string $root, ?array $only = null): self
+    public static function load(string $root, ?array $only = null, ?bool $skipPlanned = null): self
     {
         $real = realpath($root);
 
@@ -75,7 +86,39 @@ final readonly class Workspace
             }
         }
 
-        return new self($rootPackage, $members, $installed, $only ?? self::fromEnvironment());
+        return new self($rootPackage, $members, $installed, $only ?? self::fromEnvironment(), $skipPlanned ?? self::skipPlannedFromEnvironment());
+    }
+
+    /**
+     * Whether `PHIL_DEV_SKIP_PLANNED` asks to leave the planned members out: `1`, `true`, `yes` or `on`.
+     */
+    public static function skipPlannedFromEnvironment(): bool
+    {
+        $value = getenv(self::SKIP_PLANNED_VARIABLE);
+
+        return \is_string($value) && \in_array(strtolower(trim($value)), self::YES, true);
+    }
+
+    public function skipsPlanned(): bool
+    {
+        return $this->skipPlanned;
+    }
+
+    /**
+     * The planned members left out of what is analysed: those the narrowing selects, when the workspace skips them.
+     *
+     * @return list<Package>
+     */
+    public function skipped(): array
+    {
+        if (!$this->skipPlanned) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $this->members,
+            fn (Package $package): bool => $package->isPlanned() && $this->named($package),
+        ));
     }
 
     public function isMonorepo(): bool
@@ -170,6 +213,15 @@ final readonly class Workspace
     }
 
     private function selected(Package $package): bool
+    {
+        if ($this->skipPlanned && !$package->isRoot() && $package->isPlanned()) {
+            return false;
+        }
+
+        return $this->named($package);
+    }
+
+    private function named(Package $package): bool
     {
         if (null === $this->only) {
             return true;

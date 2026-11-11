@@ -12,6 +12,10 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `phil-dev.php`, `Manifest`, `Package` and `Workspace`: each package's paths and exceptions in a file of its own; the
   root, the members found by the root's globs, and the installed packages that ship a manifest; `PHIL_DEV_PACKAGES` to
   analyse some members only.
+- `PackageStatus` and the `status` of `phil-dev.php`: `active` by default, or `planned` for a package being written;
+  `--skip-planned` on every command and `PHIL_DEV_SKIP_PLANNED=1` leave the planned members out of every gate, the
+  command telling how many it skipped; `PhpUnitConfig` writes the root's PHPUnit configuration without them, for
+  `test` and `infection`.
 - The shared configurations of PHP-CS-Fixer, Rector, Arkitect, PHPStan and PHPBench, read through `Tooling`, with the
   forbidden calls of PHPStan, their identifiers and their witnesses.
 - PHPStan in bleeding edge, with `phpstan-deprecation-rules`, the type coverage at 100 %, the cognitive complexity at
@@ -52,7 +56,8 @@ publicly, split to their public repositories, this file keeps one "Added" sectio
 - `ChurnConfig` and `phil-dev hotspots`: the hotspots of the code, with churn-php.
 - `phil-dev new`: the skeleton of a library or a bundle, with the wording of its vendor, the versions of the matrix, a
   normalized `composer.json` and `roave/security-advisories`, and the French mirror of its README and `doc/`, stamped
-  with its English source.
+  with its English source; `--planned` for a package being written, with what it will do in its README, its status and
+  a smoke test; `--requires`, `--title` and `--description-fr`.
 - `phil-dev check-docs`: the file set, the links, the tables, the bold — code spans of any run of backticks and
   escaped pipes left out —, the README index and sections, one "Added" section until the packages are public, the licence holder's wording and the forbidden terms; `README.fr.md`, when
   there is one, indexes `doc/fr/`.

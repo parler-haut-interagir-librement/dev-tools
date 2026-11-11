@@ -196,11 +196,118 @@ final class WorkspaceTest extends TestCase
         self::assertSame(['phil/app', 'phil/one'], array_map(static fn (Package $package): string => $package->name, $workspace->members));
     }
 
+    public function testPlannedMembersAreAnalysedByDefault(): void
+    {
+        $workspace = Workspace::load($this->withPlanned(), null, false);
+
+        self::assertSame(['phil/root', 'phil/active', 'phil/later', 'tilttek/later'], $this->names($workspace->analysed()));
+        self::assertSame(['phil/active', 'phil/later', 'tilttek/later'], $this->names($workspace->targets()));
+        self::assertSame([], $workspace->skipped());
+        self::assertFalse($workspace->skipsPlanned());
+    }
+
+    public function testPlannedMembersAreSkippedWhenAsked(): void
+    {
+        $workspace = Workspace::load($this->withPlanned(), null, true);
+
+        self::assertTrue($workspace->skipsPlanned());
+        self::assertSame(['phil/root', 'phil/active'], $this->names($workspace->analysed()));
+        self::assertSame(['phil/active'], $this->names($workspace->targets()));
+        self::assertSame(['phil/later', 'tilttek/later'], $this->names($workspace->skipped()));
+        self::assertCount(3, $workspace->members);
+        self::assertSame(['phil/later'], $this->names($workspace->targets(['later'])));
+        self::assertTrue($workspace->members[1]->isPlanned());
+        self::assertFalse($workspace->members[0]->isPlanned());
+    }
+
+    public function testAPlannedRootIsNeverSkipped(): void
+    {
+        $root = $this->withPlanned();
+        $this->put($root.'/phil-dev.php', "<?php return ['status' => 'planned'];");
+
+        $workspace = Workspace::load($root, null, true);
+
+        self::assertSame(['phil/root', 'phil/active'], $this->names($workspace->analysed()));
+        self::assertSame(['phil/later', 'tilttek/later'], $this->names($workspace->skipped()));
+    }
+
+    public function testSkippingCombinesWithTheNarrowing(): void
+    {
+        $workspace = Workspace::load($this->withPlanned(), ['active', 'tilttek-later'], true);
+
+        self::assertSame(['phil/active'], $this->names($workspace->analysed()));
+        self::assertSame(['tilttek/later'], $this->names($workspace->skipped()));
+    }
+
+    public function testItReadsTheSkipVariable(): void
+    {
+        $root = $this->withPlanned();
+        $read = static function (string $value) use ($root): Workspace {
+            putenv('PHIL_DEV_SKIP_PLANNED='.$value);
+
+            try {
+                return Workspace::load($root);
+            } finally {
+                putenv('PHIL_DEV_SKIP_PLANNED');
+            }
+        };
+
+        self::assertSame(['phil/active'], $this->names($read('1')->targets()));
+        self::assertSame(['phil/active'], $this->names($read(' TRUE ')->targets()));
+        self::assertSame(['phil/active'], $this->names($read('yes')->targets()));
+        self::assertCount(3, $read('0')->targets());
+        self::assertCount(3, $read('false')->targets());
+        self::assertCount(3, $read(' ')->targets());
+        self::assertCount(3, Workspace::load($root)->targets());
+        self::assertSame('PHIL_DEV_SKIP_PLANNED', Workspace::SKIP_PLANNED_VARIABLE);
+    }
+
+    public function testTheGivenSkipWinsOverTheVariable(): void
+    {
+        $root = $this->withPlanned();
+        putenv('PHIL_DEV_SKIP_PLANNED=1');
+
+        try {
+            $workspace = Workspace::load($root, null, false);
+        } finally {
+            putenv('PHIL_DEV_SKIP_PLANNED');
+        }
+
+        self::assertCount(3, $workspace->targets());
+        self::assertFalse(Workspace::skipPlannedFromEnvironment());
+    }
+
     public function testADirectoryWithoutComposerJson(): void
     {
         $this->expectException(WorkspaceNotFound::class);
         $this->expectExceptionMessageIsOrContains('holds no composer.json.');
 
         Workspace::load($this->temporaryDirectory());
+    }
+
+    /**
+     * A monorepo with one active member and two planned ones.
+     */
+    private function withPlanned(): string
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root"}');
+        $this->put($root.'/packages/active/composer.json', '{"name": "phil/active"}');
+        $this->put($root.'/packages/later/composer.json', '{"name": "phil/later"}');
+        $this->put($root.'/packages/later/phil-dev.php', "<?php return ['status' => 'planned'];");
+        $this->put($root.'/packages/tilttek-later/composer.json', '{"name": "tilttek/later"}');
+        $this->put($root.'/packages/tilttek-later/phil-dev.php', "<?php return ['status' => 'planned'];");
+
+        return $root;
+    }
+
+    /**
+     * @param list<Package> $packages
+     *
+     * @return list<string>
+     */
+    private function names(array $packages): array
+    {
+        return array_map(static fn (Package $package): string => $package->name, $packages);
     }
 }

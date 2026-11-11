@@ -42,6 +42,13 @@ final class InfectionConfigTest extends TestCase
         ], new InfectionConfig(Workspace::load($root))->build());
     }
 
+    public function testThePhpUnitConfigurationOfTheSkippedPlannedPackages(): void
+    {
+        $root = $this->fixture('monorepo');
+
+        self::assertSame(['configDir' => $root.'/var/phil-dev/phpunit'], new InfectionConfig(Workspace::load($root), $root.'/var/phil-dev/phpunit')->build()['phpUnit']);
+    }
+
     public function testDuplicatesAreDropped(): void
     {
         $root = $this->temporaryDirectory();

@@ -1,14 +1,14 @@
-# {{package}}
+# {{title}}
 
-**{{description}}**
+**{{summary}}**
 
-{{package}} is a plain PHP library.
+{{package}} is a plain PHP library.{{planned}}
 
 ## Status
 
 | Part | State |
 |---|---|
-| The package skeleton | Implemented |
+| The package skeleton | Implemented |{{planned_status}}
 
 ## Documentation
 

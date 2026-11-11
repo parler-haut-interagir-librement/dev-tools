@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Kernel\AbstractBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /**
- * {{description}}
+ * {{summary}}
  *
  * ```yaml
  * {{alias}}:

@@ -7,6 +7,6 @@ declare(strict_types=1);
  * configurations, nothing else.
  */
 return [
-    'paths' => ['src', 'tests'],
+{{status}}    'paths' => ['src', 'tests'],
     'docs' => ['translations' => 'blocking'],
 ];

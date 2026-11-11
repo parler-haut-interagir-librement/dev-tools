@@ -1,14 +1,14 @@
-# {{package}}
+# {{title}}
 
-**{{description}}**
+**{{summary}}**
 
-{{intro}}
+{{intro}}{{planned}}
 
 ## Status
 
 | Part | State |
 |---|---|
-| `{{bundle_class}}` and its configuration `{{alias}}` | Implemented and tested |
+| `{{bundle_class}}` and its configuration `{{alias}}` | Implemented and tested |{{planned_status}}
 
 ## Documentation
 

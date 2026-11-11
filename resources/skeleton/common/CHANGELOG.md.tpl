@@ -8,7 +8,7 @@ publicly, split to its public repository, this file keeps one "Added" section th
 ## NEXT - YYYY-MM-DD
 
 ### Added
-
+{{changelog_planned_first}}
 - The package skeleton: `composer.json`, `phil-dev.php` and `composer-dependency-analyser.php`.
 - The documentation in `doc/`, one file per topic, indexed by the README.
 - `CONTRIBUTING.md`, `SECURITY.md` and `CODE_OF_CONDUCT.md`.

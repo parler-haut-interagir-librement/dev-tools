@@ -1,11 +1,13 @@
 # Commands
 
-`phil-dev` runs from the root of a package or a monorepo; `PHIL_DEV_ROOT` names another root.
+`phil-dev` runs from the root of a package or a monorepo; `PHIL_DEV_ROOT` names another root. Every command takes
+`--skip-planned`, which leaves the planned packages out, as `PHIL_DEV_SKIP_PLANNED=1` does; see
+[Configuration](configuration.md#planned-packages).
 
 | Command | What it does |
 |---|---|
 | `init [--force] [--monorepo\|--package]` | Writes the thin configuration files and the Composer scripts. |
-| `new <vendor/name> [--bundle] [--description=…] [--dir=…] [--year=…]` | Writes the skeleton of a new package. |
+| `new <vendor/name> [--bundle] [--planned] [--requires=…] [--title=…] [--description=…] [--description-fr=…] [--dir=…] [--year=…]` | Writes the skeleton of a new package. |
 | `check-docs [packages…] [--forbid=REGEX…]` | Checks the documentation of each package. |
 | `check-translations [packages…]` | Compares the English documentation of each package with its French mirror. |
 | `stamp-translations <packages>… [--file=PATH…]` | Records, in each French mirror, the English document it now follows. |
@@ -59,6 +61,20 @@ it requires the coverage metadata of every test, registers the slow-test detecto
 ends with `-bundle` is a bundle without the option. Only the `phil` and `tilttek` vendors are accepted: the wording of
 each is in the templates. A directory that exists and is not empty is refused.
 
+| Option | Effect |
+|---|---|
+| `--description` | What the package does: the description of `composer.json` and the README. |
+| `--description-fr` | The French description, for `README.fr.md`; the English one by default. |
+| `--title` | The title of the README and of its mirror; the package name by default. |
+| `--planned` | A package being written: `'status' => 'planned'`, a README that describes what it will do, and a smoke test. The first sentence of the description is its summary. |
+| `--requires` | The packages it requires, comma-separated: `--requires=phil/geo,tilttek/dice`, each at `^0.1@dev` unless a constraint follows a colon, as in `symfony/uid:^8.2`. |
+
+```sh
+vendor/bin/phil-dev new tilttek/cards --planned --requires=tilttek/dice --title="Cards" \
+    --description="Decks of cards. Shuffled, dealt and drawn, with the history of each draw." \
+    --description-fr="Des paquets de cartes. Mêlés, distribués et piochés, avec l'historique de chaque pioche."
+```
+
 ## check-docs
 
 Runs the checks of [The package skeleton](skeleton.md#the-documentation-checks) on each member of a monorepo, or on
@@ -111,7 +127,8 @@ on every `tests/Witnesses/PhpStan` directory with the forbidden calls only; see 
 Runs the suites of `phpunit.dist.xml` with ParaTest, one process per core, when `vendor/bin/paratest` exists; else with
 PHPUnit. The root's `'phpunit' => ['parallel' => false]` keeps PHPUnit, for tests that share a resource they cannot
 share at once. `--suite` runs one suite; arguments after `--` go to the runner. Infection always replays the Unit suite
-with PHPUnit.
+with PHPUnit. While the planned packages are skipped, `test` and `infection` read `var/phil-dev/phpunit/phpunit.xml`,
+the root's configuration without them.
 
 `test`, `infection` and `services test|record` run with `TMPDIR` under `var/tmp/` of the root, unless it already points
 inside the root: the test kernels that keep their cache under the system's temporary directory get one per checkout,

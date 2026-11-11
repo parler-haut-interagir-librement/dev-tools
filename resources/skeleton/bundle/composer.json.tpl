@@ -1,6 +1,6 @@
 {
     "name": "{{package}}",
-    "description": "{{description}}",
+    "description": "{{summary_json}}",
     "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [

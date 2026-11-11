@@ -6,6 +6,7 @@ namespace Phil\DevTools\Command;
 
 use Override;
 use Phil\DevTools\Config\InfectionConfig;
+use Phil\DevTools\Config\PhpUnitConfig;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,10 @@ use Symfony\Component\Console\Output\OutputInterface;
     Full: every source directory, once a week and before each release.
     --changed: the PHP files added or modified since the base ref, committed or not, once per batch before its
     commit; nothing to mutate passes.
+
+    While the planned packages are skipped (--skip-planned, PHIL_DEV_SKIP_PLANNED=1), their code is not mutated
+    and their tests do not run: Infection reads var/phil-dev/phpunit/phpunit.xml, the root's configuration
+    without them.
     TXT)]
 final class InfectionCommand extends WorkspaceCommand
 {
@@ -36,7 +41,10 @@ final class InfectionCommand extends WorkspaceCommand
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $config = $this->generate('infection.json', new InfectionConfig($this->workspace())->json());
+        $workspace = $this->workspace();
+        $phpUnit = new PhpUnitConfig($workspace)->withoutSkipped();
+        $phpUnitDirectory = null === $phpUnit ? null : \dirname($this->generate('phpunit/phpunit.xml', $phpUnit));
+        $config = $this->generate('infection.json', new InfectionConfig($workspace, $phpUnitDirectory)->json());
         $command = [
             $this->tool('infection', 'infection'),
             '--configuration='.$config,

@@ -43,6 +43,7 @@ A PHP file that returns an array. Every section is optional; paths are relative 
 declare(strict_types=1);
 
 return [
+    'status' => 'active',
     'paths' => ['src', 'tests'],
     'phpstan' => [
         'includes' => ['extension.neon'],
@@ -77,6 +78,7 @@ return [
 
 | Section | Key | Meaning |
 |---|---|---|
+| `status` | | `active`, the default, or `planned`: a package being written; see [Planned packages](#planned-packages). |
 | `paths` | | The directories and files the tools read; `src` and `tests` by default. |
 | `packages` | | Root only: the globs of the members of a monorepo; `packages/*` by default. |
 | `phpstan` | `includes` | Extensions of the package that PHPStan loads, such as the PHPStan extension a library ships. |
@@ -126,3 +128,27 @@ The root's `phil-dev.php` lists its own paths and the globs of its members. Two 
   it where a class lives (`findFile()`, `getPrefixesPsr4()`) find them too.
 - **Narrowing**: `PHIL_DEV_PACKAGES=tilttek-quests,tilttek-quests-bundle composer gates` runs every gate on those
   members only; the generated rules still know every package, so the result is the same as in a full run.
+
+## Planned packages
+
+A package being written keeps `'status' => 'planned'` in its `phil-dev.php`: its skeleton, a README that describes
+what it will do, and a smoke test, written by `phil-dev new --planned` (see [The package skeleton](skeleton.md#a-planned-package)).
+It is incubated with the other members: every gate checks it, as it checks an active package.
+
+While the code of the active packages is what a run is about, the planned ones are left out:
+
+```sh
+PHIL_DEV_SKIP_PLANNED=1 composer gates
+vendor/bin/phil-dev check-docs --skip-planned
+```
+
+- `PHIL_DEV_SKIP_PLANNED` accepts `1`, `true`, `yes` and `on`; any other value, or none, keeps the planned packages.
+- `--skip-planned`, which every `phil-dev` command takes, sets the variable for the tools the command starts.
+- Each `phil-dev` command that leaves them out first writes, on the error output, how many it skipped and which:
+  `Skipped 2 planned packages: phil/a, tilttek/b.`
+- The configurations of PHP-CS-Fixer, Rector, PHPStan and Arkitect read the variable through `Tooling`, so the
+  Composer scripts that call those tools directly leave the planned packages out too, without a word.
+- `test` and `infection` run with `var/phil-dev/phpunit/phpunit.xml`: the root's PHPUnit configuration, each relative
+  path made absolute, each skipped package excluded from every suite and from the source.
+- A command still works on a planned package named as its argument, and the root is never skipped.
+- The variable combines with `PHIL_DEV_PACKAGES`: the members it names, less the planned ones.

@@ -1,14 +1,14 @@
-# {{package}}
+# {{title}}
 
-**{{description}}**
+**{{summary_fr}}**
 
-{{intro_fr}}
+{{intro_fr}}{{planned_fr}}
 
 ## État
 
 | Partie | État |
 |---|---|
-| `{{bundle_class}}` et sa configuration `{{alias}}` | Implémenté et testé |
+| `{{bundle_class}}` et sa configuration `{{alias}}` | Implémenté et testé |{{planned_status_fr}}
 
 ## Documentation
 

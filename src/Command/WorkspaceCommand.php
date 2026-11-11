@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Command;
 
+use Override;
 use Phil\DevTools\DevTools;
+use Phil\DevTools\Exception\WorkspaceNotFound;
 use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Process\ProcessRunner;
+use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * A command that works on the workspace of a root directory: `PHIL_DEV_ROOT`, or the directory it runs from.
+ *
+ * Every command takes `--skip-planned`, which leaves the planned packages out, as `PHIL_DEV_SKIP_PLANNED=1` does: the
+ * option sets the variable, so that the tools the command starts leave them out too. While they are left out, the
+ * command first tells, on the error output, how many it skipped.
  */
 abstract class WorkspaceCommand extends Command
 {
@@ -21,6 +31,30 @@ abstract class WorkspaceCommand extends Command
         protected readonly ProcessRunner $runner = new LocalProcessRunner(),
     ) {
         parent::__construct();
+        $this->addOption('skip-planned', null, InputOption::VALUE_NONE, 'Leave out the planned packages, as PHIL_DEV_SKIP_PLANNED=1 does');
+    }
+
+    #[Override]
+    protected function initialize(InputInterface $input, OutputInterface $output): void
+    {
+        if (true === $input->getOption('skip-planned')) {
+            // The tools the command starts — PHPStan, Rector, PHPUnit — read the variable through their configurations.
+            putenv(Workspace::SKIP_PLANNED_VARIABLE.'=1'); // @phpstan-ignore disallowed.function
+        }
+
+        if (!Workspace::skipPlannedFromEnvironment()) {
+            return;
+        }
+
+        try {
+            $skipped = $this->workspace()->skipped();
+        } catch (WorkspaceNotFound) {
+            return;
+        }
+
+        $names = array_map(static fn (Package $package): string => $package->name, $skipped);
+        $errors = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+        $errors->writeln(\sprintf('Skipped %d planned package%s%s.', \count($names), 1 === \count($names) ? '' : 's', [] === $names ? '' : ': '.implode(', ', $names)));
     }
 
     protected function root(): string

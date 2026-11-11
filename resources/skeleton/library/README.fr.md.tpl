@@ -1,14 +1,14 @@
-# {{package}}
+# {{title}}
 
-**{{description}}**
+**{{summary_fr}}**
 
-{{package}} est une bibliothèque PHP.
+{{package}} est une bibliothèque PHP.{{planned_fr}}
 
 ## État
 
 | Partie | État |
 |---|---|
-| Le squelette du paquet | Implémenté |
+| Le squelette du paquet | Implémenté |{{planned_status_fr}}
 
 ## Documentation
 

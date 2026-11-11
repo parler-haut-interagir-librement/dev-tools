@@ -23,6 +23,32 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertStringContainsString('"minCoveredMsi": 100', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
     }
 
+    public function testThePhpUnitConfigurationWithoutTheSkippedPlannedPackages(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/phpunit.dist.xml', '<phpunit/>');
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['status' => 'planned'];");
+        $tester = $this->tester($root, 'infection');
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, static fn (): int => $tester->execute(['--skip-planned' => true]));
+
+        self::assertStringContainsString('"configDir": "'.$root.'/var/phil-dev/phpunit"', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
+        self::assertStringNotContainsString($root.'/packages/slug/src', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
+        self::assertFileExists($root.'/var/phil-dev/phpunit/phpunit.xml');
+    }
+
+    public function testTheRootPhpUnitConfigurationWhenNothingIsSkipped(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/phpunit.dist.xml', '<phpunit/>');
+        $tester = $this->tester($root, 'infection');
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, static fn (): int => $tester->execute([]));
+
+        self::assertStringContainsString('"configDir": "'.$root.'"', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
+        self::assertFileDoesNotExist($root.'/var/phil-dev/phpunit/phpunit.xml');
+    }
+
     public function testTheFilesChangedSinceAGivenRef(): void
     {
         $root = $this->fixture('monorepo');

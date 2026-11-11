@@ -20,7 +20,10 @@ final readonly class InfectionConfig
 {
     public const int MINIMUM_MSI = 100;
 
-    public function __construct(private Workspace $workspace)
+    /**
+     * @param string|null $phpUnitDirectory the directory of the PHPUnit configuration Infection reads; the root's by default
+     */
+    public function __construct(private Workspace $workspace, private ?string $phpUnitDirectory = null)
     {
     }
 
@@ -54,7 +57,7 @@ final readonly class InfectionConfig
                 'directories' => array_values(array_unique($directories)),
                 'excludes' => array_values(array_unique($excludes)),
             ], static fn (array $value): bool => [] !== $value),
-            'phpUnit' => ['configDir' => $root->dir],
+            'phpUnit' => ['configDir' => $this->phpUnitDirectory ?? $root->dir],
             'testFrameworkOptions' => \is_string($options) ? $options : '--testsuite=Unit',
             'minMsi' => self::MINIMUM_MSI,
             'minCoveredMsi' => self::MINIMUM_MSI,

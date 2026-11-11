@@ -112,4 +112,31 @@ final class TestCommandTest extends CommandTestCase
 
         self::assertSame([$root.'/vendor/bin/phpunit'], $this->runner->commands());
     }
+
+    public function testTheSkippedPlannedPackagesAreLeftOutOfTheSuites(): void
+    {
+        $root = $this->package(['packages' => ['packages/*']]);
+        $this->put($root.'/phpunit.dist.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>packages/*/tests</directory></testsuite></testsuites></phpunit>');
+        $this->put($root.'/packages/later/composer.json', '{"name": "phil/later"}');
+        $this->put($root.'/packages/later/phil-dev.php', "<?php return ['status' => 'planned'];");
+        $tester = $this->tester($root, 'test');
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', '1', static fn (): int => $tester->execute([]));
+
+        self::assertSame([$root.'/vendor/bin/phpunit --configuration='.$root.'/var/phil-dev/phpunit/phpunit.xml'], $this->runner->commands());
+        self::assertStringContainsString('<exclude>'.$root.'/packages/later</exclude>', (string) file_get_contents($root.'/var/phil-dev/phpunit/phpunit.xml'));
+    }
+
+    public function testTheRootConfigurationWhenNothingIsSkipped(): void
+    {
+        $root = $this->package(['packages' => ['packages/*']]);
+        $this->put($root.'/phpunit.dist.xml', '<phpunit/>');
+        $this->put($root.'/packages/later/composer.json', '{"name": "phil/later"}');
+        $this->put($root.'/packages/later/phil-dev.php', "<?php return ['status' => 'planned'];");
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, fn (): int => $this->tester($root, 'test')->execute([]));
+
+        self::assertSame([$root.'/vendor/bin/phpunit'], $this->runner->commands());
+        self::assertFileDoesNotExist($root.'/var/phil-dev/phpunit/phpunit.xml');
+    }
 }
