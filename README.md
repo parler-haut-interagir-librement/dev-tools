@@ -45,7 +45,7 @@ several batches can work at once in their own worktrees.
 | [Dependencies](doc/dependencies.md) | The default every library may use, and what each package is allowed. |
 | [Real servers](doc/services.md) | MySQL, PostgreSQL and Gotenberg in Docker, and their variables. |
 | [HTTP recordings](doc/http-recordings.md) | Recording and replaying HTTP services with the recorder of Symfony 8.2. |
-| [The version matrix](doc/version-matrix.md) | The PHP and Symfony versions, adding at RC1 and enforcing at x.y.3. |
+| [The version matrix](doc/version-matrix.md) | The PHP and Symfony versions, adding at RC1 and enforcing at x.y.1 (Symfony minor) or x.y.3. |
 | [The package skeleton](doc/skeleton.md) | What `new` writes, the wording, the CHANGELOG rule, the documentation checks. |
 | [The French glossary](doc/fr-glossary.md) | The words and the tone of the French documentation, in French. |
 | [The add-on convention](doc/add-ons.md) | Tagged services, extension points and when they are stable. |

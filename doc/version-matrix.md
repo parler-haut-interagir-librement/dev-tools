@@ -21,8 +21,10 @@ prints them. No script names a version: the PHP range of PHPStan, the images of 
 - **The floor** is the version the packages enforce: `"php": ">=8.5"`, `"symfony/…": "^8.2"`.
 - **The next version** is added from its first release candidate, and supported before it is enforced: the constraints
   already allow it, and the tests, PHPStan and the standalone check run on it.
-- **The floor is raised** only in a new release of the packages, once the next version reaches its x.y.3 release
-  (PHP 8.6.3, Symfony 8.3.3). The old floor then leaves the matrix.
+- **The floor is raised** only in a new release of the packages, once the next version reaches its first patch
+  release for a Symfony minor version (Symfony 8.3.1), or its third for a Symfony major version or for PHP (Symfony
+  9.0.3, PHP 8.6.3): Symfony minor versions come every six months, so waiting for their x.y.3 would leave too little
+  time before the next one. The old floor then leaves the matrix.
 
 The matrix therefore holds one floor and at most one next version for each product.
 
@@ -34,7 +36,7 @@ The matrix therefore holds one floor and at most one next version for each produ
 3. Fix what fails on the next version without breaking the floor. A deprecation of the next version fails the tests.
 4. Move the image to the release (`php:8.6-cli`) when the version is released.
 
-## Enforcing it at its x.y.3
+## Enforcing it at its x.y.1 or x.y.3
 
 1. In a new release of the packages, raise the constraints: `"php": ">=8.6"`, `"symfony/…": "^8.3"`.
 2. In `config/matrix.json`, give the version `"status": "floor"` and remove the old floor.

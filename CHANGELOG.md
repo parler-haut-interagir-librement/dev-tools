@@ -5,6 +5,13 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.1-alpha - 2026-11-11
+
+### Changed
+
+- The version matrix raises the Symfony floor at the next minor version's first patch release (x.y.1); a Symfony
+  major version and PHP still become the floor at their x.y.3.
+
 ## 0.1.0-alpha - 2026-11-11
 
 ### Added

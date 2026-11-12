@@ -12,7 +12,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'matrix', description: 'Lists the versions of PHP and Symfony the packages are tested on', help: <<<'TXT'
     The matrix of config/matrix.json: for PHP and for Symfony, the floor the packages enforce and the next version they
-    already support, from its first release candidate until it becomes the floor at its x.y.3 release.
+    already support, from its first release candidate until it becomes the floor at its x.y.1 release
+    (Symfony minor) or its x.y.3 release (Symfony major, PHP).
     TXT)]
 final class MatrixCommand extends WorkspaceCommand
 {
