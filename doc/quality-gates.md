@@ -193,6 +193,20 @@ their excludes and the named exceptions of each manifest. The bar is 100 % of mu
 killed. A surviving mutant is a missing test, or code nothing can reach; a mutant that no test can tell apart is named
 in the package's manifest with its reason, never excused by lowering the bar.
 
+A mutant whose tests run longer than the timeout counts as timed out. Infection's timeout, 10 seconds, stays the
+default; a package whose tests are slow on purpose, such as a search index built for each test, gives its own in its
+`phil-dev.php`:
+
+```php
+return [
+    'infection' => ['timeout' => 60],
+];
+```
+
+Infection reads one configuration, so `var/phil-dev/infection.json` takes the longest timeout of the packages
+analysed: the whole monorepo in the global run, the members `PHIL_DEV_PACKAGES` names when it narrows them. The value
+is a positive integer; anything else stops the command.
+
 | When | On | Script |
 |---|---|---|
 | Once per batch, before its commit | the files changed since the base ref, on the floor PHP | `composer infection:changed` |
@@ -244,9 +258,10 @@ what was translated.
 
 ### While the existing packages catch up
 
-`docs.translations` in `phil-dev.php` says whether a package's failures stop the gate: `blocking`, the default, or
-`advisory`. A package's own value wins over the root's. An advisory package never fails: it is summed up on one line,
-and `-v` lists its findings.
+`docs.translations` in `phil-dev.php` says whether a package's failures stop the gate: `blocking` or `advisory`. A
+package's own value wins over the root's. Without either, the gate follows `docs.public`: a public package blocks,
+any other is advisory, so that a new package passes before its French documentation is written. An advisory package
+never fails: it is summed up on one line, and `-v` lists its findings.
 
 To let a monorepo catch up, set the root to advisory:
 
@@ -256,16 +271,18 @@ return [
 ];
 ```
 
-Once a package is translated and passes, turn the gate on for it in its own `phil-dev.php`:
+The gate blocks at the release. `phil-dev new` writes no `translations` line: the new package is advisory until it is
+split to its public repository. Its release sets `public`, which blocks on its own in a root without
+`docs.translations`; under an advisory root, the release also turns the gate on in the package's own `phil-dev.php`:
 
 ```php
 return [
     'paths' => ['src', 'tests'],
-    'docs' => ['translations' => 'blocking'],
+    'docs' => ['public' => true, 'translations' => 'blocking'],
 ];
 ```
 
-`phil-dev new` writes that line in every new package, which is bilingual from its first commit. When the last package
-has caught up, the key goes from the root.
+A package translated earlier may turn the gate on before its release with the same line. When the last package has
+caught up, the key goes from the root.
 
 The French follows [the glossary](fr-glossary.md): its words, its tone and what stays in English.

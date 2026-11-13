@@ -16,8 +16,7 @@
         "php": ">={{php}}"
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.4",
-        "roave/security-advisories": "dev-latest"
+        "phpunit/phpunit": "^13.4"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -29,6 +28,13 @@
     "autoload-dev": {
         "psr-4": {
             "{{namespace_json}}\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "policy": {
+            "advisories": {
+                "block": true
+            }
         }
     },
     "extra": {

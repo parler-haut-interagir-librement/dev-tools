@@ -16,7 +16,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'infection', description: 'Runs mutation testing on the whole code, or on the files changed since a base ref', help: <<<'TXT'
     Generates var/phil-dev/infection.json from the composer.json and phil-dev.php of each package — the
     source directories, their excludes and the named exceptions of each package — then runs Infection on
-    the Unit suite, at 100 % of mutants killed and of covered mutants killed.
+    the Unit suite, at 100 % of mutants killed and of covered mutants killed. The timeout of a mutant is the
+    longest infection.timeout of the packages analysed, else Infection's 10 seconds.
 
     Full: every source directory, once a week and before each release.
     --changed: the PHP files added or modified since the base ref, committed or not, once per batch before its

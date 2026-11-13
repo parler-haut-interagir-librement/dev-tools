@@ -219,6 +219,9 @@ final readonly class Initializer
         }
 
         $composer->set('config.allow-plugins.bamarni/composer-bin-plugin', true, $force);
+        // Composer refuses to install a version with a security advisory: policy.advisories.block, its default since
+        // 2.9 as audit.block-insecure, written so that no global configuration turns it off for the package.
+        $composer->set('config.policy.advisories.block', true, $force);
         $composer->set('config.process-timeout', 0, $force);
         $composer->set('extra.bamarni-bin', ['bin-links' => false, 'forward-command' => true, 'target-directory' => 'vendor-bin'], $force);
 

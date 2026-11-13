@@ -15,8 +15,10 @@
 | `src/`, `tests/Unit/` | empty | the bundle class on `AbstractBundle` and its test |
 
 The versions come from the floor of the [version matrix](version-matrix.md), and the constraints allow the next one.
-The `composer.json` requires `roave/security-advisories` in `require-dev`, which keeps every version with an advisory
-out of an installation, and is written normalized, as the `deps:normalize` gate wants it.
+The `composer.json` sets `config.policy.advisories.block`, with which Composer keeps every version with an advisory out
+of an installation (see [Security checks](security.md#the-advisories)), and is written normalized, as the
+`deps:normalize` gate wants it. The `phil-dev.php` writes no `docs.translations`: the French mirror is advisory until
+the package is public, then blocks (see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up)).
 
 `--title` sets the title of the README and of its mirror, the package name by default; `--description-fr` the French
 description, the English one by default. `--requires=phil/geo,tilttek/dice` adds those packages to `require`, at
@@ -37,7 +39,8 @@ other members until its code is there:
 | `CHANGELOG.md` | A first "Added" entry: the description of what the package will do, while its code is being written. |
 | `tests/Unit/` | For a library, `PackageTest`, the smoke test that its namespace is autoloaded from `src/`; a bundle's test of its bundle class is its smoke test. |
 
-The package passes the documentation checks, the translation checks and its own tests as it is written. Once its code
+The package passes the documentation checks, the translation checks and its own tests as it is written, and the
+translation checks stay advisory while its French documentation catches up. Once its code
 is there, its `status` line goes, and its README and CHANGELOG describe the code instead of the plan.
 
 ## The wording

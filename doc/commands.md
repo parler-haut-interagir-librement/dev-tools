@@ -47,7 +47,7 @@ with its own directory; see [Configuration](configuration.md).
 
 It adds to `composer.json` the scripts, their descriptions, `bamarni/composer-bin-plugin`, `brianium/paratest`,
 `ergebnis/phpunit-slow-test-detector`, `phpunit/phpunit` and `shipmonk/composer-dependency-analyser` in `require-dev`,
-the plugin's settings and `config.process-timeout: 0`. The scripts it adds go at the end of `scripts`: run
+the plugin's settings, `config.policy.advisories.block: true` and `config.process-timeout: 0`. The scripts it adds go at the end of `scripts`: run
 `composer deps:normalize:fix` afterwards, as the `deps:normalize` gate sorts them. A file
 or a value already identical is left alone; one that differs is kept and reported, and `--force` replaces it. The
 `phpunit.dist.xml` lists the test directories that exist when it is written, and the `packages/*` globs in a monorepo;

@@ -132,10 +132,22 @@ final class TranslationCheckerTest extends TestCase
     {
         $checker = new TranslationChecker();
 
-        self::assertTrue($checker->blocks($this->withMode(null), $this->withMode(null)));
+        self::assertFalse($checker->blocks($this->withMode(null), $this->withMode(null)));
         self::assertFalse($checker->blocks($this->withMode(null), $this->withMode('advisory')));
+        self::assertTrue($checker->blocks($this->withMode(null), $this->withMode('blocking')));
         self::assertTrue($checker->blocks($this->withMode('blocking'), $this->withMode('advisory')));
         self::assertFalse($checker->blocks($this->withMode('advisory'), $this->withMode('blocking')));
+    }
+
+    public function testAPublicPackageBlocksByDefault(): void
+    {
+        $checker = new TranslationChecker();
+
+        self::assertTrue($checker->blocks($this->withMode(null, true), $this->withMode(null)));
+        self::assertTrue($checker->blocks($this->withMode(null, true), $this->withMode(null, false)));
+        self::assertFalse($checker->blocks($this->withMode(null, false), $this->withMode(null, true)));
+        self::assertFalse($checker->blocks($this->withMode(null, true), $this->withMode('advisory')));
+        self::assertFalse($checker->blocks($this->withMode('advisory', true), $this->withMode(null)));
     }
 
     public function testAnUnknownModeIsRefused(): void
@@ -168,12 +180,13 @@ final class TranslationCheckerTest extends TestCase
         $this->put($dir.'/'.$mirror, SourceStamp::apply($french, $english));
     }
 
-    private function withMode(?string $mode): Package
+    private function withMode(?string $mode, ?bool $public = null): Package
     {
         $dir = $this->package();
+        $docs = array_filter(['translations' => $mode, 'public' => $public], static fn (bool|string|null $value): bool => null !== $value);
 
-        if (null !== $mode) {
-            $this->put($dir.'/phil-dev.php', "<?php return ['docs' => ['translations' => '".$mode."']];");
+        if ([] !== $docs) {
+            $this->put($dir.'/phil-dev.php', '<?php return '.var_export(['docs' => $docs], true).';');
         }
 
         return Package::fromDirectory($dir, '', PackageRole::Root);

@@ -6,6 +6,7 @@ namespace Phil\DevTools\Config;
 
 use JsonException;
 use Phil\DevTools\Exception\InvalidManifest;
+use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
 
 /**
@@ -15,6 +16,10 @@ use Phil\DevTools\Workspace\Workspace;
  * manifest adds its `infection.excludes` and its `infection.mutators`, the named exceptions of a package, merged with
  * the others. The bar is one hundred: a surviving mutant is a missing test or code nothing can reach, and an exception
  * is written by name in a manifest, never by lowering the bar.
+ *
+ * Each manifest may give its `infection.timeout`, the seconds a mutant's tests may take before it counts as timed
+ * out: the configuration takes the longest of the packages analysed, and leaves Infection's own ten seconds when none
+ * gives one.
  */
 final readonly class InfectionConfig
 {
@@ -36,6 +41,7 @@ final readonly class InfectionConfig
         $directories = [];
         $excludes = [];
         $mutators = ['@default' => true];
+        $timeout = null;
 
         foreach ($this->workspace->analysed() as $package) {
             $declared = $package->manifest->strings('infection', 'directories');
@@ -46,6 +52,7 @@ final readonly class InfectionConfig
 
             array_push($excludes, ...$package->manifest->strings('infection', 'excludes'));
             $mutators = self::merge($mutators, $package->manifest->map('infection', 'mutators'));
+            $timeout = max($timeout, $this->timeout($package));
         }
 
         $options = $root->manifest->get('infection', 'testFrameworkOptions');
@@ -61,6 +68,7 @@ final readonly class InfectionConfig
             'testFrameworkOptions' => \is_string($options) ? $options : '--testsuite=Unit',
             'minMsi' => self::MINIMUM_MSI,
             'minCoveredMsi' => self::MINIMUM_MSI,
+            'timeout' => $timeout,
             'logs' => [
                 'text' => $root->path('var/infection/infection.log'),
                 'summary' => $root->path('var/infection/summary.log'),
@@ -69,6 +77,24 @@ final readonly class InfectionConfig
             'tmpDir' => $root->path('var/infection/tmp'),
             'mutators' => $mutators,
         ], static fn (mixed $value): bool => null !== $value);
+    }
+
+    /**
+     * The `infection.timeout` of a package, in seconds, or null when it gives none.
+     */
+    private function timeout(Package $package): ?int
+    {
+        $timeout = $package->manifest->get('infection', 'timeout');
+
+        if (null === $timeout) {
+            return null;
+        }
+
+        if (!\is_int($timeout) || $timeout < 1) {
+            throw new InvalidManifest(\sprintf('infection.timeout of %s is a number of seconds, a positive integer.', $package->name));
+        }
+
+        return $timeout;
     }
 
     public function json(): string

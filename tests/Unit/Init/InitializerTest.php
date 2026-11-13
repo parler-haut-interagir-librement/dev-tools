@@ -53,7 +53,7 @@ final class InitializerTest extends TestCase
         $composer = json_decode((string) file_get_contents($root.'/composer.json'), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($composer);
         self::assertSame(Initializer::DEV_REQUIRES, $composer['require-dev']);
-        self::assertSame(['allow-plugins' => ['bamarni/composer-bin-plugin' => true], 'process-timeout' => 0], $composer['config']);
+        self::assertSame(['allow-plugins' => ['bamarni/composer-bin-plugin' => true], 'policy' => ['advisories' => ['block' => true]], 'process-timeout' => 0], $composer['config']);
         self::assertSame(['bamarni-bin' => ['bin-links' => false, 'forward-command' => true, 'target-directory' => 'vendor-bin']], $composer['extra']);
         self::assertIsArray($composer['scripts']);
         self::assertArrayNotHasKey('packages', $composer['scripts']);

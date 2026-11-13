@@ -5,6 +5,28 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## 0.1.2-alpha - 2026-11-12
+
+### Added
+
+- `infection.timeout` in `phil-dev.php`: the seconds a mutant's tests may take for a package whose tests are slow on
+  purpose. `phil-dev infection` writes the longest timeout of the packages analysed in
+  `var/phil-dev/infection.json`, for the global run as for the members `PHIL_DEV_PACKAGES` names; Infection's 10
+  seconds stay the default, and a value other than a positive integer stops the command.
+- The skeleton and `phil-dev init` write `config.policy.advisories.block: true` in `composer.json`: Composer itself
+  refuses to install a version with a security advisory, whatever the global configuration says.
+
+### Changed
+
+- Without `docs.translations` in the package's manifest or the root's, the failures of `check-translations` block
+  once the package is public (`docs.public`) and are advisory until then. The skeleton writes no `translations`
+  line: a new package passes before its French documentation is written, and blocks from its release.
+
+### Removed
+
+- `roave/security-advisories` from the `require-dev` of the skeleton, which Composer's native blocking replaces;
+  `composer audit` stays in the gates.
+
 ## 0.1.1-alpha - 2026-11-11
 
 ### Changed

@@ -23,6 +23,16 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertStringContainsString('"minCoveredMsi": 100', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
     }
 
+    public function testTheTimeoutOfAPackage(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['infection' => ['timeout' => 60]];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertStringContainsString('"timeout": 60,', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
+    }
+
     public function testThePhpUnitConfigurationWithoutTheSkippedPlannedPackages(): void
     {
         $root = $this->fixture('monorepo');

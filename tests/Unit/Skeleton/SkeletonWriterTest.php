@@ -49,6 +49,11 @@ final class SkeletonWriterTest extends TestCase
         self::assertSame('library', $composer['type']);
         self::assertSame('Opening hours as values.', $composer['description']);
         self::assertSame(['psr-4' => ['Phil\\OpeningHours\\' => 'src/']], $composer['autoload']);
+        // Composer itself refuses a version with an advisory: no roave/security-advisories.
+        self::assertSame(['phpunit/phpunit' => '^13.4'], $composer['require-dev']);
+        self::assertSame(['policy' => ['advisories' => ['block' => true]]], $composer['config']);
+        // The French mirror only blocks once the package is public.
+        self::assertStringNotContainsString('translations', (string) file_get_contents($dir.'/phil-dev.php'));
         self::assertStringContainsString('Copyright (c) 2027 Philippe Gamache, doing business as Le Gnome Archiviste; a Parler Haut Interagir Librement project', (string) file_get_contents($dir.'/LICENSE'));
         self::assertStringContainsString('one of the open packages of [Parler Haut Interagir Librement]', (string) file_get_contents($dir.'/CONTRIBUTING.md'));
         self::assertStringNotContainsString('{{', (string) file_get_contents($dir.'/README.md'));

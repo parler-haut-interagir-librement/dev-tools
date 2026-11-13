@@ -58,6 +58,7 @@ return [
     'infection' => [
         'excludes' => ['Infrastructure'],
         'mutators' => ['IncrementInteger' => ['ignoreSourceCodeByRegex' => ['private const int MAX_.*']]],
+        'timeout' => 60,
     ],
     'deptrac' => ['allow' => ['^League\\\\Uri\\\\.*']],
     'arkitect' => ['namespaces' => ['Legacy'], 'rules' => static fn (): array => []],
@@ -90,18 +91,19 @@ return [
 | `infection` | `directories` | The source directories; those of `autoload` by default. |
 | | `excludes` | Paths left out of mutation, relative to each source directory. |
 | | `mutators` | The named exceptions of the package, merged with the others. |
+| | `timeout` | The seconds a mutant's tests may take, a positive integer; Infection's 10 by default. The longest of the packages analysed wins; see [Quality gates](quality-gates.md#infection). |
 | | `testFrameworkOptions` | Root only: the PHPUnit options; `--testsuite=Unit` by default. |
 | `deptrac` | `allow` | The dependencies the package is allowed besides the default; see [Dependencies](dependencies.md). |
 | | `layers`, `ruleset` | Layers of the package's own, and rules replacing the defaults of a layer. |
 | | `default`, `configs` | Root only: the default replaced; extra Deptrac configurations. |
 | `arkitect` | `namespaces` | Namespaces admitted besides those of `autoload`. |
 | | `rules` | A callable returning extra Arkitect rules. |
-| `docs` | `public` | Set once the package is split to its public repository: the CHANGELOG may then use every section. |
+| `docs` | `public` | Set once the package is split to its public repository: the CHANGELOG may then use every section, and the French mirror blocks unless `translations` says otherwise. |
 | | `forbidden` | Root only: regular expressions of the terms no package names. |
 | | `language` | `en`, the default, or `fr`: the language cspell reads; Vale reads English only. The root's is its members' default. |
 | | `words` | Words cspell accepts besides the shared list; the root's apply to every member. |
 | | `markdownlint` | Root only: markdownlint rules over the shared ones. |
-| | `translations` | `blocking`, the default, or `advisory`: whether the failures of `check-translations` stop the gate. A package's value wins over the root's; see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up). |
+| | `translations` | `blocking` or `advisory`: whether the failures of `check-translations` stop the gate. A package's value wins over the root's; without either, a public package blocks and any other is advisory; see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up). |
 | `gates` | `audit`, `unused`, `normalize`, `twig`, `js` | Root only: `false` turns that gate off. |
 | `phpunit` | `parallel` | Root only: `false` runs the tests with PHPUnit instead of ParaTest. |
 | `psalm` | `excludes` | Paths the taint analysis leaves out. |

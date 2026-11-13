@@ -11,7 +11,7 @@ use Phil\DevTools\Workspace\Package;
 /**
  * Compares the English documentation of a package with its French mirror: a document without its mirror, a mirror
  * without its document, the headings of each level and the code blocks fail; a translation behind its source is
- * reported. Whether a failure blocks is the choice of `docs.translations`.
+ * reported. Whether a failure blocks is the choice of `docs.translations`, else of `docs.public`.
  */
 final readonly class TranslationChecker
 {
@@ -59,11 +59,15 @@ final readonly class TranslationChecker
     }
 
     /**
-     * Whether the failures of a package stop the gate: its `docs.translations`, else the root's, else they do.
+     * Whether the failures of a package stop the gate: its `docs.translations`, else the root's, else they do once the
+     * package is public (`docs.public`) and are advisory until then, so that a new package passes before its French
+     * documentation is written.
      */
     public function blocks(Package $package, Package $root): bool
     {
-        $mode = $package->manifest->get('docs', 'translations') ?? $root->manifest->get('docs', 'translations') ?? self::BLOCKING;
+        $mode = $package->manifest->get('docs', 'translations')
+            ?? $root->manifest->get('docs', 'translations')
+            ?? ($package->manifest->flag('docs', 'public') ? self::BLOCKING : self::ADVISORY);
 
         if (self::BLOCKING !== $mode && self::ADVISORY !== $mode) {
             throw new InvalidManifest(\sprintf('docs.translations of %s is "%s" or "%s".', $package->name, self::BLOCKING, self::ADVISORY));

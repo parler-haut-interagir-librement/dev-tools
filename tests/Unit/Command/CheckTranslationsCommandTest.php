@@ -20,6 +20,32 @@ final class CheckTranslationsCommandTest extends CommandTestCase
         self::assertSame("The translations pass every check.\n", $tester->getDisplay());
     }
 
+    public function testAPackageFreshFromTheSkeletonPassesBeforeItsFrenchDocumentation(): void
+    {
+        $root = $this->monorepo(null, skeleton: true);
+        unlink($root.'/packages/dice/README.fr.md');
+        unlink($root.'/packages/dice/doc/fr/testing.md');
+        $tester = $this->tester($root, 'check-translations');
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertSame(<<<'TEXT'
+            packages/dice: advisory, 2 translation-missing
+            0 blocking, 0 late, 2 advisory.
+
+            TEXT, $tester->getDisplay());
+    }
+
+    public function testAPackageBlocksOnceItIsPublic(): void
+    {
+        $root = $this->monorepo(null, skeleton: true);
+        unlink($root.'/packages/dice/README.fr.md');
+        $this->put($root.'/packages/dice/phil-dev.php', "<?php return ['paths' => ['src', 'tests'], 'docs' => ['public' => true]];");
+        $tester = $this->tester($root, 'check-translations');
+
+        self::assertSame(1, $tester->execute([]));
+        self::assertStringEndsWith("1 blocking, 0 late, 0 advisory.\n", $tester->getDisplay());
+    }
+
     public function testABlockingPackageFails(): void
     {
         $root = $this->monorepo();
@@ -52,7 +78,7 @@ final class CheckTranslationsCommandTest extends CommandTestCase
 
     public function testAnAdvisoryPackageIsSummedUpAndPasses(): void
     {
-        $root = $this->monorepo(advisory: true);
+        $root = $this->monorepo('advisory');
         unlink($root.'/packages/dice/doc/fr/extension-points.md');
         unlink($root.'/packages/dice/doc/fr/installation.md');
         file_put_contents($root.'/packages/dice/doc/testing.md', "\nMore.\n", \FILE_APPEND);
@@ -68,7 +94,7 @@ final class CheckTranslationsCommandTest extends CommandTestCase
 
     public function testTheAdvisoryFindingsOfEveryPackageAreCounted(): void
     {
-        $root = $this->monorepo(advisory: true);
+        $root = $this->monorepo('advisory');
         unlink($root.'/packages/cards/README.fr.md');
         unlink($root.'/packages/dice/README.fr.md');
         $tester = $this->tester($root, 'check-translations');
@@ -90,7 +116,7 @@ final class CheckTranslationsCommandTest extends CommandTestCase
 
     public function testLateAndAdvisoryFindingsTogether(): void
     {
-        $root = $this->monorepo(advisory: true);
+        $root = $this->monorepo('advisory');
         $this->put($root.'/packages/cards/phil-dev.php', "<?php return ['docs' => ['translations' => 'blocking']];");
         file_put_contents($root.'/packages/cards/doc/installation.md', "\nMore.\n", \FILE_APPEND);
         unlink($root.'/packages/dice/doc/fr/testing.md');
@@ -102,7 +128,7 @@ final class CheckTranslationsCommandTest extends CommandTestCase
 
     public function testAnAdvisoryPackageListsItsFindingsWhenVerbose(): void
     {
-        $root = $this->monorepo(advisory: true);
+        $root = $this->monorepo('advisory');
         unlink($root.'/packages/dice/doc/fr/testing.md');
         $tester = $this->tester($root, 'check-translations');
 
@@ -116,7 +142,7 @@ final class CheckTranslationsCommandTest extends CommandTestCase
 
     public function testAPackageTranslatedInAnAdvisoryRootBlocks(): void
     {
-        $root = $this->monorepo(advisory: true);
+        $root = $this->monorepo('advisory');
         unlink($root.'/packages/cards/doc/fr/testing.md');
         $this->put($root.'/packages/cards/phil-dev.php', "<?php return ['docs' => ['translations' => 'blocking']];");
 
@@ -141,6 +167,11 @@ final class CheckTranslationsCommandTest extends CommandTestCase
         unlink($root.'/README.fr.md');
         $tester = $this->tester($root, 'check-translations');
 
+        self::assertSame(0, $tester->execute([]));
+
+        $this->put($root.'/phil-dev.php', "<?php return ['paths' => ['src', 'tests'], 'docs' => ['public' => true]];");
+        $tester = $this->tester($root, 'check-translations');
+
         self::assertSame(1, $tester->execute([]));
         self::assertSame("phil/alone: [translation-missing] README.md: no translation at README.fr.md\n1 blocking, 0 late, 0 advisory.\n", $tester->getDisplay());
     }
@@ -150,16 +181,23 @@ final class CheckTranslationsCommandTest extends CommandTestCase
         file_put_contents($file, str_replace('composer install', 'composer update', (string) file_get_contents($file)));
     }
 
-    private function monorepo(bool $advisory = false): string
+    /**
+     * @param string|null $mode     the root's docs.translations, none when null
+     * @param bool        $skeleton whether the packages keep the phil-dev.php the skeleton wrote
+     */
+    private function monorepo(?string $mode = 'blocking', bool $skeleton = false): string
     {
         $root = $this->temporaryDirectory();
         $this->put($root.'/composer.json', '{"name": "phil/root"}');
-        $this->put($root.'/phil-dev.php', $advisory ? "<?php return ['docs' => ['translations' => 'advisory']];" : '<?php return [];');
+        $this->put($root.'/phil-dev.php', null === $mode ? '<?php return [];' : "<?php return ['docs' => ['translations' => '".$mode."']];");
         mkdir($root.'/packages');
 
         foreach (['cards', 'dice'] as $name) {
             $this->tester($root, 'new')->execute(['package' => 'phil/'.$name]);
-            $this->put($root.'/packages/'.$name.'/phil-dev.php', "<?php return ['paths' => ['src', 'tests']];");
+
+            if (!$skeleton) {
+                $this->put($root.'/packages/'.$name.'/phil-dev.php', "<?php return ['paths' => ['src', 'tests']];");
+            }
         }
 
         return $root;

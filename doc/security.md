@@ -6,7 +6,7 @@ query unescaped, a parser that breaks on an input nobody wrote, and what a packa
 | Check | Script | Runs |
 |---|---|---|
 | The advisories of the installed packages | `composer deps:audit` | in the gates |
-| No package with an advisory ever installed | `roave/security-advisories` | at every `composer update` |
+| No package with an advisory ever installed | Composer's `policy.advisories.block` | at every `composer update` and `require` |
 | The taint analysis of Psalm | `composer taint` | on its own, weekly and before each release |
 | Fuzzing the parsers | `composer fuzz` | on its own, weekly and after a change to a parser |
 | The bill of materials | `composer sbom` | on its own, before each release |
@@ -14,9 +14,26 @@ query unescaped, a parser that breaks on an input nobody wrote, and what a packa
 ## The advisories
 
 `phil-dev audit` runs `composer audit` on the root: every installed package, development ones included, against the
-advisories of Packagist. An abandoned package is reported without failing. The skeleton requires
-`roave/security-advisories` in `require-dev`: it conflicts with every version that has an advisory, so that
-Composer refuses to install one in the first place.
+advisories of Packagist. An abandoned package is reported without failing.
+
+Composer itself refuses to install a version with an advisory in the first place: `composer update`, `require` and
+`remove` leave out every version an advisory of Packagist names, and fail when nothing else satisfies a constraint.
+Composer 2.9 turned this on by default as `audit.block-insecure`; Composer 2.11 moved it to `policy.advisories.block`,
+`audit.block-insecure` staying a deprecated fallback. The skeleton, and `phil-dev init`, write it in `composer.json`, so
+that no global configuration turns it off for the package:
+
+```json
+"config": {
+    "policy": {
+        "advisories": {
+            "block": true
+        }
+    }
+}
+```
+
+`roave/security-advisories` is no longer needed in `require-dev`. A version kept on purpose goes in
+`policy.advisories.ignore-id` with its advisory ID and the reason, never by setting `block` to `false`.
 
 ## The taint analysis
 

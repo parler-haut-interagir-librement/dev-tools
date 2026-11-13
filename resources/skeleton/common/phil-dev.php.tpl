@@ -8,5 +8,4 @@ declare(strict_types=1);
  */
 return [
 {{status}}    'paths' => ['src', 'tests'],
-    'docs' => ['translations' => 'blocking'],
 ];
