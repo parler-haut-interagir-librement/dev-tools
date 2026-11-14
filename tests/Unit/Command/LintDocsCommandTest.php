@@ -174,6 +174,35 @@ final class LintDocsCommandTest extends CommandTestCase
         self::assertSame(['@cspell/dict-fr-fr/cspell-ext.json'], $french['import']);
     }
 
+    public function testTheDictionaryIsSoughtOnceWhenItIsNowhere(): void
+    {
+        $root = $this->fixture('monorepo');
+
+        foreach (['slug', 'tilttek-dice'] as $member) {
+            $this->put($root.'/packages/'.$member.'/README.md', '# Package');
+            $this->put($root.'/packages/'.$member.'/README.fr.md', '# Paquet');
+        }
+
+        $tester = $this->tester($root, 'lint-docs');
+
+        self::assertSame(0, $this->withEnvironment('PATH', $this->executables(['cspell']), static fn (): int => $tester->execute([])));
+
+        self::assertSame(1, substr_count($tester->getDisplay(), 'is not installed: cspell looks for it itself.'));
+    }
+
+    public function testWithoutCspellTheDictionaryIsNotSought(): void
+    {
+        $root = $this->package();
+        $this->put($root.'/README.md', '# Example');
+        $this->put($root.'/README.fr.md', '# Exemple');
+        $tester = $this->tester($root, 'lint-docs');
+
+        self::assertSame(0, $this->withEnvironment('PATH', '', static fn (): int => $tester->execute([])));
+
+        self::assertStringNotContainsString('cspell looks for it itself', $tester->getDisplay());
+        self::assertSame([], $this->runner->runs);
+    }
+
     public function testAnEnglishPackageNeedsNoDictionary(): void
     {
         $root = $this->package();

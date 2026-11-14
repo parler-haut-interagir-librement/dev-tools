@@ -30,6 +30,12 @@ final class TestKernelsTest extends TestCase
         yield 'after a class constant' => ["<?php\nnamespace App;\n\$a = Foo::class;\nfinal class TestKernel extends Kernel {}", 'App\\TestKernel'];
         yield 'an abstract kernel' => ["<?php\nnamespace App;\nabstract class BaseKernel extends Kernel {}", null];
         yield 'an abstract readonly kernel' => ["<?php\nnamespace App;\nabstract readonly class BaseKernel extends Kernel {}", null];
+        yield 'an abstract final kernel' => ["<?php\nnamespace App;\nabstract final class BaseKernel extends Kernel {}", null];
+        yield 'an abstract kernel at the start' => ['<?php abstract class BaseKernel extends Kernel {}', null];
+        yield 'a kernel at the start' => ['<?php class TestKernel extends Kernel {}', 'TestKernel'];
+        yield 'a class constant followed by a kernel shape' => ["<?php\nnamespace App;\n\$a = Foo::class Name extends Kernel;", null];
+        yield 'a name that is not a word' => ["<?php\nnamespace App;\nclass 5 extends Kernel {}", null];
+        yield 'a class without parent at the end' => ['<?php final class TestKernel', null];
         yield 'an anonymous kernel' => ["<?php\nnamespace App;\n\$kernel = new class('test', true) extends Kernel {};", null];
         yield 'a parent that is not a kernel' => ["<?php\nnamespace App;\nfinal class KernelTest extends TestCase {}", null];
         yield 'no parent' => ["<?php\nnamespace App;\nfinal class TestKernel {}", null];
@@ -56,6 +62,7 @@ final class TestKernelsTest extends TestCase
         $this->put($dir.'/composer.json', '{"name": "phil/example-bundle", "type": "symfony-bundle"}');
         $this->put($dir.'/tests/Functional/App/TestKernel.php', "<?php\nnamespace A;\nfinal class TestKernel extends Kernel {}");
         $this->put($dir.'/tests/Functional/Admin/AdminKernel.php', "<?php\nnamespace B;\nfinal class AdminKernel extends Kernel {}");
+        $this->put($dir.'/tests/Functional/0-notes.txt', "<?php\nfinal class Notes extends Kernel {}");
         $this->put($dir.'/tests/Functional/App/config/kernel.php.txt', "<?php\nfinal class Text extends Kernel {}");
         $this->put($dir.'/tests/Functional/PageTest.php', "<?php\nnamespace A;\nfinal class PageTest extends WebTestCase {}");
         $this->put($dir.'/tests/Unit/UnitKernel.php', "<?php\nnamespace C;\nfinal class UnitKernel extends Kernel {}");

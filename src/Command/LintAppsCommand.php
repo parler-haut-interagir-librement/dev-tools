@@ -48,14 +48,14 @@ final class LintAppsCommand extends WorkspaceCommand
         $names = $input->getArgument('packages');
         $autoload = $root->path('vendor/autoload.php');
         $status = self::SUCCESS;
-        $linted = 0;
+        $linted = false;
 
         foreach ($workspace->targets($names) as $package) {
             $skipped = $package->manifest->strings('apps', 'skip');
 
             foreach (TestKernels::of($package) as $class => $file) {
                 $output->writeln(\sprintf('== %s: %s', $package->name, substr($file, \strlen($root->dir) + 1)));
-                ++$linted;
+                $linted = true;
 
                 if (\in_array($class, $skipped, true)) {
                     $output->writeln('Left out by apps.skip.');
@@ -69,7 +69,7 @@ final class LintAppsCommand extends WorkspaceCommand
             }
         }
 
-        if (0 === $linted) {
+        if (!$linted) {
             $output->writeln('No package has a functional test application: nothing to lint.');
         }
 

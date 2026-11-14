@@ -87,7 +87,7 @@ final readonly class TestKernels
     {
         $before = $tokens[$index - 1] ?? null;
 
-        if (null === $before || $before->is([\T_DOUBLE_COLON, \T_NEW])) {
+        if (null !== $before && $before->is([\T_DOUBLE_COLON, \T_NEW])) {
             return false;
         }
 

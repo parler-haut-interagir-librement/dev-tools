@@ -39,7 +39,8 @@ final readonly class FrenchDictionary
     {
         $manifest = '' === $this->manifest ? DevTools::directory().'/package.json' : $this->manifest;
         $data = json_decode(Files::read($manifest), true);
-        $version = \is_array($data) && \is_array($data['devDependencies'] ?? null) ? $data['devDependencies'][self::PACKAGE] ?? null : null;
+        $dependencies = \is_array($data) ? $data['devDependencies'] ?? null : null;
+        $version = \is_array($dependencies) ? $dependencies[self::PACKAGE] ?? null : null;
 
         if (!\is_string($version) || 1 !== preg_match('/^\d+\.\d+\.\d+$/', $version)) {
             throw new InvalidManifest(\sprintf('%s pins %s at an exact version in its devDependencies.', $manifest, self::PACKAGE));
