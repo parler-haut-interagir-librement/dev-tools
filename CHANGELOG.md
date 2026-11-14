@@ -5,6 +5,24 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- `phil-dev lint-apps` and the `lint:apps` script, in the gates after Arkitect: each kernel under `tests/Functional/`
+  of a package boots in a process of its own and runs `lint:container`, `lint:expressions` and, on the YAML files of
+  its `config/` directory, `lint:yaml --check-schema` through its own console. A command the application does not
+  have is skipped with a note, `lint:yaml` checks the syntax only without `opis/json-schema`, and a package leaves a
+  kernel out under `apps.skip` of its `phil-dev.php`; `'gates' => ['apps' => false]` turns the gate off.
+- `phil-dev bench:worker --ext` and `--build`: the worker served by the `frankenphp-ext` service, on the `bench-ext`
+  image of `resources/bench-ext/Dockerfile` — FrankenPHP on Debian with the thread-safe PHP 8.5, intl, GD, production
+  settings and the PIE extensions `PHIL_DEV_BENCH_EXT_PIE` names —, built on demand only.
+- `package.json` with `@cspell/dict-fr-fr` as a development dependency at an exact version, which `lint-docs` reads
+  from the `node_modules/` of the root or installs under `var/phil-dev/node/` with npm, and imports by its absolute
+  path in the configurations of cspell.
+- `lou_translate` and the tables of liblouis in the image of `phil-dev php`, for the integration tests of a braille
+  translator.
+
 ## 0.1.2-alpha - 2026-11-12
 
 ### Added
@@ -88,8 +106,8 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   with its English source; `--planned` for a package being written, with what it will do in its README, its status and
   a smoke test; `--requires`, `--title` and `--description-fr`.
 - `phil-dev check-docs`: the file set, the links, the tables, the bold — code spans of any run of backticks and
-  escaped pipes left out —, the README index and sections, one "Added" section until the packages are public, the licence holder's wording and the forbidden terms; `README.fr.md`, when
-  there is one, indexes `doc/fr/`.
+  escaped pipes left out —, the README index and sections, one "Added" section until the packages are public, the
+  licence holder's wording and the forbidden terms; `README.fr.md`, when there is one, indexes `doc/fr/`.
 - `phil-dev check-translations` and `TranslationChecker`: `README.md` and `doc/` against `README.fr.md` and `doc/fr/`,
   a document or a mirror alone, the headings of each level and the code blocks failing, a translation behind its
   English reported, by the SHA-256 of `SourceStamp` on its first line; `docs.translations` for a blocking or advisory

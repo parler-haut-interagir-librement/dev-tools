@@ -23,7 +23,7 @@ sorts the scripts `init` added, and `composer hooks` installs the git hooks of `
 
 | Script | What it runs |
 |---|---|
-| `composer gates` | Every gate in order: dependency analysis, advisories, unused packages, normalized `composer.json`, code style of PHP, Twig and scripts, PHPStan, Rector, Deptrac, Arkitect, PHPUnit, Infection. |
+| `composer gates` | Every gate in order: dependency analysis, advisories, unused packages, normalized `composer.json`, code style of PHP, Twig and scripts, PHPStan, Rector, Deptrac, Arkitect, the functional test applications (`lint:apps`), PHPUnit, Infection. |
 | `composer cs:fix`, `rector:fix`, `twig:fix`, `js:fix`, `deps:normalize:fix` | The fixes of PHP-CS-Fixer, Rector, Twig-CS-Fixer, Biome and composer-normalize. |
 | `composer infection:changed` | Mutation testing of the files changed since the base ref, once per batch before its commit. |
 | `composer packages` | Each package of a monorepo installed and tested on its own. |

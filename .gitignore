@@ -6,3 +6,5 @@
 /.php-cs-fixer.cache
 /.phpunit.cache/
 /.deptrac.cache
+/node_modules/
+/package-lock.json

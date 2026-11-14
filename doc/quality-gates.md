@@ -2,14 +2,15 @@
 
 `composer gates` runs them in this order, the order of a continuous integration job: the dependency analysis, the
 advisories, the unused packages, the normalized `composer.json`, the code style of PHP, of the Twig templates and of
-the scripts, PHPStan, Rector, Deptrac, Arkitect, the tests and Infection. A gate is in it when it is reliable and fast
-enough for every batch; the slower checks are scripts of their own.
+the scripts, PHPStan, Rector, Deptrac, Arkitect, the functional test applications, the tests and Infection. A gate is
+in it when it is reliable and fast enough for every batch; the slower checks are scripts of their own.
 
 | Check | Script | Where |
 |---|---|---|
 | Dependency analysis, advisories, unused packages, normalized `composer.json` | `deps`, `deps:audit`, `deps:unused`, `deps:normalize` | the gates |
 | PHP-CS-Fixer, Twig-CS-Fixer, Biome | `cs`, `twig`, `js` | the gates |
 | PHPStan and its witnesses, Rector, Deptrac, Arkitect | `phpstan`, `rector`, `deptrac`, `arkitect` | the gates |
+| The container, the expressions and the YAML of each functional test application | `lint:apps` | the gates |
 | PHPUnit through ParaTest, Infection | `test`, `infection` | the gates |
 | TwigStan | `twigstan` | its own script: young, and it compiles every template |
 | The taint analysis, fuzzing, the bill of materials | `taint`, `fuzz`, `sbom` | their own scripts: see [Security checks](security.md) |
@@ -19,7 +20,7 @@ enough for every batch; the slower checks are scripts of their own.
 | The file set and the links of the documentation | `docs` | its own script and the hooks: see [The package skeleton](skeleton.md#the-documentation-checks) |
 | The French mirror of the documentation | `docs:translations` | its own script and the hooks: see [below](#the-french-mirror-of-the-documentation) |
 
-The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig` and `js` with
+The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig`, `js` and `apps` with
 `'gates' => ['<name>' => false]`: the gate then says it is off and passes. The fast gates also run on the staged files
 before each commit, through the hooks of [The monorepo workflow](workflow.md#the-hooks).
 
@@ -174,6 +175,38 @@ class in a namespace of the packages; `Domain\Model` final and not readonly; `Do
 `Domain\Repository` interfaces named `*Repository`; nothing of Doctrine in a domain but the mapping attributes, nor the
 validator, the container, HTTP, Messenger, the serializer, forms or security; no ORM nor DBAL in an application layer;
 no domain event that is a Messenger envelope. Each rule applies to `<Namespace>\<Layer>` and `<Namespace>\*\<Layer>`.
+
+## The functional test applications
+
+`phil-dev lint-apps` checks the small application each bundle boots for its functional tests, through that
+application's own console. It finds the kernels under `tests/Functional/` of each package analysed: the concrete
+classes whose parent's name ends with `Kernel`, read from the files without loading them. Each kernel boots in a process
+of its own, in the `test` environment with debug on and `TMPDIR` under `var/tmp/` of the root, as for the tests, and
+runs:
+
+| Command | Checks |
+|---|---|
+| `lint:container` | every service: its arguments and their types, as the container compiles them |
+| `lint:expressions` | the expressions of controller attributes, such as `#[IsGranted]`, and those the configuration lists, such as `allow_if` of `access_control` (Symfony 8.2) |
+| `lint:yaml --check-schema` | the YAML files of the application's `config/` directory, against the JSON schema of its configuration |
+
+The gate fails when one of them fails, or when the kernel does not boot. The tests boot the same kernels, but a service
+no test asks for is never built: a wrong argument type, an expression with a missing function or a misspelt
+configuration key reaches the gate before an application does. An expression `lint:expressions` reads is one a bundle
+declares to the expression collector of Symfony 8.2.
+
+A command the application does not have is skipped with a note: `lint:expressions` before Symfony 8.2, `lint:yaml`
+without YAML files. Without `opis/json-schema`, which Symfony needs for `--check-schema`, `lint:yaml` checks the syntax
+only and says so; a root that requires it in `require-dev` gets the schema check. A kernel whose constructor needs more
+than `$environment` and `$debug` is skipped too, since no console could build it. A package leaves a kernel out by its
+class name, with the reason, in its `phil-dev.php`:
+
+```php
+return [
+    // The API Platform processor of Mercure is defined without Mercure installed.
+    'apps' => ['skip' => ['Phil\ExampleBundle\Tests\Functional\App\OpenApiKernel']],
+];
+```
 
 ## PHPUnit
 

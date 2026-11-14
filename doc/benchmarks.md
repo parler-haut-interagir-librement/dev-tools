@@ -8,7 +8,7 @@ five iterations of a hundred revolutions, after a warm-up, with the `phil` repor
 | `composer bench` | The benchmarks. |
 | `composer bench:baseline` | The benchmarks, stored as the baseline of this machine. |
 | `composer bench:compare` | The benchmarks against the baseline, failing above the threshold. |
-| `composer bench:worker` | A page served by FrankenPHP in worker mode. |
+| `composer bench:worker` | A page served by FrankenPHP in worker mode; `-- --ext` on the image with PHP extensions. |
 
 None of them is a gate: a timing depends on the machine and on what else runs on it.
 
@@ -58,6 +58,30 @@ mounted at `/app`, serves the script from its own directory at `/<file name>`, s
 `warmup` requests, one after the other, prints the requests per second and the 50th, 95th and 99th percentiles, then
 stops the service. A request that does not answer 200 fails the run. The port is 8090, moved by
 `PHIL_DEV_FRANKENPHP_PORT`; the service has the `bench` profile, so `phil-dev services up` leaves it out.
+
+### With a PHP extension
+
+An extension that may make a package faster is measured before it becomes an adapter: the package keeps its pure PHP
+path, and the benchmark compares both. `--ext` serves the worker from the `frankenphp-ext` service instead, on the
+`bench-ext` image of `resources/bench-ext/Dockerfile`:
+
+| Part | Content |
+|---|---|
+| Base | FrankenPHP on Debian, with the thread-safe (ZTS) PHP 8.5 it runs |
+| Extensions | intl and GD, with JPEG, PNG, WebP and AVIF, besides those of the base image |
+| PIE | The extensions `PHIL_DEV_BENCH_EXT_PIE` names, separated by spaces, each as `pie install` takes it: a Composer package name with an optional constraint |
+| Settings | Those of production: `php.ini-production`, assertions compiled out, OPcache on |
+
+```sh
+PHIL_DEV_BENCH_EXT_PIE="vendor/extension vendor/other:^1.2" vendor/bin/phil-dev bench:worker --ext --build
+vendor/bin/phil-dev bench:worker --ext
+```
+
+The image is built on demand only: the first `--ext` builds it, and `--build` builds it again after
+`PHIL_DEV_BENCH_EXT_PIE` changes. Without an extension it builds in a minute or two; an extension written in Rust or
+C++ compiles for longer, so build it on a machine at rest. It never runs in the continuous integration of each commit,
+and the tests stay on the pure PHP image of [the version matrix](version-matrix.md). The port and the variables are
+those of the `frankenphp` service, which `--ext` replaces for the run; the service has the `bench-ext` profile.
 
 Sequential requests measure what one visitor waits, which is what a change to a package moves; the throughput of many
 visitors at once depends on the machine more than on the code.

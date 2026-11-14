@@ -53,7 +53,7 @@ services:
 
   # Only for phil-dev bench:worker, which starts it with the project mounted at /app and the worker script of a
   # package: the profile keeps it out of phil-dev services up.
-  frankenphp:
+  frankenphp: &frankenphp
     image: dunglas/frankenphp:1-php8.5
     profiles: ["bench"]
     environment:
@@ -69,3 +69,14 @@ services:
       interval: 2s
       timeout: 5s
       retries: 30
+
+  # The same server on the image of bench-ext/, with intl, GD and the PIE extensions PHIL_DEV_BENCH_EXT_PIE names:
+  # only for phil-dev bench:worker --ext, which builds the image the first time, or again with --build.
+  frankenphp-ext:
+    <<: *frankenphp
+    image: phil-dev/bench-ext:8.5
+    build:
+      context: ./bench-ext
+      args:
+        PIE_EXTENSIONS: "${PHIL_DEV_BENCH_EXT_PIE:-}"
+    profiles: ["bench-ext"]

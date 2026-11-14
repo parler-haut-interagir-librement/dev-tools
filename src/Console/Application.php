@@ -17,6 +17,7 @@ use Phil\DevTools\Command\HotspotsCommand;
 use Phil\DevTools\Command\InfectionCommand;
 use Phil\DevTools\Command\InitCommand;
 use Phil\DevTools\Command\JsCommand;
+use Phil\DevTools\Command\LintAppsCommand;
 use Phil\DevTools\Command\LintDocsCommand;
 use Phil\DevTools\Command\MatrixCommand;
 use Phil\DevTools\Command\NewCommand;
@@ -76,6 +77,7 @@ final class Application extends Console
             new WorkerBenchCommand($root, $runner),
             new SplitCommand($root, $runner),
             new LintDocsCommand($root, $runner),
+            new LintAppsCommand($root, $runner),
             new HotspotsCommand($root, $runner),
         ]);
     }

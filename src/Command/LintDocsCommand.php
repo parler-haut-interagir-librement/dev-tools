@@ -6,6 +6,7 @@ namespace Phil\DevTools\Command;
 
 use Override;
 use Phil\DevTools\Config\DocsLintConfig;
+use Phil\DevTools\Docs\FrenchDictionary;
 use Phil\DevTools\Process\Executables;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
@@ -23,8 +24,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
     These are not PHP tools: each is used when it is on the PATH — cspell and markdownlint-cli2 also through
     npx when Node.js is installed —, and skipped with a note otherwise. The French dictionary of cspell is
-    @cspell/dict-fr-fr, installed globally. They read every page, so they run as their own script; check-docs
-    stays the gate.
+    @cspell/dict-fr-fr, at the version the package.json of phil/dev-tools pins: read from the node_modules of
+    the root, else installed by npm under var/phil-dev/node/ the first time a French page is read. They read every page, so they run as their own script; check-docs stays the gate.
     TXT)]
 final class LintDocsCommand extends WorkspaceCommand
 {
@@ -46,6 +47,8 @@ final class LintDocsCommand extends WorkspaceCommand
         /** @var list<string> $names */
         $names = $input->getArgument('packages');
         $status = self::SUCCESS;
+        $dictionary = null;
+        $dictionarySought = false;
 
         foreach ([['cspell', $cspell], ['markdownlint-cli2', $markdownlint], ['vale', $vale]] as [$tool, $found]) {
             if (null === $found) {
@@ -68,13 +71,18 @@ final class LintDocsCommand extends WorkspaceCommand
             $translations = $config->translations($package);
             $slug = str_replace('/', '-', $package->name);
 
+            if (null !== $cspell && !$dictionarySought && ([] !== $translations || 'fr' === $config->language($package))) {
+                $dictionary = $this->frenchDictionary($executables, $output);
+                $dictionarySought = true;
+            }
+
             if (null !== $cspell) {
-                $cspellConfig = $this->generate('docs/cspell-'.$slug.'.json', $config->cspell($package));
+                $cspellConfig = $this->generate('docs/cspell-'.$slug.'.json', $config->cspell($package, dictionary: $dictionary));
                 $runs[] = [...$cspell, 'lint', '--no-progress', '--config', $cspellConfig, ...$files];
             }
 
             if (null !== $cspell && [] !== $translations) {
-                $frenchConfig = $this->generate('docs/cspell-'.$slug.'-fr.json', $config->cspell($package, true));
+                $frenchConfig = $this->generate('docs/cspell-'.$slug.'-fr.json', $config->cspell($package, true, $dictionary));
                 $runs[] = [...$cspell, 'lint', '--no-progress', '--config', $frenchConfig, ...$translations];
             }
 
@@ -94,6 +102,32 @@ final class LintDocsCommand extends WorkspaceCommand
         }
 
         return $status;
+    }
+
+    /**
+     * The `cspell-ext.json` of the French dictionary: in the `node_modules` of the root — phil/dev-tools itself while
+     * it is developed — or of `var/phil-dev/node/`, else installed there by npm. Null when it cannot be had, cspell
+     * then resolving the package's name itself, as for a global install.
+     */
+    private function frenchDictionary(Executables $executables, OutputInterface $output): ?string
+    {
+        $root = $this->workspace()->root;
+        $dictionary = new FrenchDictionary();
+        $installed = $root->path(FrenchDictionary::DIRECTORY);
+        $found = $dictionary->find([$root->dir, $installed]);
+        $npm = $executables->find('npm');
+
+        if (null === $found && null !== $npm) {
+            $output->writeln(\sprintf('Installing %s under %s.', FrenchDictionary::PACKAGE, FrenchDictionary::DIRECTORY));
+            $this->runner->run($dictionary->installCommand($npm, $installed), $root->dir);
+            $found = $dictionary->find([$installed]);
+        }
+
+        if (null === $found) {
+            $output->writeln(\sprintf('%s is not installed: cspell looks for it itself.', FrenchDictionary::PACKAGE));
+        }
+
+        return $found;
     }
 
     /**

@@ -28,9 +28,10 @@
 | `sbom [packages…]` | Writes the CycloneDX bill of materials of each package. |
 | `bc [-- arguments]` | Checks the public API against the latest tag. |
 | `bench [--baseline\|--compare] [--threshold=PERCENT] [-- arguments]` | Runs the benchmarks, stores the baseline, or compares with it. |
-| `bench:worker [package]` | Measures a page served by FrankenPHP in worker mode. |
+| `bench:worker [package] [--ext] [--build]` | Measures a page served by FrankenPHP in worker mode, or on the image with PHP extensions. |
 | `split [packages…] [--push] [--branch=NAME] [--tag=TAG]` | Splits the finished packages to their public repositories. |
 | `lint-docs [packages…]` | Lints the prose of the documentation with cspell, markdownlint and Vale. |
+| `lint-apps [packages…]` | Lints the container, the expressions and the YAML of each functional test application. |
 | `hotspots` | Lists the files that change most and are the most complex. |
 | `services up\|down\|env\|test\|record [-- arguments]` | Starts, stops and points the tests at MySQL, PostgreSQL and Gotenberg. |
 | `php <version> [--build] [-- command]` | Runs a command on a PHP version of the matrix, in its Docker image. |
@@ -47,8 +48,8 @@ with its own directory; see [Configuration](configuration.md).
 
 It adds to `composer.json` the scripts, their descriptions, `bamarni/composer-bin-plugin`, `brianium/paratest`,
 `ergebnis/phpunit-slow-test-detector`, `phpunit/phpunit` and `shipmonk/composer-dependency-analyser` in `require-dev`,
-the plugin's settings, `config.policy.advisories.block: true` and `config.process-timeout: 0`. The scripts it adds go at the end of `scripts`: run
-`composer deps:normalize:fix` afterwards, as the `deps:normalize` gate sorts them. A file
+the plugin's settings, `config.policy.advisories.block: true` and `config.process-timeout: 0`. The scripts it adds go
+at the end of `scripts`: run `composer deps:normalize:fix` afterwards, as the `deps:normalize` gate sorts them. A file
 or a value already identical is left alone; one that differs is kept and reported, and `--force` replaces it. The
 `phpunit.dist.xml` lists the test directories that exist when it is written, and the `packages/*` globs in a monorepo;
 it requires the coverage metadata of every test, registers the slow-test detector, and the `SymfonyExtension` of
@@ -157,6 +158,10 @@ See [Benchmarks](benchmarks.md).
 ## split, lint-docs, hotspots
 
 See [The monorepo workflow](workflow.md).
+
+## lint-apps
+
+See [Quality gates](quality-gates.md#the-functional-test-applications).
 
 ## services, php, matrix
 

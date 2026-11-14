@@ -1,0 +1,4 @@
+<?php
+namespace A;
+abstract readonly class BaseKernel extends Kernel {}
+final class AppKernel extends BaseKernel {}

@@ -27,8 +27,9 @@ several batches can work at once in their own worktrees.
 | The version matrix, `php` and `matrix`, `check-packages --symfony` | Implemented and tested |
 | The gates `audit`, `unused`, `normalize`, `twig` and `js`, ParaTest, the PHPStan extensions | Implemented and tested |
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implemented and tested |
-| `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service | Implemented and tested |
-| `split`, the CaptainHook configuration, `lint-docs`, `hotspots` | Implemented and tested |
+| `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service, the `bench-ext` image | Implemented and tested |
+| `split`, the CaptainHook configuration, `lint-docs` and its French dictionary, `hotspots` | Implemented and tested |
+| `lint-apps`: `lint:container`, `lint:expressions` and `lint:yaml` on each functional test application | Implemented and tested |
 | `check-translations`, `stamp-translations`, the French mirror of `new` | Implemented and tested |
 
 ## Documentation

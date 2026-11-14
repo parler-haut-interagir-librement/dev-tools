@@ -30,7 +30,7 @@ final readonly class Manifest
     /** @var list<string> */
     public const array SECTIONS = [
         'paths', 'packages', 'phpstan', 'rector', 'cs', 'infection', 'deptrac', 'arkitect', 'docs', 'phpunit',
-        'gates', 'psalm', 'fuzz', 'bench', 'bc', 'split', 'twig', 'js', 'unused', 'hotspots', 'status',
+        'gates', 'psalm', 'fuzz', 'bench', 'bc', 'split', 'twig', 'js', 'unused', 'hotspots', 'status', 'apps',
     ];
 
     /**

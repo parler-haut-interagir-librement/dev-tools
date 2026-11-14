@@ -14,7 +14,9 @@ return [
     'paths' => ['src', 'tests', 'config', 'bin/phil-dev'],
     'phpstan' => [
         // These load the classes of PHP-CS-Fixer, Rector, Arkitect and Twig, which only their own vendor-bin has.
-        'excludePaths' => ['config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php'],
+        // The fuzz targets run inside nikic/php-fuzzer, which gives them `$config`. The script of lint-apps runs with
+        // the autoloader of the workspace it lints, whose Symfony kernel and console this package does not require.
+        'excludePaths' => ['config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php', 'tests/Fuzz/*', 'resources/lint/app.php'],
         'ignoreErrors' => [
             // The port of the processes stays next to its two adapters, the local runner and the recording one.
             ['identifier' => 'symplify.requiredInterfaceContractNamespace', 'path' => 'src/Process/ProcessRunner.php'],
@@ -31,6 +33,10 @@ return [
     ],
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],
+    'fuzz' => [
+        // The reader of the kernels of functional test applications, from the seeds of tests/Fuzz/corpus/<target>.
+        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php'],
+    ],
     'infection' => [
         'mutators' => [
             // The two numbers of a version, matched as digits when the matrix is read, multiply the same as strings.

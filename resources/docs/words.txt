@@ -20,6 +20,7 @@ cspell
 CycloneDX
 Deptrac
 dev-tools
+docblocks
 Dockerfile
 FrankenPHP
 Gamache
@@ -30,14 +31,18 @@ Haut
 hotspots
 Infection
 Interagir
+journaliseur
+liblouis
 Librement
 lockfile
 markdownlint
 markdownlint-cli2
 mbstring
 Mercure
+monodépôt
 monorepo
 monorepos
+Multilocataire
 namespace
 namespaces
 npx

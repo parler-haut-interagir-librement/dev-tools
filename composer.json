@@ -24,6 +24,7 @@
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-mbstring": "*",
+        "ext-tokenizer": "*",
         "symfony/console": "^8.2"
     },
     "require-dev": {
@@ -103,6 +104,7 @@
             "@rector",
             "@deptrac",
             "@arkitect",
+            "@lint:apps",
             "@test",
             "@infection"
         ],
@@ -113,6 +115,7 @@
         "infection:next": "@php bin/phil-dev php next -- php bin/phil-dev infection",
         "js": "@php bin/phil-dev js",
         "js:fix": "@php bin/phil-dev js --fix",
+        "lint:apps": "@php bin/phil-dev lint-apps",
         "phpstan": [
             "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress",
             "@php bin/phil-dev witnesses"
@@ -151,6 +154,7 @@
         "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",
         "infection:next": "Mutation testing of the whole code on the next PHP of the matrix, weekly and before a release.",
         "js": "The Stimulus controllers and other scripts, checked by Biome.",
+        "lint:apps": "The container, the expressions and the YAML of each functional test application, through its own console.",
         "phpstan": "PHPStan at the maximum level, then the witnesses that prove each forbidden call is still reported.",
         "sbom": "The CycloneDX bill of materials of each package, under var/phil-dev/sbom/.",
         "taint": "The taint analysis of Psalm on the production code; a script of its own.",

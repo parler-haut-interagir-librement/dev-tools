@@ -6,6 +6,7 @@ namespace Phil\DevTools\Config;
 
 use JsonException;
 use Phil\DevTools\DevTools;
+use Phil\DevTools\Docs\FrenchDictionary;
 use Phil\DevTools\Docs\Mirrors;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Workspace\Package;
@@ -77,9 +78,11 @@ final readonly class DocsLintConfig
     }
 
     /**
-     * @param bool $translations whether the configuration reads the French mirrors, whatever the package's language
+     * @param bool        $translations whether the configuration reads the French mirrors, whatever the package's language
+     * @param string|null $dictionary   the `cspell-ext.json` of the French dictionary, by its absolute path; the name
+     *                                  of the package, which cspell resolves from its own directory, without it
      */
-    public function cspell(Package $package, bool $translations = false): string
+    public function cspell(Package $package, bool $translations = false, ?string $dictionary = null): string
     {
         $words = [
             ...$this->workspace->root->manifest->strings('docs', 'words'),
@@ -91,7 +94,7 @@ final readonly class DocsLintConfig
             'version' => '0.2',
             // The documentation writes British spellings as well as American ones: licence, analyse.
             'language' => $french ? 'fr,en,en-GB' : 'en,en-GB',
-            'import' => $french ? ['@cspell/dict-fr-fr/cspell-ext.json'] : null,
+            'import' => $french ? [$dictionary ?? FrenchDictionary::PACKAGE.'/'.FrenchDictionary::EXTENSION] : null,
             'dictionaryDefinitions' => [['name' => 'phil', 'path' => DevTools::resource('docs/words.txt'), 'addWords' => false]],
             'dictionaries' => ['phil'],
             'words' => array_values(array_unique($words)),

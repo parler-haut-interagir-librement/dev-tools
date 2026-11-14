@@ -104,7 +104,8 @@ return [
 | | `words` | Words cspell accepts besides the shared list; the root's apply to every member. |
 | | `markdownlint` | Root only: markdownlint rules over the shared ones. |
 | | `translations` | `blocking` or `advisory`: whether the failures of `check-translations` stop the gate. A package's value wins over the root's; without either, a public package blocks and any other is advisory; see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up). |
-| `gates` | `audit`, `unused`, `normalize`, `twig`, `js` | Root only: `false` turns that gate off. |
+| `gates` | `audit`, `unused`, `normalize`, `twig`, `js`, `apps` | Root only: `false` turns that gate off. |
+| `apps` | `skip` | The kernels of the functional test applications `lint-apps` leaves out, by class name; see [Quality gates](quality-gates.md#the-functional-test-applications). |
 | `phpunit` | `parallel` | Root only: `false` runs the tests with PHPUnit instead of ParaTest. |
 | `psalm` | `excludes` | Paths the taint analysis leaves out. |
 | | `suppress` | An issue type, such as `TaintedHtml`, with the paths where it is a reviewed exception. |

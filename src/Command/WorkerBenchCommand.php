@@ -12,6 +12,7 @@ use Phil\DevTools\Workspace\Package;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'bench:worker', description: 'Measures a page of a package served by FrankenPHP in worker mode', help: <<<'TXT'
@@ -22,13 +23,23 @@ use Symfony\Component\Console\Output\OutputInterface;
 
     The worker script is a front controller that loops on frankenphp_handle_request(); it is served from its
     own directory, at /<file name>. The port is 8090, moved by PHIL_DEV_FRANKENPHP_PORT.
+
+    With --ext, the frankenphp-ext service serves it instead, on the bench-ext image of resources/bench-ext:
+    Debian, the thread-safe PHP 8.5, intl, GD, production settings, and the PIE extensions that
+    PHIL_DEV_BENCH_EXT_PIE names, separated by spaces. The image is built the first time, or again with --build
+    after PHIL_DEV_BENCH_EXT_PIE changes; build it on a machine at rest, never in the CI of each commit.
+
+        PHIL_DEV_BENCH_EXT_PIE="vendor/extension" phil-dev bench:worker --ext --build
     TXT)]
 final class WorkerBenchCommand extends WorkspaceCommand
 {
     #[Override]
     protected function configure(): void
     {
-        $this->addArgument('package', InputArgument::OPTIONAL, 'The package whose worker to measure, when several declare one');
+        $this
+            ->addArgument('package', InputArgument::OPTIONAL, 'The package whose worker to measure, when several declare one')
+            ->addOption('ext', null, InputOption::VALUE_NONE, 'Serve it on the bench-ext image, with intl, GD and the PIE extensions')
+            ->addOption('build', null, InputOption::VALUE_NONE, 'Build the bench-ext image again first; with --ext');
     }
 
     #[Override]
@@ -70,8 +81,11 @@ final class WorkerBenchCommand extends WorkspaceCommand
             'PHIL_DEV_WORKER_SCRIPT' => '/app/'.$relative,
             'PHIL_DEV_WORKER_DIRECTORY' => '/app/'.\dirname($relative),
         ];
-        $compose = ['docker', 'compose', '--file', TestServices::composeFile(), '--project-name', TestServices::PROJECT, '--profile', 'bench'];
-        $up = $this->runner->run([...$compose, 'up', '--detach', '--wait', '--force-recreate', 'frankenphp'], $root->dir, $environment);
+        $extension = true === $input->getOption('ext');
+        $service = $extension ? 'frankenphp-ext' : 'frankenphp';
+        $build = $extension && true === $input->getOption('build') ? ['--build'] : [];
+        $compose = ['docker', 'compose', '--file', TestServices::composeFile(), '--project-name', TestServices::PROJECT, '--profile', $extension ? 'bench-ext' : 'bench'];
+        $up = $this->runner->run([...$compose, 'up', '--detach', '--wait', '--force-recreate', ...$build, $service], $root->dir, $environment);
 
         if (!$up->successful()) {
             return $up->exitCode;
@@ -82,7 +96,7 @@ final class WorkerBenchCommand extends WorkspaceCommand
             $url = \sprintf('http://127.0.0.1:%s/%s', \is_string($port) && '' !== $port ? $port : '8090', basename($relative));
             $result = new WorkerBench()->run($url, $requests, $warmup);
         } finally {
-            $this->runner->run([...$compose, 'stop', 'frankenphp'], $root->dir, $environment);
+            $this->runner->run([...$compose, 'stop', $service], $root->dir, $environment);
         }
 
         $output->writeln(\sprintf('%s: %d requests, %.1f per second; p50 %.2f ms, p95 %.2f ms, p99 %.2f ms; %d failed.', $url, $result->requests(), $result->perSecond(), $result->percentile(50), $result->percentile(95), $result->percentile(99), $result->failures));

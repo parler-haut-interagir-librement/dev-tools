@@ -52,7 +52,8 @@ vendor/bin/phil-dev check-packages --symfony=next
 ```
 
 `phil-dev php` builds `resources/php/Dockerfile` from the image of the version — with intl, sodium, openssl, zip,
-pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring and gd with JPEG, PNG, WebP and AVIF, the `sqlite3` command, Composer, and
+pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring and gd with JPEG, PNG, WebP and AVIF, the `sqlite3` command, the
+`lou_translate` command and the tables of liblouis for the integration tests of a braille translator, Composer, and
 pcov, or Xdebug in coverage mode where pcov does not build yet — and runs the command with the project mounted at
 `/app`. Every deprecation is reported and fails the tests, which run with `failOnDeprecation`. The project's `vendor/`
 is shared with the host.
