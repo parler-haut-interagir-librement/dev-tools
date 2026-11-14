@@ -24,6 +24,8 @@
 | `Docs\Mirrors` | Where the French mirror of a document lives, and which documents have one. |
 | `Docs\SourceStamp` | The SHA-256 of the English source on the first line of a mirror. |
 | `Docs\MarkdownStructure` | The headings by level and the fenced code blocks of a Markdown text. |
+| `Docs\FrenchDictionary` | The French dictionary of cspell: its pinned version, where it is installed, the npm command that installs it. |
+| `Workspace\TestKernels` | The kernels of a package's functional test applications, found by reading the files. |
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, with a timeout when one is given. |
@@ -44,7 +46,10 @@
 | `config/matrix.json` | The version matrix. |
 | `resources/init/`, `resources/skeleton/` | The templates of `init` and `new`, the French mirror of the documentation included. |
 | `doc/fr-glossary.md` | The words and the tone of the French documentation. |
-| `resources/compose.yaml` | The real servers, and FrankenPHP for the worker-mode benchmark. |
+| `resources/compose.yaml` | The real servers, and FrankenPHP for the worker-mode benchmark, on the plain image and on `bench-ext`. |
+| `resources/bench-ext/Dockerfile` | The image of the benchmarks with PHP extensions, built on demand. |
+| `resources/lint/app.php` | Lints one functional test application through its own console, for `lint-apps`. |
+| `package.json` | The npm development dependencies: the French dictionary of cspell. |
 | `resources/biome/download.php` | Downloads Biome through `kocal/biome-js-bundle`, without a Symfony kernel. |
 | `resources/docs/words.txt`, `resources/docs/vale/Phil/` | The shared words of cspell, and the Vale style. |
 | `resources/php/Dockerfile` | The image of a PHP of the matrix. |

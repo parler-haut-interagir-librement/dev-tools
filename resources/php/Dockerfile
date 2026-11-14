@@ -6,11 +6,11 @@ FROM ${PHP_IMAGE}
 
 # The extensions the packages need, besides those the image builds in (openssl, sodium, pdo_sqlite): GD reads and
 # writes JPEG, PNG, WebP and AVIF. git and unzip for Composer; the sqlite3 command for the tests that inspect a
-# database file.
+# database file; lou_translate and the tables of liblouis for the integration tests of a braille translator.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends git unzip sqlite3 libicu-dev libonig-dev libzip-dev libpq-dev \
-        libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev; \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev liblouis-bin liblouis-data; \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif; \
     docker-php-ext-install -j"$(nproc)" intl mbstring zip pdo_mysql pdo_pgsql gd; \
     rm -rf /var/lib/apt/lists/*

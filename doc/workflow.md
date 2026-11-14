@@ -14,8 +14,8 @@ prose of the documentation and the hotspots of the code.
 
 `init` writes `captainhook.json`. Before each commit, CaptainHook, in its own `vendor-bin/captainhook/`, runs the fast
 gates on the staged files only, each when a file of its type is staged: PHP-CS-Fixer and PHPStan on the PHP files,
-Twig-CS-Fixer on the templates, `phil-dev normalize` for a `composer.json`, `phil-dev check-docs` and `phil-dev check-translations` for a Markdown
-file.
+Twig-CS-Fixer on the templates, `phil-dev normalize` for a `composer.json`, `phil-dev check-docs` and
+`phil-dev check-translations` for a Markdown file.
 The slow gates — Deptrac, the tests, Infection — stay in `composer gates`. `composer hooks` installs the hooks once
 per clone; a worktree shares them.
 
@@ -58,8 +58,14 @@ corpora do: cspell then reads the French dictionary as well, and Vale, whose rul
 out. The root's `docs.language` is the default of its members. Vale reads no French mirror either.
 
 These linters are not PHP tools. Each is used when it is on the `PATH`; cspell and markdownlint-cli2 also through
-`npx` when Node.js is installed. A linter missing is skipped with a note. The French dictionary is
-`@cspell/dict-fr-fr`, installed globally next to cspell. `phil-dev check-docs` stays the gate.
+`npx` when Node.js is installed. A linter missing is skipped with a note. `phil-dev check-docs` stays the gate.
+
+The French dictionary of cspell is `@cspell/dict-fr-fr`, a development dependency of this package in its
+`package.json`, at an exact version. The first time a French page is read, `lint-docs` looks for it in the
+`node_modules/` of the root — this package's own while it is developed, after `npm install` — then in
+`var/phil-dev/node/`. When neither has it and npm is on the `PATH`, it installs the pinned version there, without
+scripts, lock file or audit, and the configurations of cspell import it by its absolute path. Without npm, cspell looks
+for the package itself, as for a global install, and the command says so.
 
 ## The hotspots
 

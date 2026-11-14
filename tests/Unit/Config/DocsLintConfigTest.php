@@ -89,6 +89,10 @@ final class DocsLintConfigTest extends TestCase
         self::assertSame('fr,en,en-GB', $cspell['language']);
         self::assertSame(['@cspell/dict-fr-fr/cspell-ext.json'], $cspell['import']);
         self::assertSame(['PHIL', 'grimoire'], $cspell['words']);
+        $installed = json_decode($config->cspell($slug, dictionary: '/root/node_modules/@cspell/dict-fr-fr/cspell-ext.json'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertIsArray($installed);
+        self::assertSame(['/root/node_modules/@cspell/dict-fr-fr/cspell-ext.json'], $installed['import']);
+        self::assertStringNotContainsString('"import"', $config->cspell($workspace->targets(['tilttek-dice'])[0], dictionary: '/root/x.json'));
         self::assertSame('en', $config->language($workspace->targets(['tilttek-dice'])[0]));
 
         $this->put($root.'/phil-dev.php', "<?php return ['docs' => ['language' => 'fr']];");

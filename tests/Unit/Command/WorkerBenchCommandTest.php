@@ -83,6 +83,59 @@ final class WorkerBenchCommandTest extends CommandTestCase
     }
 
     /**
+     * @return iterable<string, array{array<string, bool>, string}>
+     */
+    public static function extensionImages(): iterable
+    {
+        yield 'the image as it is' => [['--ext' => true], 'up --detach --wait --force-recreate frankenphp-ext'];
+        yield 'the image built again' => [['--ext' => true, '--build' => true], 'up --detach --wait --force-recreate --build frankenphp-ext'];
+    }
+
+    /**
+     * @param array<string, bool> $options
+     */
+    #[DataProvider('extensionImages')]
+    public function testTheBenchExtImageServesItWithExt(array $options, string $up): void
+    {
+        $root = $this->package(['bench' => ['worker' => ['script' => 'worker.php', 'requests' => 1, 'warmup' => 0]]]);
+        $this->put($root.'/worker.php', '<?php echo "ok";');
+        $port = $this->serve($root);
+        $tester = $this->tester($root, 'bench:worker');
+
+        $status = $this->withEnvironment('PHIL_DEV_FRANKENPHP_PORT', (string) $port, static fn (): int => $tester->execute($options));
+
+        self::assertSame(0, $status, $tester->getDisplay());
+        $compose = 'docker compose --file '.TestServices::composeFile().' --project-name phil-dev-tools --profile bench-ext ';
+        self::assertSame([$compose.$up, $compose.'stop frankenphp-ext'], $this->runner->commands());
+    }
+
+    public function testBuildWithoutExtLeavesThePlainImage(): void
+    {
+        $root = $this->package(['bench' => ['worker' => ['script' => 'worker.php', 'requests' => 1, 'warmup' => 0]]]);
+        $this->put($root.'/worker.php', '<?php echo "ok";');
+        $port = $this->serve($root);
+        $tester = $this->tester($root, 'bench:worker');
+
+        $this->withEnvironment('PHIL_DEV_FRANKENPHP_PORT', (string) $port, static fn (): int => $tester->execute(['--build' => true]));
+
+        self::assertSame('docker compose --file '.TestServices::composeFile().' --project-name phil-dev-tools --profile bench up --detach --wait --force-recreate frankenphp', $this->runner->commands()[0]);
+    }
+
+    public function testTheBenchExtImageIsBuiltOnDemandOnly(): void
+    {
+        $compose = (string) file_get_contents(TestServices::composeFile());
+        $dockerfile = (string) file_get_contents(\dirname(TestServices::composeFile()).'/bench-ext/Dockerfile');
+
+        self::assertStringContainsString("  frankenphp-ext:\n    <<: *frankenphp\n    image: phil-dev/bench-ext:8.5\n    build:\n      context: ./bench-ext\n", $compose);
+        self::assertStringContainsString('PIE_EXTENSIONS: "${PHIL_DEV_BENCH_EXT_PIE:-}"', $compose);
+        self::assertStringContainsString('profiles: ["bench-ext"]', $compose);
+        self::assertStringNotContainsString('pull_policy', $compose);
+        self::assertStringContainsString('ARG FRANKENPHP_IMAGE=dunglas/frankenphp:1-php8.5', $dockerfile);
+        self::assertStringContainsString('docker-php-ext-install -j"$(nproc)" intl gd', $dockerfile);
+        self::assertStringContainsString('ARG PIE_EXTENSIONS=""', $dockerfile);
+    }
+
+    /**
      * @return iterable<string, array{array<string, mixed>}>
      */
     public static function invalidWorkers(): iterable

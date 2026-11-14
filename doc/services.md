@@ -23,7 +23,9 @@ Port 3999 stays free: a Mercure hub used by tests listens there. A variable alre
 
 The file also holds `frankenphp` (`dunglas/frankenphp:1-php8.5`, port 8090, moved by `PHIL_DEV_FRANKENPHP_PORT`), under
 the `bench` profile: `services up` leaves it out, and `phil-dev bench:worker` starts it with the worker script of a
-package; see [Benchmarks](benchmarks.md#worker-mode).
+package; see [Benchmarks](benchmarks.md#worker-mode). `frankenphp-ext`, under the `bench-ext` profile, is the same
+server on the `bench-ext` image, with PHP extensions, built on demand by `phil-dev bench:worker --ext`; see
+[Benchmarks](benchmarks.md#with-a-php-extension).
 
 ## In a test
 

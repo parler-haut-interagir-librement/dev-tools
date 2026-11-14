@@ -1,0 +1,9 @@
+{
+    "name": "@phil/dev-tools",
+    "private": true,
+    "description": "The npm tools phil/dev-tools reads: the French dictionary of cspell for lint-docs.",
+    "license": "MIT",
+    "devDependencies": {
+        "@cspell/dict-fr-fr": "2.3.2"
+    }
+}

@@ -1,0 +1,3 @@
+<?php
+$k = new class("test", true) extends Kernel {};
+$c = Foo::class;
