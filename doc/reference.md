@@ -29,6 +29,8 @@
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, with a timeout when one is given. |
+| `Split\SecurityFiles` | The security files of a split repository, the repository a package is split to, and its OpenSSF Scorecard badge. |
+| `Split\SecurityCommit` | The commit of the security files on top of a split commit, and the tip of the published branch it merges. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |
 | `Bench\WorkerBench`, `WorkerBenchResult` | The requests of the worker-mode benchmark and their percentiles. |
 | `Services\TestServices` | The real servers and their variables. |
@@ -46,6 +48,7 @@
 | `config/matrix.json` | The version matrix. |
 | `resources/init/`, `resources/skeleton/` | The templates of `init` and `new`, the French mirror of the documentation included. |
 | `doc/fr-glossary.md` | The words and the tone of the French documentation. |
+| `resources/security/split/`, `resources/security/monorepo/` | The Dependabot and OpenSSF Scorecard templates of a split repository; the Snyk policy and workflow of a public monorepo. |
 | `resources/compose.yaml` | The real servers, and FrankenPHP for the worker-mode benchmark, on the plain image and on `bench-ext`. |
 | `resources/bench-ext/Dockerfile` | The image of the benchmarks with PHP extensions, built on demand. |
 | `resources/lint/app.php` | Lints one functional test application through its own console, for `lint-apps`. |

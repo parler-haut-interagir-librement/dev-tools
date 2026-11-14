@@ -5,7 +5,7 @@
 
 | File | Library | Bundle |
 |---|---|---|
-| `README.md` | the index of `doc/`, Status, Quick start, Requirements, Contributing, License | the same, with the bundle's configuration |
+| `README.md` | the OpenSSF Scorecard badge of its split repository, the index of `doc/`, Status, Quick start, Requirements, Contributing, License | the same, with the bundle's configuration |
 | `CHANGELOG.md` | one "Added" section | one "Added" section |
 | `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` | the vendor's wording | the vendor's wording |
 | `composer.json` | `library`, `"php": ">=` the floor | `symfony-bundle`, with `symfony/config` and `symfony/dependency-injection` at the floor |

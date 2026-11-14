@@ -8,6 +8,7 @@ use Phil\DevTools\Command\CheckPackagesCommand;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Matrix\Matrix;
 use Phil\DevTools\Process\ProcessResult;
+use Phil\DevTools\Split\SecurityFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -21,6 +22,7 @@ final class CheckPackagesCommandTest extends CommandTestCase
         $this->put($root.'/packages/slug/composer.lock', '{}');
         $this->put($root.'/packages/slug-bundle/composer.json', '{"name": "phil/slug-bundle", "extra": {"branch-alias": {"dev-trunk": "1.0.x-dev"}}}');
         $this->put($root.'/packages/tilttek-dice/composer.json', '{"name": "tilttek/dice", "extra": {"branch-alias": {"0.1": "0.1.x-dev"}}}');
+        $this->put($root.'/packages/slug/SECURITY.md', '# Security Policy');
         $tester = $this->tester($root, 'check-packages');
 
         self::assertSame(0, $tester->execute(['packages' => ['slug']]));
@@ -40,6 +42,25 @@ final class CheckPackagesCommandTest extends CommandTestCase
         self::assertSame(['TMPDIR' => $work.'/var/tmp'], $this->runner->runs[3]['environment']);
         self::assertSame($this->runner->runs[0]['environment'], $this->runner->runs[3]['environment']);
         self::assertDirectoryDoesNotExist($work);
+    }
+
+    public function testWhatASplitRepositoryWouldMissIsAWarning(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug/README.md', "# phil/slug\n");
+        $this->put($root.'/packages/slug-bundle/README.md', "# phil/slug-bundle\n\n".SecurityFiles::badge('o', 'slug-bundle')."\n");
+        $this->put($root.'/packages/slug-bundle/SECURITY.md', '# Security Policy');
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(0, $tester->execute(['packages' => ['slug', 'slug-bundle']]));
+        self::assertSame(
+            "== phil/slug\n"
+            ."   warning: no SECURITY.md (phil-dev split --security-files adds it).\n"
+            ."   warning: README.md shows no security badge (phil-dev split --security-files adds it).\n"
+            ."== phil/slug-bundle\n"
+            ."Every package installs and passes on its own.\n",
+            $tester->getDisplay(),
+        );
     }
 
     public function testAFailureStopsThatPackageAndIsReported(): void

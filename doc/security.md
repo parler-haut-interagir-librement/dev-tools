@@ -1,7 +1,8 @@
 # Security checks
 
-Five checks look for what a vulnerability is made of: a dependency with an advisory, an input that reaches a page or a
-query unescaped, a parser that breaks on an input nobody wrote, and what a package brings with it.
+Six checks look for what a vulnerability is made of: a dependency with an advisory, an input that reaches a page or a
+query unescaped, a parser that breaks on an input nobody wrote, what a package brings with it, and what its split
+repository shows of its supply chain.
 
 | Check | Script | Runs |
 |---|---|---|
@@ -10,6 +11,7 @@ query unescaped, a parser that breaks on an input nobody wrote, and what a packa
 | The taint analysis of Psalm | `composer taint` | on its own, weekly and before each release |
 | Fuzzing the parsers | `composer fuzz` | on its own, weekly and after a change to a parser |
 | The bill of materials | `composer sbom` | on its own, before each release |
+| Dependabot and the OpenSSF Scorecard of each split repository | `composer split` | at each split |
 
 ## The advisories
 
@@ -104,3 +106,10 @@ bill of materials of what installing it brings, without its development dependen
 A package with a `composer.lock` is read from it. A member of a monorepo has none: its `composer.json` is copied under
 `var/phil-dev/sbom/work/`, with a path repository on each glob of the root's packages, and its dependencies are
 resolved without being installed, which needs the network. The file is attached to each release.
+
+## The split repositories
+
+Each split repository gets, in a commit on top of its split, a Dependabot configuration and the OpenSSF Scorecard
+workflow, whose score its README shows as a badge; a member without a `SECURITY.md` is not split. A public monorepo can
+add Snyk Open Source, with a versioned `.snyk` policy whose every ignore is justified, dated and expires. See
+[The monorepo workflow](workflow.md#the-security-files-of-a-split-repository).

@@ -13,6 +13,7 @@ use Phil\DevTools\Exception\InvalidPackageName;
 use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Skeleton\PackageName;
 use Phil\DevTools\Skeleton\SkeletonWriter;
+use Phil\DevTools\Split\SecurityFiles;
 use Phil\DevTools\Tests\Unit\Support\TemporaryDirectory;
 use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\PackageRole;
@@ -116,7 +117,7 @@ final class SkeletonWriterTest extends TestCase
         self::assertContains('src/.gitkeep', $files);
 
         $readme = (string) file_get_contents($dir.'/README.md');
-        self::assertStringStartsWith("# Opening hours\n\n**Opening hours as values.**\n\nphil/opening-hours is a plain PHP library.\n\n**Being written.** The package holds its skeleton; the code described below is not written yet.\n\nOpening hours as values. A week of ranges, its exceptions and the next opening.\n\n## Status\n", $readme);
+        self::assertStringStartsWith("# Opening hours\n\n".SecurityFiles::badge('parler-haut-interagir-librement', 'opening-hours')."\n\n**Opening hours as values.**\n\nphil/opening-hours is a plain PHP library.\n\n**Being written.** The package holds its skeleton; the code described below is not written yet.\n\nOpening hours as values. A week of ranges, its exceptions and the next opening.\n\n## Status\n", $readme);
         self::assertStringContainsString("| The package skeleton | Implemented |\n| The code described above | Being written |\n", $readme);
         $readmeFr = (string) file_get_contents($dir.'/README.fr.md');
         self::assertStringContainsString("**Des heures d'ouverture en valeurs.**", $readmeFr);
@@ -234,7 +235,7 @@ final class SkeletonWriterTest extends TestCase
         new SkeletonWriter('2026')->write(PackageName::parse('phil/x'), $dir, "  First, à/b.  Second! Third?\nFourth.", planned: true);
 
         self::assertStringContainsString('"description": "First, à/b.",', (string) file_get_contents($dir.'/composer.json'));
-        self::assertStringStartsWith("# phil/x\n\n**First, à/b.**\n", (string) file_get_contents($dir.'/README.md'));
+        self::assertStringStartsWith("# phil/x\n\n".SecurityFiles::badge('parler-haut-interagir-librement', 'x')."\n\n**First, à/b.**\n", (string) file_get_contents($dir.'/README.md'));
     }
 
     public function testNoTemplateIsLeftUnfilled(): void

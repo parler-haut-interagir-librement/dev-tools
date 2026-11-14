@@ -84,7 +84,7 @@ final class DocsCheckerTest extends TestCase
         $this->put($dir.'/CHANGELOG.md', file_get_contents($dir.'/CHANGELOG.md')."\n[Old](old.md)\n");
 
         self::assertSame([
-            '[broken-link] README.md:28: mine.md',
+            '[broken-link] README.md:30: mine.md',
             '[broken-link] CHANGELOG.md:16: old.md',
             '[broken-link] doc/topic.md:4: nowhere.md',
             '[broken-link] doc/topic.md:4: gone.md',

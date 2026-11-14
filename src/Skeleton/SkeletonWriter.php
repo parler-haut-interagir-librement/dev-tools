@@ -11,6 +11,7 @@ use Phil\DevTools\Docs\SourceStamp;
 use Phil\DevTools\Exception\InvalidPackageName;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
+use Phil\DevTools\Split\SecurityFiles;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -318,6 +319,7 @@ final readonly class SkeletonWriter
             '{{php}}' => $php,
             '{{symfony}}' => $symfony,
             '{{holder}}' => self::HOLDERS[$name->vendor],
+            '{{badge}}' => SecurityFiles::badge(SecurityFiles::OWNERS[$name->vendor], $name->name),
             '{{contributing_intro}}' => self::INTRODUCTIONS[$name->vendor],
             '{{installation}}' => $installation,
             '{{installation_fr}}' => $installationFr,

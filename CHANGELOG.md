@@ -22,6 +22,18 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   path in the configurations of cspell.
 - `lou_translate` and the tables of liblouis in the image of `phil-dev php`, for the integration tests of a braille
   translator.
+- `phil-dev split` adds, in a commit on top of each split commit, `.github/dependabot.yml` (Composer, npm when the
+  member has a `package.json` at its root or under `assets/`, GitHub Actions; no pull request for version updates) and
+  the OpenSSF Scorecard workflow, its actions pinned by commit, from `resources/security/split/`. The commit is built
+  with git's plumbing, reproducible from the same split, and merges the tip of the published branch when the split
+  does not descend from it, so that each push is a fast-forward. A member without a `SECURITY.md` is not split.
+- `phil-dev split --security-files`: the `SECURITY.md` of the skeleton and the OpenSSF Scorecard badge of the README
+  and its French mirror, added to the members that miss them, and, with the root's `split.snyk`, the Snyk policy
+  `.snyk` and workflow of `resources/security/monorepo/` at the root of a public monorepo; nothing is split or
+  committed.
+- `check-packages` warns about a package without a `SECURITY.md`, or whose README shows no security badge.
+- The skeleton writes the OpenSSF Scorecard badge of the package's split repository after the title of its README and
+  of its French mirror.
 
 ## 0.1.2-alpha - 2026-11-12
 

@@ -8,6 +8,7 @@ use FilesystemIterator;
 use Override;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
+use Phil\DevTools\Split\SecurityFiles;
 use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
 use RecursiveCallbackFilterIterator;
@@ -33,6 +34,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     repository would once the package has moved, each at the branch its branch alias names (dev-main), whatever
     branch the checkout is on. It needs the network for everything else. The tests of each copy run with TMPDIR
     inside the copy.
+
+    It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge:
+    phil-dev split --security-files adds both.
     TXT)]
 final class CheckPackagesCommand extends WorkspaceCommand
 {
@@ -64,6 +68,11 @@ final class CheckPackagesCommand extends WorkspaceCommand
 
         foreach ($workspace->targets($names) as $package) {
             $output->writeln('== '.$package->name);
+
+            foreach ($this->securityWarnings($package) as $warning) {
+                $output->writeln('   warning: '.$warning);
+            }
+
             $work = tempnam(sys_get_temp_dir(), 'phil-dev-');
 
             if (false === $work) {
@@ -175,6 +184,28 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $composer['minimum-stability'] = 'dev';
         $composer['prefer-stable'] = true;
         file_put_contents($file, json_encode($composer, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * What the package misses of what a split repository shows of its security: its policy, and the badge of its README.
+     *
+     * @return list<string>
+     */
+    private function securityWarnings(Package $package): array
+    {
+        $warnings = [];
+
+        if (!is_file($package->path('SECURITY.md'))) {
+            $warnings[] = 'no SECURITY.md (phil-dev split --security-files adds it).';
+        }
+
+        $readme = $package->path('README.md');
+
+        if (is_file($readme) && !SecurityFiles::hasBadge(Files::read($readme))) {
+            $warnings[] = 'README.md shows no security badge (phil-dev split --security-files adds it).';
+        }
+
+        return $warnings;
     }
 
     /**

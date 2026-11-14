@@ -1,5 +1,7 @@
 # tilttek/example-bundle
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TiltTek/example-bundle/badge)](https://scorecard.dev/viewer/?uri=github.com/TiltTek/example-bundle)
+
 **An example bundle.**
 
 tilttek/example-bundle integrates `tilttek/example` with Symfony. The library alone suits an application without Symfony.
