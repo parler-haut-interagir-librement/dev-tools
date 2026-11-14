@@ -41,7 +41,7 @@ final class TestCommand extends WorkspaceCommand
         $paratest = $root->path('vendor/bin/paratest');
         $parallel = is_file($paratest) && $root->manifest->flag('phpunit', 'parallel', true);
         $command = [$parallel ? $paratest : $root->path('vendor/bin/phpunit')];
-        $configuration = new PhpUnitConfig($workspace)->withoutSkipped();
+        $configuration = new PhpUnitConfig($workspace)->generated();
 
         if (null !== $configuration) {
             $command[] = '--configuration='.$this->generate('phpunit/phpunit.xml', $configuration);

@@ -85,6 +85,7 @@ tmpfs
 Twig
 TwigStan
 twigstan
+Valkey
 vendor-bin
 worktree
 worktrees

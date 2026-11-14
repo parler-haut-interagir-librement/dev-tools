@@ -129,10 +129,36 @@ final class CheckPackagesCommandTest extends CommandTestCase
         $this->tester($this->fixture('monorepo'), 'check-packages')->execute(['--symfony' => '1.0']);
     }
 
+    public function testTheRootsOtherPathRepositoriesAreGivenToEachCopy(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/composer.json', json_encode(['name' => 'phil/example-monorepo', 'repositories' => [
+            'members' => ['type' => 'path', 'url' => './packages/*', 'options' => ['symlink' => true]],
+            ['type' => 'path', 'url' => '../public/packages/*', 'options' => ['symlink' => true]],
+            ['type' => 'path', 'url' => '/opt/dev-tools'],
+            ['type' => 'path', 'url' => '../public/packages/*'],
+            ['type' => 'vcs', 'url' => 'https://example.com/repository.git'],
+            ['type' => 'path', 'url' => ''],
+            ['type' => 'path'],
+            'not a repository',
+        ]], \JSON_THROW_ON_ERROR));
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(0, $tester->execute(['packages' => ['slug']]));
+
+        $commands = $this->runner->commands();
+        self::assertStringStartsWith('composer config repositories.siblings0 ', $commands[0]);
+        self::assertSame([
+            'composer config repositories.neighbours0 {"type":"path","url":"'.$root.'/../public/packages/*","options":{"symlink":false}}',
+            'composer config repositories.neighbours1 {"type":"path","url":"/opt/dev-tools","options":{"symlink":false}}',
+            'composer install --no-interaction --no-progress --quiet',
+        ], \array_slice($commands, 1, 3));
+    }
+
     public function testAPackageOnItsOwnNeedsNoSiblings(): void
     {
         $root = $this->temporaryDirectory();
-        $this->put($root.'/composer.json', '{"name": "phil/alone"}');
+        $this->put($root.'/composer.json', '{"name": "phil/alone", "repositories": [{"type": "path", "url": "../beside"}]}');
         $this->put($root.'/src/A.php', '<?php');
 
         self::assertSame(0, $this->tester($root, 'check-packages')->execute([]));

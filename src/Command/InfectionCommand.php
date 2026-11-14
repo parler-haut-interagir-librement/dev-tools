@@ -20,8 +20,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     longest infection.timeout of the packages analysed, else Infection's 10 seconds.
 
     Full: every source directory, once a week and before each release.
-    --changed: the PHP files added or modified since the base ref, committed or not, once per batch before its
-    commit; nothing to mutate passes.
+    --changed: the PHP files added, modified or renamed since the base ref, committed or not, and the untracked
+    ones git does not ignore, once per batch before its commit; nothing to mutate passes. Without a ref, the base is
+    PHIL_DEV_BASE_REF, else whichever of origin/main and main the branch left last, else main.
 
     While the planned packages are skipped (--skip-planned, PHIL_DEV_SKIP_PLANNED=1), their code is not mutated
     and their tests do not run: Infection reads var/phil-dev/phpunit/phpunit.xml, the root's configuration
@@ -35,7 +36,7 @@ final class InfectionCommand extends WorkspaceCommand
     protected function configure(): void
     {
         $this
-            ->addOption('changed', null, InputOption::VALUE_OPTIONAL, 'Mutate only the files added or modified since this ref: PHIL_DEV_BASE_REF, else origin/main, else main', false)
+            ->addOption('changed', null, InputOption::VALUE_OPTIONAL, 'Mutate only the files added, modified or renamed since this ref: PHIL_DEV_BASE_REF, else origin/main or main, whichever the branch left last', false)
             ->addArgument('arguments', InputArgument::IS_ARRAY, 'More arguments for Infection, after --');
     }
 
@@ -43,7 +44,7 @@ final class InfectionCommand extends WorkspaceCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $workspace = $this->workspace();
-        $phpUnit = new PhpUnitConfig($workspace)->withoutSkipped();
+        $phpUnit = new PhpUnitConfig($workspace)->generated();
         $phpUnitDirectory = null === $phpUnit ? null : \dirname($this->generate('phpunit/phpunit.xml', $phpUnit));
         $config = $this->generate('infection.json', new InfectionConfig($workspace, $phpUnitDirectory)->json());
         $command = [
@@ -57,8 +58,8 @@ final class InfectionCommand extends WorkspaceCommand
         $changed = $input->getOption('changed');
 
         if (false !== $changed) {
-            $base = \is_string($changed) && '' !== $changed ? $changed : $this->defaultBase();
-            $files = $this->changedFiles($base);
+            [$base, $since] = \is_string($changed) && '' !== $changed ? [$changed, $this->mergeBase($changed)] : $this->defaultBase();
+            $files = $this->changedFiles($since);
 
             if ([] === $files) {
                 $output->writeln(\sprintf('No source file changed since %s: nothing to mutate.', $base));
@@ -77,13 +78,14 @@ final class InfectionCommand extends WorkspaceCommand
     }
 
     /**
-     * The source files added or modified since the point where the branch left `$base`, committed or not, relative to
-     * the root. Infection's own `--git-diff-filter` is not used: it resolves the files against the directory of the
+     * The source files added, modified or renamed since `$since`, committed or not, and the untracked ones that git
+     * does not ignore, relative to the root and sorted: the same files whatever was staged, committed or pushed in the
+     * meantime. Infection's own `--git-diff-filter` is not used: it resolves the files against the directory of the
      * configuration, which is generated under `var/phil-dev/`.
      *
      * @return list<string>
      */
-    private function changedFiles(string $base): array
+    private function changedFiles(string $since): array
     {
         $root = $this->workspace()->root->dir;
         $directories = [];
@@ -92,30 +94,62 @@ final class InfectionCommand extends WorkspaceCommand
             array_push($directories, ...$package->sourceDirectories());
         }
 
-        $mergeBase = trim($this->runner->capture(['git', 'merge-base', $base, 'HEAD'], $root)->output);
-        $diff = $this->runner->capture(['git', 'diff', '--name-only', '--diff-filter=AM', '' === $mergeBase ? $base : $mergeBase, '--', ...$directories], $root);
+        $diff = $this->runner->capture(['git', 'diff', '--name-only', '--diff-filter=AMR', $since, '--', ...$directories], $root);
+        $untracked = $this->runner->capture(['git', 'ls-files', '--others', '--exclude-standard', '--', ...$directories], $root);
 
         $files = [];
 
-        foreach (explode("\n", $diff->output) as $file) {
+        foreach (explode("\n", $diff->output."\n".$untracked->output) as $file) {
             if (str_ends_with($file, '.php')) {
-                $files[] = $file;
+                $files[$file] = $file;
             }
         }
+
+        sort($files);
 
         return $files;
     }
 
-    private function defaultBase(): string
+    /**
+     * The commit where the branch left `$ref`, or `$ref` itself when git finds none.
+     */
+    private function mergeBase(string $ref): string
+    {
+        $mergeBase = trim($this->runner->capture(['git', 'merge-base', $ref, 'HEAD'], $this->workspace()->root->dir)->output);
+
+        return '' === $mergeBase ? $ref : $mergeBase;
+    }
+
+    /**
+     * The base ref and the commit to compare with: PHIL_DEV_BASE_REF; else, of `origin/main` and `main`, the one the
+     * branch left last, so that the merges of the local `main` not pushed yet do not count as changes of the branch;
+     * else `main`.
+     *
+     * @return array{string, string}
+     */
+    private function defaultBase(): array
     {
         $variable = getenv(self::BASE_VARIABLE);
 
         if (\is_string($variable) && '' !== $variable) {
-            return $variable;
+            return [$variable, $this->mergeBase($variable)];
         }
 
-        $remote = $this->runner->capture(['git', 'rev-parse', '--verify', '--quiet', 'origin/main'], $this->workspace()->root->dir);
+        $root = $this->workspace()->root->dir;
+        $chosen = null;
 
-        return $remote->successful() ? 'origin/main' : 'main';
+        foreach (['origin/main', 'main'] as $ref) {
+            if (!$this->runner->capture(['git', 'rev-parse', '--verify', '--quiet', $ref], $root)->successful()) {
+                continue;
+            }
+
+            $candidate = [$ref, $this->mergeBase($ref)];
+
+            if (null === $chosen || $this->runner->capture(['git', 'merge-base', '--is-ancestor', $chosen[1], $candidate[1]], $root)->successful()) {
+                $chosen = $candidate;
+            }
+        }
+
+        return $chosen ?? ['main', 'main'];
     }
 }

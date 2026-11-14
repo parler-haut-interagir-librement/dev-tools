@@ -139,4 +139,17 @@ final class TestCommandTest extends CommandTestCase
         self::assertSame([$root.'/vendor/bin/phpunit'], $this->runner->commands());
         self::assertFileDoesNotExist($root.'/var/phil-dev/phpunit/phpunit.xml');
     }
+
+    public function testTheGlobsOfTheSuitesAreListedDirectoryByDirectory(): void
+    {
+        $root = $this->package(['packages' => ['packages/*']]);
+        $this->put($root.'/phpunit.dist.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>packages/*/tests</directory></testsuite></testsuites></phpunit>');
+        $this->put($root.'/packages/a/composer.json', '{"name": "phil/a"}');
+        $this->put($root.'/packages/a/tests/ATest.php', '<?php');
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, fn (): int => $this->tester($root, 'test')->execute([]));
+
+        self::assertSame([$root.'/vendor/bin/phpunit --configuration='.$root.'/var/phil-dev/phpunit/phpunit.xml'], $this->runner->commands());
+        self::assertStringContainsString('<directory>'.$root.'/packages/a/tests</directory>', (string) file_get_contents($root.'/var/phil-dev/phpunit/phpunit.xml'));
+    }
 }

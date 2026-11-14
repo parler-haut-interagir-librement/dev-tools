@@ -11,11 +11,14 @@ use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
 
 /**
- * The root's PHPUnit configuration without the planned packages a workspace skips, for `phil-dev test` and Infection.
+ * The root's PHPUnit configuration with explicit directories and without the planned packages a workspace skips, for
+ * `phil-dev test` and Infection.
  *
- * The suites of a monorepo find every package by their globs, so leaving packages out takes a configuration of its
- * own: a copy of the root's, generated under `var/phil-dev/`, each relative path made absolute, each skipped package
- * excluded from every suite and from the source.
+ * The suites of a monorepo find every package by their globs. The generated configuration is a copy of the root's,
+ * under `var/phil-dev/`, each relative path made absolute and each glob replaced by the directories it matches when
+ * the configuration is generated, sorted: PHPUnit and Infection read a fixed list of directories, whatever the
+ * checkout's path, and a package added later is found by the next generation. A skipped package is left out of the
+ * directories and excluded from every suite and from the source. A `**` pattern is left for PHPUnit to expand.
  */
 final readonly class PhpUnitConfig
 {
@@ -47,14 +50,15 @@ final readonly class PhpUnitConfig
     }
 
     /**
-     * The configuration without the skipped packages; null when no package is skipped or the root has no configuration.
+     * The configuration with explicit directories and without the skipped packages; null when no package is skipped
+     * and no path holds a glob, or when the root has no configuration.
      */
-    public function withoutSkipped(): ?string
+    public function generated(): ?string
     {
         $skipped = $this->workspace->skipped();
         $file = $this->source();
 
-        if ([] === $skipped || null === $file) {
+        if (null === $file) {
             return null;
         }
 
@@ -62,6 +66,12 @@ final readonly class PhpUnitConfig
 
         if (!$document->load($file, \LIBXML_NOERROR | \LIBXML_NOWARNING)) {
             throw new InvalidManifest(\sprintf('%s is not valid XML.', $file));
+        }
+
+        $expanded = $this->expand($document, $skipped);
+
+        if ([] === $skipped && !$expanded) {
+            return null;
         }
 
         $this->absolutize($document);
@@ -84,6 +94,84 @@ final readonly class PhpUnitConfig
         }
 
         return null;
+    }
+
+    /**
+     * Replaces each path element whose text is a glob by one element per path it matches, sorted, outside the skipped
+     * packages; an element that matches nothing is removed.
+     *
+     * @param list<Package> $skipped
+     *
+     * @return bool whether a glob was found
+     */
+    private function expand(DOMDocument $document, array $skipped): bool
+    {
+        $found = false;
+
+        /** @var list<DOMElement> $elements */
+        $elements = iterator_to_array($document->getElementsByTagName('*'), false);
+
+        foreach ($elements as $element) {
+            $path = trim($element->textContent);
+
+            if (!\in_array($element->localName, self::PATH_ELEMENTS, true) || null !== $element->firstElementChild || !$this->isGlob($path)) {
+                continue;
+            }
+
+            $found = true;
+
+            foreach ($this->matches($this->absolute($path), 'directory' === $element->localName, $skipped) as $match) {
+                $copy = match ($element->localName) {
+                    'directory' => $document->createElement('directory'),
+                    'file' => $document->createElement('file'),
+                    default => $document->createElement('exclude'),
+                };
+                $copy->textContent = $match;
+                $element->before($copy);
+
+                foreach ($element->attributes as $attribute) {
+                    $copy->setAttribute($attribute->name, $attribute->value);
+                }
+            }
+
+            $element->remove();
+        }
+
+        return $found;
+    }
+
+    /**
+     * A pattern PHP's glob expands; a `**` pattern is PHPUnit's own and stays as written.
+     */
+    private function isGlob(string $path): bool
+    {
+        return false !== strpbrk($path, '*?[') && !str_contains($path, '**');
+    }
+
+    /**
+     * @param list<Package> $skipped
+     *
+     * @return list<string>
+     */
+    private function matches(string $pattern, bool $directoriesOnly, array $skipped): array
+    {
+        $matches = [];
+
+        $found = glob($pattern, $directoriesOnly ? \GLOB_ONLYDIR : 0);
+
+        foreach (false === $found ? [] : $found as $match) {
+            foreach ($skipped as $package) {
+                if (str_starts_with($match.'/', $package->dir.'/')) {
+                    continue 2;
+                }
+            }
+
+            $matches[] = $match;
+        }
+
+        sort($matches);
+
+        return $matches;
     }
 
     private function absolutize(DOMDocument $document): void
@@ -111,6 +199,10 @@ final readonly class PhpUnitConfig
      */
     private function exclude(DOMDocument $document, array $skipped): void
     {
+        if ([] === $skipped) {
+            return;
+        }
+
         /** @var DOMElement $suite */
         foreach ($document->getElementsByTagName('testsuite') as $suite) {
             foreach ($skipped as $package) {

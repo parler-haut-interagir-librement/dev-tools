@@ -51,6 +51,20 @@ services:
       timeout: 5s
       retries: 60
 
+  # Without persistence: no snapshot, no append-only file. Database 15 is the tests' own by convention.
+  valkey:
+    image: valkey/valkey:9-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${PHIL_DEV_VALKEY_PORT:-16379}:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
   # Only for phil-dev bench:worker, which starts it with the project mounted at /app and the worker script of a
   # package: the profile keeps it out of phil-dev services up.
   frankenphp: &frankenphp

@@ -12,7 +12,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'services', description: 'Starts, stops and points the tests at MySQL 8, PostgreSQL 17 and Gotenberg 9', help: <<<'TXT'
+#[AsCommand(name: 'services', description: 'Starts, stops and points the tests at MySQL 8, PostgreSQL 17, Gotenberg 9 and Valkey 9', help: <<<'TXT'
     up    starts the servers of resources/compose.yaml and waits until they are healthy;
     down  stops them, leaving nothing behind;
     env   prints the variables the integration tests read, as shell exports;
@@ -20,9 +20,10 @@ use Symfony\Component\Console\Output\OutputInterface;
     record runs it with SYMFONY_HTTP_RECORDER=record as well, rewriting the HAR files of the tests marked
           #[UseRecord] from the real services.
 
-    PHIL_TEST_MYSQL_URL, PHIL_TEST_POSTGRESQL_URL and PHIL_GOTENBERG_URL point at the servers on their
-    ports — 13306, 15432 and 3011, moved by PHIL_DEV_MYSQL_PORT, PHIL_DEV_POSTGRESQL_PORT and
-    PHIL_DEV_GOTENBERG_PORT —, unless they are already set.
+    PHIL_TEST_MYSQL_URL, PHIL_TEST_POSTGRESQL_URL, PHIL_GOTENBERG_URL and PHIL_TEST_VALKEY_URL point at the
+    servers on their ports — 13306, 15432, 3011 and 16379, moved by PHIL_DEV_MYSQL_PORT,
+    PHIL_DEV_POSTGRESQL_PORT, PHIL_DEV_GOTENBERG_PORT and PHIL_DEV_VALKEY_PORT —, unless they are already set.
+    PHIL_TEST_VALKEY_URL names database 15.
     TXT)]
 final class ServicesCommand extends WorkspaceCommand
 {
