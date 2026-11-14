@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phil\DevTools\Tests\Unit\Command;
 
 use Closure;
+use Override;
 use Phil\DevTools\Command\SplitCommand;
 use Phil\DevTools\Console\Application;
 use Phil\DevTools\DevTools;
@@ -12,6 +13,7 @@ use Phil\DevTools\Docs\SourceStamp;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Process\ProcessResult;
+use Phil\DevTools\Process\ProcessRunner;
 use Phil\DevTools\Split\SecurityFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -57,6 +59,7 @@ final class SplitCommandTest extends CommandTestCase
             .'Nothing was pushed: run again with --push.'."\n",
             $tester->getDisplay(),
         );
+        self::assertSame(['GIT_INDEX_FILE' => $root.'/var/phil-dev/split/security-phil-slug/index'], $this->runner->runs[1]['environment']);
         self::assertDirectoryDoesNotExist($root.'/var/phil-dev/split/security-phil-slug');
     }
 
@@ -115,6 +118,18 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame(1, $this->withEnvironment('PATH', '', static fn (): int => $tester->execute(['packages' => ['slug']])));
         self::assertStringStartsWith('phil/slug: no SECURITY.md; a split repository needs its security policy (phil-dev split --security-files adds it).'."\n", $tester->getDisplay());
         self::assertSame([], $this->runner->runs);
+    }
+
+    public function testAMemberWithoutASecurityPolicyDoesNotStopTheNext(): void
+    {
+        $root = $this->monorepo(['repository' => 'git@github.com:phil/slug.git']);
+        unlink($root.'/packages/slug/SECURITY.md');
+        $this->put($root.'/packages/tilttek-dice/phil-dev.php', "<?php return ['split' => ['repository' => 'git@github.com:tilttek/dice.git']];");
+        $this->put($root.'/packages/tilttek-dice/SECURITY.md', '# Security Policy');
+        $tester = $this->tester($root, 'split', [new ProcessResult(0, self::SHA), ...$this->security()]);
+
+        self::assertSame(1, $this->withEnvironment('PATH', '', static fn (): int => $tester->execute(['packages' => ['slug', 'tilttek-dice']])));
+        self::assertStringContainsString("\ntilttek/dice: would push ", $tester->getDisplay());
     }
 
     /**
@@ -250,7 +265,7 @@ final class SplitCommandTest extends CommandTestCase
         $root = $this->monorepo(['repository' => $remote]);
         $this->put($root.'/packages/slug/assets/package.json', '{}');
         $this->commitAll($root, 'The monorepo');
-        $split = $this->git($root, 'subtree', 'split', '--prefix=packages/slug', 'HEAD');
+        $split = $this->git($root, 'subtree', 'split', '--quiet', '--prefix=packages/slug', 'HEAD');
 
         [$status, $display] = $this->realSplit($root, ['packages' => ['slug']]);
 
@@ -280,14 +295,14 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame(0, $status, $display);
         $first = $this->git($remote, 'rev-parse', 'refs/heads/main');
         self::assertSame($first, $this->git($remote, 'rev-parse', 'refs/tags/v0.1.0^{commit}'));
-        self::assertSame($this->git($root, 'subtree', 'split', '--prefix=packages/slug', 'HEAD'), $this->git($remote, 'rev-parse', $first.'^1'));
+        self::assertSame($this->git($root, 'subtree', 'split', '--quiet', '--prefix=packages/slug', 'HEAD'), $this->git($remote, 'rev-parse', $first.'^1'));
 
         $this->put($root.'/packages/slug/src/Slug.php', '<?php');
         $this->commitAll($root, 'A class');
         [$status, $display] = $this->realSplit($root, ['packages' => ['slug'], '--push' => true]);
         self::assertSame(0, $status, $display);
         $second = $this->git($remote, 'rev-parse', 'refs/heads/main');
-        $split = $this->git($root, 'subtree', 'split', '--prefix=packages/slug', 'HEAD');
+        $split = $this->git($root, 'subtree', 'split', '--quiet', '--prefix=packages/slug', 'HEAD');
         self::assertSame($split.' '.$first, $this->git($remote, 'log', '-1', '--format=%P', $second));
         self::assertSame('<?php', $this->git($remote, 'show', $second.':src/Slug.php'));
         self::assertSame($first, $this->git($remote, 'rev-parse', 'refs/tags/v0.1.0^{commit}'));
@@ -414,7 +429,21 @@ final class SplitCommandTest extends CommandTestCase
      */
     private function realSplit(string $root, array $input): array
     {
-        $tester = new CommandTester(new Application($root, new LocalProcessRunner())->find('split'));
+        // Infection stops its initial run at the first byte on stderr: what git writes there while pushing is dropped.
+        $runner = new class implements ProcessRunner {
+            #[Override]
+            public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult
+            {
+                return new ProcessResult($this->capture($command, $directory, $environment)->exitCode);
+            }
+
+            #[Override]
+            public function capture(array $command, string $directory, array $environment = []): ProcessResult
+            {
+                return new LocalProcessRunner()->capture(['/bin/sh', '-c', 'exec "$@" 2>/dev/null', 'sh', ...$command], $directory, $environment);
+            }
+        };
+        $tester = new CommandTester(new Application($root, $runner)->find('split'));
         $path = \dirname($this->which('git')).':/usr/bin:/bin';
 
         return $this->isolated(fn (): array => $this->withEnvironment('PATH', $path, static fn (): array => [$tester->execute($input), $tester->getDisplay()]));

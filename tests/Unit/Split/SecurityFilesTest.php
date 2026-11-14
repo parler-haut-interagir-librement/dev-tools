@@ -105,6 +105,7 @@ final class SecurityFilesTest extends TestCase
         self::assertSame(['parler-haut-interagir-librement', 'slug'], SecurityFiles::repositoryOf('phil/slug', null, null));
         self::assertSame(['TiltTek', 'dice'], SecurityFiles::repositoryOf('tilttek/dice', null, null));
         self::assertNull(SecurityFiles::repositoryOf('acme/thing', null, null));
+        self::assertSame(['parler-haut-interagir-librement', 'a/b'], SecurityFiles::repositoryOf('phil/a/b', null, null));
         self::assertNull(SecurityFiles::repositoryOf('phil', null, null));
         self::assertNull(SecurityFiles::repositoryOf('phil/', null, null));
     }

@@ -193,6 +193,13 @@ final class SecurityCommitTest extends TestCase
         self::assertSame(\array_slice([true, false], 0, \count($commands)), array_column($runner->runs, 'capture'));
     }
 
+    public function testABranchNameIsMatchedAsItIsWritten(): void
+    {
+        $runner = new RecordingRunner([new ProcessResult(0, self::TIP."\trefs/heads/a-b\n")]);
+
+        self::assertNull(new SecurityCommit($runner, $this->temporaryDirectory())->remoteTip('git@github.com:o/n.git', 'a.b'));
+    }
+
     public function testAFailedFetch(): void
     {
         $runner = new RecordingRunner([new ProcessResult(0, "x\trefs/heads/feature\n".self::TIP."\trefs/heads/feature/main\n".self::TIP."\trefs/heads/main\n"), new ProcessResult(1)]);
