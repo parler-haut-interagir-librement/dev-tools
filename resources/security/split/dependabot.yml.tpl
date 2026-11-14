@@ -1,0 +1,9 @@
+# The dependencies of this read-only split repository, watched by Dependabot. phil-dev split writes this file on top
+# of each split: change it in phil/dev-tools, not here.
+#
+# Version updates open no pull request (open-pull-requests-limit: 0): a change made here would be overwritten by the
+# next split. The alerts and the security updates still tell when a dependency has an advisory; the fix lands in the
+# monorepo the package is developed in.
+version: 2
+updates:
+{{updates}}

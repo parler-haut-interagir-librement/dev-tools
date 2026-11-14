@@ -29,6 +29,7 @@ several batches can work at once in their own worktrees.
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implemented and tested |
 | `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service, the `bench-ext` image | Implemented and tested |
 | `split`, the CaptainHook configuration, `lint-docs` and its French dictionary, `hotspots` | Implemented and tested |
+| The security files of a split repository (Dependabot, OpenSSF Scorecard), its badge, `split --security-files`, the Snyk policy of a public monorepo | Implemented and tested |
 | `lint-apps`: `lint:container`, `lint:expressions` and `lint:yaml` on each functional test application | Implemented and tested |
 | `check-translations`, `stamp-translations`, the French mirror of `new` | Implemented and tested |
 
@@ -42,7 +43,7 @@ several batches can work at once in their own worktrees.
 | [Quality gates](doc/quality-gates.md) | What each gate checks, which checks are scripts of their own, the PHPStan witnesses, the Infection modes, the French mirror. |
 | [Security checks](doc/security.md) | The advisories, the taint analysis of Psalm, fuzzing, the bill of materials. |
 | [Benchmarks](doc/benchmarks.md) | PHPBench, the regressions against a baseline, the worker mode of FrankenPHP. |
-| [The monorepo workflow](doc/workflow.md) | The hooks, the split of the finished packages, the prose of the documentation, the hotspots. |
+| [The monorepo workflow](doc/workflow.md) | The hooks, the split of the finished packages and their security files, the prose of the documentation, the hotspots. |
 | [Dependencies](doc/dependencies.md) | The default every library may use, and what each package is allowed. |
 | [Real servers](doc/services.md) | MySQL, PostgreSQL and Gotenberg in Docker, and their variables. |
 | [HTTP recordings](doc/http-recordings.md) | Recording and replaying HTTP services with the recorder of Symfony 8.2. |

@@ -1,0 +1,18 @@
+# The Snyk policy of a public monorepo. Snyk reads it when it tests the monorepo, from its GitHub integration or from
+# the workflow of resources/security/monorepo/snyk.yml; neither runs before a Snyk account imports the repository.
+#
+# Every ignore says why the vulnerability does not apply, who decided it and when, and expires: Snyk reports the
+# vulnerability again at that date, so the reason is reviewed rather than forgotten. An ignore without a reason, or
+# without an expiry, is not accepted in review. The form of one ignore:
+#
+# ignore:
+#   SNYK-PHP-VENDORPACKAGE-0000000:
+#     - 'vendor/package':
+#         reason: >-
+#           Only the command line of vendor/package calls the vulnerable function, and no package of this
+#           monorepo runs it. Decided by the maintainer on 2026-11-14.
+#         created: 2026-11-14T00:00:00.000Z
+#         expires: 2027-02-14T00:00:00.000Z
+version: v1.25.0
+ignore: {}
+patch: {}

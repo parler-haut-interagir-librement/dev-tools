@@ -115,6 +115,7 @@ return [
 | | `worker` | The `script`, `requests` and `warmup` of the worker-mode benchmark. |
 | `bc` | `tags` | Root only: the glob of the tags `bc` compares with; every tag by default. |
 | `split` | `repository`, `branch`, `prefix` | Where a finished member is split to, its branch, and its directory in a target monorepo. |
+| | `snyk` | Root only: `true` in a public monorepo makes `split --security-files` add the Snyk policy and workflow; see [The monorepo workflow](workflow.md#snyk-on-a-public-monorepo). |
 | `twig` | `paths`, `loader` | The template directories; a PHP file returning the `Twig\Environment` TwigStan compiles with. |
 | `js` | `paths`, `rules` | The script directories; Biome rules by group. |
 | | `biome` | Root only: the Biome version downloaded. |

@@ -1,5 +1,7 @@
-<!-- phil-dev source-sha256=a4bb37d493d75f2579fad2ae18606bc39c1657d0142158ccd615ac52e603ada9 -->
+<!-- phil-dev source-sha256=bad9402b8c46314c2d4deacd4b389f1feda9f9ca3cf7032356ce065c4556aa1c -->
 # phil/example
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/parler-haut-interagir-librement/example/badge)](https://scorecard.dev/viewer/?uri=github.com/parler-haut-interagir-librement/example)
 
 **An example.**
 

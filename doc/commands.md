@@ -29,7 +29,7 @@
 | `bc [-- arguments]` | Checks the public API against the latest tag. |
 | `bench [--baseline\|--compare] [--threshold=PERCENT] [-- arguments]` | Runs the benchmarks, stores the baseline, or compares with it. |
 | `bench:worker [package] [--ext] [--build]` | Measures a page served by FrankenPHP in worker mode, or on the image with PHP extensions. |
-| `split [packages…] [--push] [--branch=NAME] [--tag=TAG]` | Splits the finished packages to their public repositories. |
+| `split [packages…] [--push] [--branch=NAME] [--tag=TAG] [--security-files]` | Splits the finished packages to their public repositories, with their security files; `--security-files` adds the missing `SECURITY.md` and badge to the members instead. |
 | `lint-docs [packages…]` | Lints the prose of the documentation with cspell, markdownlint and Vale. |
 | `lint-apps [packages…]` | Lints the container, the expressions and the YAML of each functional test application. |
 | `hotspots` | Lists the files that change most and are the most complex. |
@@ -99,6 +99,10 @@ The gates of a monorepo cover the code of its packages, not their `composer.json
 linked —, installs it, runs `composer-dependency-analyser` with the package's own configuration, then PHPUnit with the
 package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is reported and the
 next package is checked. `--keep` keeps the copies.
+
+Before installing a package, it warns, without failing, when the package has no `SECURITY.md` or when its README shows
+no security badge — what its split repository would lack; `phil-dev split --security-files` adds both. See
+[The monorepo workflow](workflow.md#the-badge-and-the-files-of-the-existing-members).
 
 The path repositories install each member at the branch its branch alias names (`dev-main`, aliased `0.1.x-dev`),
 whatever branch the checkout is on: from a worktree on `b/topic`, Composer would otherwise read `dev-b/topic`, which no

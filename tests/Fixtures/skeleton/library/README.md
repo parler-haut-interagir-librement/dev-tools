@@ -1,5 +1,7 @@
 # phil/example
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/parler-haut-interagir-librement/example/badge)](https://scorecard.dev/viewer/?uri=github.com/parler-haut-interagir-librement/example)
+
 **An example.**
 
 phil/example is a plain PHP library.

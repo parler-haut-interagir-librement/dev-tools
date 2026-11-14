@@ -1,5 +1,7 @@
 # {{title}}
 
+{{badge}}
+
 **{{summary_fr}}**
 
 {{intro_fr}}{{planned_fr}}

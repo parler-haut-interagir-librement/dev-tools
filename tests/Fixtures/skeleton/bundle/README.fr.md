@@ -1,5 +1,7 @@
-<!-- phil-dev source-sha256=9187bc5dc3873563c8b2b21e33c913f5d322b062803b1542cb2541bfd93cdb9d -->
+<!-- phil-dev source-sha256=a014c4c794c08ff9d6798810cff1915b24ef6cfc359167e67f242192f2bbf517 -->
 # tilttek/example-bundle
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/TiltTek/example-bundle/badge)](https://scorecard.dev/viewer/?uri=github.com/TiltTek/example-bundle)
 
 **An example bundle.**
 

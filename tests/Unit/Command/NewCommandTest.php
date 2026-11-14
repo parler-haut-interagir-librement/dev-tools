@@ -6,6 +6,7 @@ namespace Phil\DevTools\Tests\Unit\Command;
 
 use DateTimeImmutable;
 use Phil\DevTools\Command\NewCommand;
+use Phil\DevTools\Split\SecurityFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 #[CoversClass(NewCommand::class)]
@@ -72,7 +73,7 @@ final class NewCommandTest extends CommandTestCase
         ]));
 
         $dir = $root.'/packages/tilttek-cards';
-        self::assertStringStartsWith("# Cards\n\n**Decks of cards.**\n", (string) file_get_contents($dir.'/README.md'));
+        self::assertStringStartsWith("# Cards\n\n".SecurityFiles::badge('TiltTek', 'cards')."\n\n**Decks of cards.**\n", (string) file_get_contents($dir.'/README.md'));
         self::assertStringContainsString('Des paquets de cartes. Mêlés, distribués et piochés.', (string) file_get_contents($dir.'/README.fr.md'));
         self::assertStringContainsString("'status' => 'planned'", (string) file_get_contents($dir.'/phil-dev.php'));
         self::assertStringContainsString('"tilttek/dice": "^0.1@dev"', (string) file_get_contents($dir.'/composer.json'));

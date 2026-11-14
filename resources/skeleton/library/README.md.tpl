@@ -1,5 +1,7 @@
 # {{title}}
 
+{{badge}}
+
 **{{summary}}**
 
 {{package}} is a plain PHP library.{{planned}}

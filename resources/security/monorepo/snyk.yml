@@ -1,0 +1,37 @@
+# Snyk Open Source on a public monorepo: its composer.lock and the package.json of its packages, against the policy of
+# its .snyk. The job does nothing until the SNYK_TOKEN secret of the repository is set, from a Snyk account; every
+# action is pinned to the commit of the version its comment names.
+name: Snyk
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Snyk Open Source
+    runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    steps:
+      - name: Without a token
+        if: env.SNYK_TOKEN == ''
+        run: echo "The SNYK_TOKEN secret is not set; Snyk is skipped."
+
+      - name: Checkout
+        if: env.SNYK_TOKEN != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/php@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
+        with:
+          args: --all-projects --exclude=vendor-bin,var,node_modules --policy-path=.snyk --severity-threshold=high

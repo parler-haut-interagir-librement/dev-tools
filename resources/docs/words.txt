@@ -18,6 +18,7 @@ composer-normalize
 composer-unused
 cspell
 CycloneDX
+Dependabot
 Deptrac
 dev-tools
 docblocks
@@ -46,6 +47,7 @@ Multilocataire
 namespace
 namespaces
 npx
+OpenSSF
 Packagist
 paratest
 ParaTest
@@ -67,7 +69,9 @@ Rector
 roave
 SBOM
 SBOMs
+Scorecard
 shipmonk
+Snyk
 splitsh
 splitsh-lite
 Stimulus

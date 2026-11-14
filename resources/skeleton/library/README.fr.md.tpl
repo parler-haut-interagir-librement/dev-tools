@@ -1,5 +1,7 @@
 # {{title}}
 
+{{badge}}
+
 **{{summary_fr}}**
 
 {{package}} est une bibliothèque PHP.{{planned_fr}}
