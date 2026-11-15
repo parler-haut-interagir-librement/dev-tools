@@ -42,6 +42,12 @@ parameters:
         class: 100
         function: 25
 
+    # A worker gets half an hour for its share of the files instead of ten minutes: a large monorepo analysed in the
+    # PHP image of `phil-dev php`, through a bind mount on a busy machine, outlasts the default and stops the run with
+    # an internal error.
+    parallel:
+        processTimeout: 1800.0
+
     # An exception that no longer matches anything is an exception nobody needs; the shared ones below do not count,
     # since a package may have nothing they apply to.
     reportUnmatchedIgnoredErrors: true

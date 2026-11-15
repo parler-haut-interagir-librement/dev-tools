@@ -46,9 +46,20 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   glob: each glob, such as `packages/*/src`, is replaced by the sorted list of directories it matches, so that PHPUnit
   and Infection read explicit directories wherever the checkout lies. `PhpUnitConfig::withoutSkipped()` is
   `PhpUnitConfig::generated()`.
+- The shared PHPStan configuration gives each worker 30 minutes (`parallel.processTimeout: 1800.0`) instead of 10: the
+  whole of a large monorepo analysed on PHP 8.6 by `phil-dev php next`, in Docker through a bind mount, stopped on an
+  internal error when a worker outlasted the default.
 - `infection --changed` counts the renamed files (`--diff-filter=AMR`) and the untracked files git does not ignore,
   sorted, and takes as its base, without a ref or `PHIL_DEV_BASE_REF`, whichever of `origin/main` and `main` the branch
   left last: the merges of a local `main` not pushed yet no longer count as changes of the branch.
+
+### Fixed
+
+- `phil-dev php` gives the container PHPStan temporary directories of its own, under `var/phil-dev/php/<version>/`, in
+  place of the `tmpDir` of the root's `phpstan.neon` (or `phpstan.dist.neon`, `var/phpstan` otherwise) and of
+  `var/phpstan-witnesses`: PHPStan keys its reflection cache by the PHP version analysed for and stores the path of the
+  stubs inside its phar, so a cache the host wrote stopped the analysis in Docker with an internal error on a stub
+  that "is not a file".
 
 ## 0.1.2-alpha - 2026-11-12
 

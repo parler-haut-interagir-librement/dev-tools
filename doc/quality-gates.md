@@ -71,7 +71,10 @@ pins. A manifest's `js.rules` changes a rule by group.
 The maximum level with the strict rules, the uninitialised properties, the benevolent unions and the PHPDoc types
 taken as certain, for every PHP of the matrix: `phpVersion` goes from the floor to the last release of the next
 version. Every exception that no longer matches fails, except the shared ones of the tests. Bleeding edge brings the
-checks of the next major version of PHPStan now.
+checks of the next major version of PHPStan now. Each worker has 30 minutes for its share of the files
+(`parallel.processTimeout`): a large monorepo analysed by `phil-dev php next` in Docker, through a bind mount, outlasts
+PHPStan's 10 minutes on a busy machine. In that container, PHPStan writes its cache to directories of its own: see
+[The version matrix](version-matrix.md#running-on-a-version).
 
 Three extensions add to it:
 

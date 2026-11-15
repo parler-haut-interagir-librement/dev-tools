@@ -54,6 +54,7 @@ ParaTest
 Parler
 pcov
 pgsql
+phar
 phil
 PHIL
 phil-dev

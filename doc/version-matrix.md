@@ -63,6 +63,17 @@ relative URL reaches from `/app` — `../../Phil/phil-prerelease/packages/*` at 
 `..` stops at the container's root — or at its own absolute path: a monorepo that installs the packages of a
 neighbouring one, and `phil/dev-tools` beside it, install and run in the container as on the host.
 
+PHPStan's temporary directories — the `tmpDir` of the root's `phpstan.neon`, or of its `phpstan.dist.neon`, when it is
+a path inside the project, `var/phpstan` otherwise, and `var/phpstan-witnesses` — are replaced in the container by
+directories of its own, `var/phil-dev/php/<version>/var-phpstan` and the like. PHPStan keys its reflection cache by
+the PHP version it analyses for, not by where its phar lies, and stores the absolute path of the stubs inside the phar:
+a cache the host wrote sends the container to a stub under `/Users/…`, which stops the run with the internal error
+`… standard_10.stub" is not a file`. The full analysis on the next PHP runs as:
+
+```bash
+vendor/bin/phil-dev php next -- php vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress
+```
+
 `check-packages --symfony` pins, in each temporary copy, the `symfony/*` requirements written at the floor to the version
 chosen, and installs with release candidates allowed, so that a package is tested on the next Symfony without touching
 its `composer.json`. A monorepo's own tests run with the root's installed Symfony; the standalone check is the run on
