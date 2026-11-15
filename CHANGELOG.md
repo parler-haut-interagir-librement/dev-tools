@@ -39,6 +39,9 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   `redis://127.0.0.1:16379/15`, database 15 for the tests.
 - `check-packages` gives each copy the root's other path repositories too — a neighbouring monorepo whose packages
   the members require —, their URL made absolute and copied.
+- `bench:worker` mounts the root's other path repositories read-only where the links of `vendor/` lead inside the
+  container — `../public/packages/*` at `/public/packages` —, through a second Compose file under
+  `var/phil-dev/bench/`; one whose place would hide a directory of the image is left out with a note.
 
 ### Changed
 

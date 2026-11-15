@@ -147,42 +147,12 @@ final class CheckPackagesCommand extends WorkspaceCommand
             $steps[] = ['composer', 'config', 'repositories.siblings'.$index, $repository];
         }
 
-        foreach ($this->neighbours($workspace) as $index => $url) {
+        foreach ($workspace->neighbourRepositories() as $index => $url) {
             $repository = json_encode(['type' => 'path', 'url' => $url, 'options' => ['symlink' => false]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
             $steps[] = ['composer', 'config', 'repositories.neighbours'.$index, $repository];
         }
 
         return $steps;
-    }
-
-    /**
-     * The URLs, absolute, of the root's path repositories other than the globs of its members: a neighbouring monorepo
-     * whose packages the members require, or a package checked out beside the root.
-     *
-     * @return list<string>
-     */
-    private function neighbours(Workspace $workspace): array
-    {
-        $composer = json_decode(Files::read($workspace->root->path('composer.json')), true);
-        $repositories = \is_array($composer) && \is_array($composer['repositories'] ?? null) ? $composer['repositories'] : [];
-        $globs = array_map($workspace->root->path(...), $workspace->packageGlobs());
-        $urls = [];
-
-        foreach ($repositories as $repository) {
-            $url = \is_array($repository) && 'path' === ($repository['type'] ?? null) ? $repository['url'] ?? null : null;
-
-            if (!\is_string($url) || '' === $url) {
-                continue;
-            }
-
-            $absolute = str_starts_with($url, '/') ? $url : $workspace->root->path(preg_replace('#^(\./)+#', '', $url) ?? $url);
-
-            if (!\in_array($absolute, [...$globs, ...$urls], true)) {
-                $urls[] = $absolute;
-            }
-        }
-
-        return $urls;
     }
 
     /**

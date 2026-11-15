@@ -59,6 +59,14 @@ mounted at `/app`, serves the script from its own directory at `/<file name>`, s
 stops the service. A request that does not answer 200 fails the run. The port is 8090, moved by
 `PHIL_DEV_FRANKENPHP_PORT`; the service has the `bench` profile, so `phil-dev services up` leaves it out.
 
+The root's other path repositories — a neighbouring monorepo whose packages the links of `vendor/` point to — are
+mounted read-only where those links lead inside the container. A link that climbs out of `/app` stops at `/`, so a
+directory is mounted at its path below the nearest directory it shares with the root: with the root at
+`~/code/incubator` and `../public/packages/*` among its repositories, `~/code/public/packages` is
+`/public/packages`. The mounts go to `var/phil-dev/bench/compose.neighbours.yaml`, a second Compose file. A repository
+inside the root needs no mount; one whose place would hide a directory of the image, such as `/usr` or `/app`, is left
+out with a note.
+
 ### With a PHP extension
 
 An extension that may make a package faster is measured before it becomes an adapter: the package keeps its pure PHP
