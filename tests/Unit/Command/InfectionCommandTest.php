@@ -103,6 +103,15 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertStringEndsWith(' --filter=src/New.php', $this->runner->commands()[3]);
     }
 
+    public function testTheChangedAndTheNewFilesAreSplitOnTheirOwnLines(): void
+    {
+        $root = $this->fixture('monorepo');
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, 'src/A.php'), new ProcessResult(0, 'src/B.php')]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame("Mutating the 2 source files changed since main.\n", $tester->getDisplay());
+    }
+
     public function testNothingChanged(): void
     {
         $root = $this->fixture('monorepo');

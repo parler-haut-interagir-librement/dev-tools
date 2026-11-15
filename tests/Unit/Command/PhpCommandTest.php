@@ -134,6 +134,7 @@ final class PhpCommandTest extends CommandTestCase
         yield 'outside' => ['phpstan.neon', "parameters:\n    tmpDir: var/../../stan\n", 'var/phpstan'];
         yield 'the project itself' => ['phpstan.neon', "parameters:\n    tmpDir: .\n", 'var/phpstan'];
         yield 'none' => ['phpstan.neon', "parameters:\n    level: max\n", 'var/phpstan'];
+        yield 'after a key on its line' => ['phpstan.neon', "parameters: tmpDir: build\n", 'var/phpstan'];
         yield 'at the start of a line' => ['phpstan.neon', "tmpDir: build\n", 'var/phpstan'];
         yield 'an expression' => ['phpstan.neon', "parameters:\n    tmpDir: %rootDir%/stan\n", 'var/phpstan'];
     }

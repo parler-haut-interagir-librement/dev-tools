@@ -104,7 +104,7 @@ final class PhpCommand extends WorkspaceCommand
             }
 
             if (1 === preg_match('~^\s+tmpDir:\s*[\'"]?([\w./-]+?)[\'"]?\s*$~m', Files::read($root.'/'.$file), $match) && !str_starts_with($match[1], '/')) {
-                $segments = array_values(array_filter(explode('/', $match[1]), static fn (string $segment): bool => '' !== $segment && '.' !== $segment));
+                $segments = array_filter(explode('/', $match[1]), static fn (string $segment): bool => '' !== $segment && '.' !== $segment);
 
                 if ([] !== $segments && !\in_array('..', $segments, true)) {
                     return implode('/', $segments);

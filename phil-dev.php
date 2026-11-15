@@ -43,7 +43,9 @@ return [
             'CastInt' => ['ignore' => [Version::class.'::id']],
             // The root a command runs on exists, so realpath() never returns false for it; a document DOM has loaded
             // always saves.
-            'CastString' => ['ignore' => [WorkspaceCommand::class.'::testEnvironment', PhpUnitConfig::class.'::withoutSkipped']],
+            'CastString' => ['ignore' => [WorkspaceCommand::class.'::testEnvironment', PhpUnitConfig::class.'::generated']],
+            // The elements of a document are read into a list whose keys are 0, 1, 2… either way: preserving them changes nothing.
+            'FalseValue' => ['ignore' => [PhpUnitConfig::class.'::expand']],
             // A timeout a nanosecond longer or shorter, reached at its instant or the one after, cannot be told apart.
             'IncrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
             'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],

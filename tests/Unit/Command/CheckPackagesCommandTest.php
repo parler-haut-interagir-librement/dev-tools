@@ -133,15 +133,17 @@ final class CheckPackagesCommandTest extends CommandTestCase
     {
         $root = $this->fixture('monorepo');
         $this->put($root.'/composer.json', json_encode(['name' => 'phil/example-monorepo', 'repositories' => [
+            ['type' => 'path', 'url' => ''],
+            ['type' => 'path'],
+            'not a repository',
             'members' => ['type' => 'path', 'url' => './packages/*', 'options' => ['symlink' => true]],
+            ['type' => 'path', 'url' => './extra/*'],
             ['type' => 'path', 'url' => '../public/packages/*', 'options' => ['symlink' => true]],
             ['type' => 'path', 'url' => '/opt/dev-tools'],
             ['type' => 'path', 'url' => '../public/packages/*'],
             ['type' => 'vcs', 'url' => 'https://example.com/repository.git'],
-            ['type' => 'path', 'url' => ''],
-            ['type' => 'path'],
-            'not a repository',
         ]], \JSON_THROW_ON_ERROR));
+        $this->put($root.'/phil-dev.php', "<?php return ['packages' => ['packages/*', 'extra/*']];");
         $tester = $this->tester($root, 'check-packages');
 
         self::assertSame(0, $tester->execute(['packages' => ['slug']]));
@@ -152,7 +154,7 @@ final class CheckPackagesCommandTest extends CommandTestCase
             'composer config repositories.neighbours0 {"type":"path","url":"'.$root.'/../public/packages/*","options":{"symlink":false}}',
             'composer config repositories.neighbours1 {"type":"path","url":"/opt/dev-tools","options":{"symlink":false}}',
             'composer install --no-interaction --no-progress --quiet',
-        ], \array_slice($commands, 1, 3));
+        ], \array_slice($commands, 2, 3));
     }
 
     public function testAPackageOnItsOwnNeedsNoSiblings(): void

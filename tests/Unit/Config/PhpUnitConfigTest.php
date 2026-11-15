@@ -70,6 +70,43 @@ final class PhpUnitConfigTest extends TestCase
             XML, new PhpUnitConfig(Workspace::load($root, null, false))->generated());
     }
 
+    public function testAnExclusionOfTheSourceIsNotAddedWhenNoPackageIsSkipped(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>packages/*/tests/Unit</directory></testsuite></testsuites><source><include><directory>src</directory></include></source></phpunit>');
+
+        self::assertSame(<<<XML
+            <?xml version="1.0"?>
+            <phpunit><testsuites><testsuite name="Unit"><directory>{$root}/packages/active/tests/Unit</directory><directory>{$root}/packages/later/tests/Unit</directory><directory>{$root}/packages/someday/tests/Unit</directory></testsuite></testsuites><source><include><directory>{$root}/src</directory></include></source></phpunit>
+
+            XML, new PhpUnitConfig(Workspace::load($root, null, false))->generated());
+    }
+
+    public function testOnlyThePathElementsAreExpandedAndTrimmed(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.xml', '<phpunit><note>packages/*/tests</note><testsuites><testsuite name="Unit"><directory> tests </directory></testsuite></testsuites></phpunit>');
+
+        self::assertSame(<<<XML
+            <?xml version="1.0"?>
+            <phpunit><note>packages/*/tests</note><testsuites><testsuite name="Unit"><directory>{$root}/tests</directory><exclude>{$root}/packages/later</exclude><exclude>{$root}/packages/someday</exclude></testsuite></testsuites></phpunit>
+
+            XML, new PhpUnitConfig(Workspace::load($root, null, true))->generated());
+    }
+
+    public function testAMatchIsSkippedOnlyInsideTheDirectoryOfASkippedPackage(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/packages/laterally/composer.json', '{"name": "phil/laterally"}');
+        $this->put($root.'/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>packages/*</directory></testsuite></testsuites></phpunit>');
+
+        $xml = (string) new PhpUnitConfig(Workspace::load($root, null, true))->generated();
+
+        self::assertStringContainsString('<directory>'.$root.'/packages/active</directory><directory>'.$root.'/packages/laterally</directory><exclude>', $xml);
+        self::assertStringNotContainsString('<directory>'.$root.'/packages/later</directory>', $xml);
+        self::assertStringNotContainsString('<directory>'.$root.'/packages/someday</directory>', $xml);
+    }
+
     public function testNothingWithoutAConfiguration(): void
     {
         $root = $this->monorepo();

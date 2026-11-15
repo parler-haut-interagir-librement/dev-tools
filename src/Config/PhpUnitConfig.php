@@ -97,7 +97,7 @@ final readonly class PhpUnitConfig
     }
 
     /**
-     * Replaces each path element whose text is a glob by one element per path it matches, sorted, outside the skipped
+     * Replaces each path element whose text is a glob by one element per path it matches, in the order glob() sorts them, outside the skipped
      * packages; an element that matches nothing is removed.
      *
      * @param list<Package> $skipped
@@ -168,8 +168,6 @@ final readonly class PhpUnitConfig
 
             $matches[] = $match;
         }
-
-        sort($matches);
 
         return $matches;
     }
