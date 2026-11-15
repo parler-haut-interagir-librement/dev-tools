@@ -14,6 +14,7 @@ use Phil\DevTools\DevTools;
  * | `PHIL_TEST_MYSQL_URL` | MySQL 8 | `mysql://phil:phil@127.0.0.1:13306/phil_test?serverVersion=8.4` |
  * | `PHIL_TEST_POSTGRESQL_URL` | PostgreSQL 17 | `postgresql://phil:phil@127.0.0.1:15432/phil_test?serverVersion=17` |
  * | `PHIL_GOTENBERG_URL` | Gotenberg 9 | `http://127.0.0.1:3011` |
+ * | `PHIL_TEST_VALKEY_URL` | Valkey 9 | `redis://127.0.0.1:16379/15` |
  */
 final class TestServices
 {
@@ -24,6 +25,8 @@ final class TestServices
     public const string POSTGRESQL = 'PHIL_TEST_POSTGRESQL_URL';
 
     public const string GOTENBERG = 'PHIL_GOTENBERG_URL';
+
+    public const string VALKEY = 'PHIL_TEST_VALKEY_URL';
 
     public static function composeFile(): string
     {
@@ -47,6 +50,7 @@ final class TestServices
             self::MYSQL => 'mysql://phil:phil@127.0.0.1:'.$port('PHIL_DEV_MYSQL_PORT', '13306').'/phil_test?serverVersion=8.4',
             self::POSTGRESQL => 'postgresql://phil:phil@127.0.0.1:'.$port('PHIL_DEV_POSTGRESQL_PORT', '15432').'/phil_test?serverVersion=17',
             self::GOTENBERG => 'http://127.0.0.1:'.$port('PHIL_DEV_GOTENBERG_PORT', '3011'),
+            self::VALKEY => 'redis://127.0.0.1:'.$port('PHIL_DEV_VALKEY_PORT', '16379').'/15',
         ];
 
         $variables = [];

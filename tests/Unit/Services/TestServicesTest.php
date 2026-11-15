@@ -19,6 +19,7 @@ final class TestServicesTest extends TestCase
             'PHIL_TEST_MYSQL_URL' => 'mysql://phil:phil@127.0.0.1:13306/phil_test?serverVersion=8.4',
             'PHIL_TEST_POSTGRESQL_URL' => 'postgresql://phil:phil@127.0.0.1:15432/phil_test?serverVersion=17',
             'PHIL_GOTENBERG_URL' => 'http://127.0.0.1:3011',
+            'PHIL_TEST_VALKEY_URL' => 'redis://127.0.0.1:16379/15',
         ], TestServices::environment([]));
     }
 
@@ -28,7 +29,9 @@ final class TestServicesTest extends TestCase
             'PHIL_TEST_MYSQL_URL' => 'mysql://phil:phil@127.0.0.1:3307/phil_test?serverVersion=8.4',
             'PHIL_TEST_POSTGRESQL_URL' => 'postgresql://elsewhere/db',
             'PHIL_GOTENBERG_URL' => 'http://127.0.0.1:3012',
+            'PHIL_TEST_VALKEY_URL' => 'redis://127.0.0.1:6380/15',
         ], TestServices::environment([
+            'PHIL_DEV_VALKEY_PORT' => '6380',
             'PHIL_DEV_MYSQL_PORT' => '3307',
             'PHIL_DEV_GOTENBERG_PORT' => '3012',
             'PHIL_TEST_POSTGRESQL_URL' => 'postgresql://elsewhere/db',
@@ -44,12 +47,14 @@ final class TestServicesTest extends TestCase
         self::assertStringContainsString('image: mysql:8.4', $compose);
         self::assertStringContainsString('image: postgres:17-alpine', $compose);
         self::assertStringContainsString('image: gotenberg/gotenberg:9', $compose);
+        self::assertStringContainsString('image: valkey/valkey:9-alpine', $compose);
+        self::assertStringContainsString('${PHIL_DEV_VALKEY_PORT:-16379}:6379', $compose);
         self::assertStringNotContainsString(':3999', $compose);
     }
 
     public function testTheEnvironmentByDefault(): void
     {
-        self::assertCount(3, TestServices::environment());
+        self::assertCount(4, TestServices::environment());
     }
 
     public function testServiceUrl(): void

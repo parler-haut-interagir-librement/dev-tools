@@ -54,6 +54,7 @@ ParaTest
 Parler
 pcov
 pgsql
+phar
 phil
 PHIL
 phil-dev
@@ -85,6 +86,7 @@ tmpfs
 Twig
 TwigStan
 twigstan
+Valkey
 vendor-bin
 worktree
 worktrees

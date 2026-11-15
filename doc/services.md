@@ -18,8 +18,13 @@ in tmpfs: they start empty and leave nothing behind.
 | MySQL 8 | `mysql:8.4` | 13306 (`PHIL_DEV_MYSQL_PORT`) | `PHIL_TEST_MYSQL_URL` | `mysql://phil:phil@127.0.0.1:13306/phil_test?serverVersion=8.4` |
 | PostgreSQL 17 | `postgres:17-alpine` | 15432 (`PHIL_DEV_POSTGRESQL_PORT`) | `PHIL_TEST_POSTGRESQL_URL` | `postgresql://phil:phil@127.0.0.1:15432/phil_test?serverVersion=17` |
 | Gotenberg 9 | `gotenberg/gotenberg:9` | 3011 (`PHIL_DEV_GOTENBERG_PORT`) | `PHIL_GOTENBERG_URL` | `http://127.0.0.1:3011` |
+| Valkey 9 | `valkey/valkey:9-alpine` | 16379 (`PHIL_DEV_VALKEY_PORT`) | `PHIL_TEST_VALKEY_URL` | `redis://127.0.0.1:16379/15` |
 
 Port 3999 stays free: a Mercure hub used by tests listens there. A variable already set is kept.
+
+Valkey runs without persistence, neither snapshot nor append-only file. `PHIL_TEST_VALKEY_URL` is a DSN in the
+`redis://host:port/database` form that Valkey clients read, and names database 15: a test may empty the database it is
+given, and the others stay free for a package's own needs.
 
 The file also holds `frankenphp` (`dunglas/frankenphp:1-php8.5`, port 8090, moved by `PHIL_DEV_FRANKENPHP_PORT`), under
 the `bench` profile: `services up` leaves it out, and `phil-dev bench:worker` starts it with the worker script of a

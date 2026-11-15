@@ -32,7 +32,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     The packages of the monorepo are found on no public repository until they are published: the copy
     gets a path repository on each glob of the root's packages, copied rather than linked, as a vcs
     repository would once the package has moved, each at the branch its branch alias names (dev-main), whatever
-    branch the checkout is on. It needs the network for everything else. The tests of each copy run with TMPDIR
+    branch the checkout is on. The root's other path repositories — a neighbouring monorepo, a package beside the
+    root — are given to the copy too, with their URL made absolute, copied as well. It needs the network for
+    everything else. The tests of each copy run with TMPDIR
     inside the copy.
 
     It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge:
@@ -64,7 +66,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $matrix = Matrix::load();
         $target = \is_string($symfony) ? $matrix->find('symfony', $symfony)->version : null;
         $floor = $matrix->floor('symfony')->version;
-        $versions = $this->siblingVersions($workspace);
+        $repositories = $this->repositorySteps($workspace);
 
         foreach ($workspace->targets($names) as $package) {
             $output->writeln('== '.$package->name);
@@ -86,13 +88,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
                 $this->requireSymfony($work.'/composer.json', $floor, $target);
             }
 
-            $steps = [];
-
-            foreach ($workspace->isMonorepo() ? $workspace->packageGlobs() : [] as $index => $glob) {
-                $repository = json_encode(['type' => 'path', 'url' => $workspace->root->path($glob), 'options' => ['symlink' => false, 'versions' => $versions]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
-                $steps[] = ['composer', 'config', 'repositories.siblings'.$index, $repository];
-            }
-
+            $steps = $repositories;
             $steps[] = ['composer', 'install', '--no-interaction', '--no-progress', '--quiet'];
             $steps[] = [\PHP_BINARY, $analyser];
             // A package's own PHPUnit configuration when it has one, else every test under tests/.
@@ -129,6 +125,64 @@ final class CheckPackagesCommand extends WorkspaceCommand
         }
 
         return self::FAILURE;
+    }
+
+    /**
+     * The `composer config` commands that give a copy the path repositories of a monorepo: one on each glob of its
+     * members, each member at its `dev-main` branch, then one on each other path repository of the root.
+     *
+     * @return list<non-empty-list<string>>
+     */
+    private function repositorySteps(Workspace $workspace): array
+    {
+        if (!$workspace->isMonorepo()) {
+            return [];
+        }
+
+        $steps = [];
+        $versions = $this->siblingVersions($workspace);
+
+        foreach ($workspace->packageGlobs() as $index => $glob) {
+            $repository = json_encode(['type' => 'path', 'url' => $workspace->root->path($glob), 'options' => ['symlink' => false, 'versions' => $versions]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            $steps[] = ['composer', 'config', 'repositories.siblings'.$index, $repository];
+        }
+
+        foreach ($this->neighbours($workspace) as $index => $url) {
+            $repository = json_encode(['type' => 'path', 'url' => $url, 'options' => ['symlink' => false]], \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            $steps[] = ['composer', 'config', 'repositories.neighbours'.$index, $repository];
+        }
+
+        return $steps;
+    }
+
+    /**
+     * The URLs, absolute, of the root's path repositories other than the globs of its members: a neighbouring monorepo
+     * whose packages the members require, or a package checked out beside the root.
+     *
+     * @return list<string>
+     */
+    private function neighbours(Workspace $workspace): array
+    {
+        $composer = json_decode(Files::read($workspace->root->path('composer.json')), true);
+        $repositories = \is_array($composer) && \is_array($composer['repositories'] ?? null) ? $composer['repositories'] : [];
+        $globs = array_map($workspace->root->path(...), $workspace->packageGlobs());
+        $urls = [];
+
+        foreach ($repositories as $repository) {
+            $url = \is_array($repository) && 'path' === ($repository['type'] ?? null) ? $repository['url'] ?? null : null;
+
+            if (!\is_string($url) || '' === $url) {
+                continue;
+            }
+
+            $absolute = str_starts_with($url, '/') ? $url : $workspace->root->path(preg_replace('#^(\./)+#', '', $url) ?? $url);
+
+            if (!\in_array($absolute, [...$globs, ...$urls], true)) {
+                $urls[] = $absolute;
+            }
+        }
+
+        return $urls;
     }
 
     /**

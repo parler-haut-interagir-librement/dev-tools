@@ -71,7 +71,10 @@ pins. A manifest's `js.rules` changes a rule by group.
 The maximum level with the strict rules, the uninitialised properties, the benevolent unions and the PHPDoc types
 taken as certain, for every PHP of the matrix: `phpVersion` goes from the floor to the last release of the next
 version. Every exception that no longer matches fails, except the shared ones of the tests. Bleeding edge brings the
-checks of the next major version of PHPStan now.
+checks of the next major version of PHPStan now. Each worker has 30 minutes for its share of the files
+(`parallel.processTimeout`): a large monorepo analysed by `phil-dev php next` in Docker, through a bind mount, outlasts
+PHPStan's 10 minutes on a busy machine. In that container, PHPStan writes its cache to directories of its own: see
+[The version matrix](version-matrix.md#running-on-a-version).
 
 Three extensions add to it:
 
@@ -239,6 +242,20 @@ return [
 Infection reads one configuration, so `var/phil-dev/infection.json` takes the longest timeout of the packages
 analysed: the whole monorepo in the global run, the members `PHIL_DEV_PACKAGES` names when it narrows them. The value
 is a positive integer; anything else stops the command.
+
+Infection reads the suites and the source of `var/phil-dev/phpunit/phpunit.xml` when the root's PHPUnit configuration
+holds a glob: each `packages/*/src` or `packages/*/tests/Unit` is written as the list of directories it matches when
+the configuration is generated. Infection rewrites the paths of the configuration it copies, so the list it reads does
+not depend on how PHPUnit expands a glob from that copy, wherever the checkout lies.
+
+`composer infection:changed` mutates the files added, modified or renamed since the point where the branch left the
+base ref, committed or not, and the untracked files git does not ignore. The base, without `PHIL_DEV_BASE_REF`, is
+whichever of `origin/main` and `main` the branch left last: the merges of a local `main` that is not pushed yet are
+not changes of the branch. For the same files, the number of mutants is the same from one pass to the next; it moves
+with the files themselves — a file created but not staged, one staged since, a rename, a base ref moved by a push or a
+rebase — which is why each of these counts the same way. Under `--threads=max`, the share of mutants killed, timed out
+or escaped may still move when the machine is busy: a mutant near its timeout is killed on one pass and timed out on
+the next, and a package whose tests are slow on purpose gives its `infection.timeout`.
 
 | When | On | Script |
 |---|---|---|

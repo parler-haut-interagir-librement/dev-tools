@@ -34,6 +34,32 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
 - `check-packages` warns about a package without a `SECURITY.md`, or whose README shows no security badge.
 - The skeleton writes the OpenSSF Scorecard badge of the package's split repository after the title of its README and
   of its French mirror.
+- A Valkey 9 server in `resources/compose.yaml` (`valkey/valkey:9-alpine`, port 16379 moved by
+  `PHIL_DEV_VALKEY_PORT`, without persistence), and `PHIL_TEST_VALKEY_URL` in `phil-dev services env|test|record`:
+  `redis://127.0.0.1:16379/15`, database 15 for the tests.
+- `check-packages` gives each copy the root's other path repositories too — a neighbouring monorepo whose packages
+  the members require —, their URL made absolute and copied.
+
+### Changed
+
+- `test` and `infection` read `var/phil-dev/phpunit/phpunit.xml` whenever the root's PHPUnit configuration holds a
+  glob: each glob, such as `packages/*/src`, is replaced by the sorted list of directories it matches, so that PHPUnit
+  and Infection read explicit directories wherever the checkout lies. `PhpUnitConfig::withoutSkipped()` is
+  `PhpUnitConfig::generated()`.
+- The shared PHPStan configuration gives each worker 30 minutes (`parallel.processTimeout: 1800.0`) instead of 10: the
+  whole of a large monorepo analysed on PHP 8.6 by `phil-dev php next`, in Docker through a bind mount, stopped on an
+  internal error when a worker outlasted the default.
+- `infection --changed` counts the renamed files (`--diff-filter=AMR`) and the untracked files git does not ignore,
+  sorted, and takes as its base, without a ref or `PHIL_DEV_BASE_REF`, whichever of `origin/main` and `main` the branch
+  left last: the merges of a local `main` not pushed yet no longer count as changes of the branch.
+
+### Fixed
+
+- `phil-dev php` gives the container PHPStan temporary directories of its own, under `var/phil-dev/php/<version>/`, in
+  place of the `tmpDir` of the root's `phpstan.neon` (or `phpstan.dist.neon`, `var/phpstan` otherwise) and of
+  `var/phpstan-witnesses`: PHPStan keys its reflection cache by the PHP version analysed for and stores the path of the
+  stubs inside its phar, so a cache the host wrote stopped the analysis in Docker with an internal error on a stub
+  that "is not a file".
 
 ## 0.1.2-alpha - 2026-11-12
 

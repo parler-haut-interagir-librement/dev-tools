@@ -94,11 +94,12 @@ of each mirror of the packages it names; `--file` narrows it to documents given 
 ## check-packages
 
 The gates of a monorepo cover the code of its packages, not their `composer.json`: the root's dependencies hide a
-`require` a package forgot. This command copies each package into a temporary directory, leaving out `vendor/`,
-`var/` and `composer.lock`, gives the copy a path repository on each glob of the root's `packages` — copied, not
-linked —, installs it, runs `composer-dependency-analyser` with the package's own configuration, then PHPUnit with the
-package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is reported and the
-next package is checked. `--keep` keeps the copies.
+`require` a package forgot. This command copies each package into a temporary directory, leaving out `vendor/`, `var/`
+and `composer.lock`, gives the copy a path repository on each glob of the root's `packages` and on each other path
+repository of the root's `composer.json` — a neighbouring monorepo whose packages the members require —, its URL made
+absolute, all copied, not linked; installs it, runs `composer-dependency-analyser` with the package's own configuration,
+then PHPUnit with the package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is
+reported and the next package is checked. `--keep` keeps the copies.
 
 Before installing a package, it warns, without failing, when the package has no `SECURITY.md` or when its README shows
 no security badge — what its split repository would lack; `phil-dev split --security-files` adds both. See
@@ -116,9 +117,10 @@ without touching its `composer.json`. See [The version matrix](version-matrix.md
 ## infection
 
 Generates `var/phil-dev/infection.json` — see [Quality gates](quality-gates.md#infection) — and runs Infection on the
-Unit suite with all threads. `--changed` mutates only the PHP files added or modified since the point where the
-branch left the base ref, committed or not: the ref given, else `PHIL_DEV_BASE_REF`, else `origin/main` when it
-exists, else `main`. Nothing changed passes. Arguments after `--` go to Infection.
+Unit suite with all threads. `--changed` mutates only the PHP files added, modified or renamed since the point where
+the branch left the base ref, committed or not, and the untracked files git does not ignore: the ref given, else
+`PHIL_DEV_BASE_REF`, else whichever of `origin/main` and `main` the branch left last, else `main`. Nothing changed
+passes. Arguments after `--` go to Infection.
 
 ## deptrac, witnesses, generate
 
@@ -132,8 +134,9 @@ on every `tests/Witnesses/PhpStan` directory with the forbidden calls only; see 
 Runs the suites of `phpunit.dist.xml` with ParaTest, one process per core, when `vendor/bin/paratest` exists; else with
 PHPUnit. The root's `'phpunit' => ['parallel' => false]` keeps PHPUnit, for tests that share a resource they cannot
 share at once. `--suite` runs one suite; arguments after `--` go to the runner. Infection always replays the Unit suite
-with PHPUnit. While the planned packages are skipped, `test` and `infection` read `var/phil-dev/phpunit/phpunit.xml`,
-the root's configuration without them.
+with PHPUnit. When the root's configuration holds a glob, such as the `packages/*/src` of a monorepo, or while the
+planned packages are skipped, `test` and `infection` read `var/phil-dev/phpunit/phpunit.xml`: the root's configuration
+with each glob replaced by the directories it matches, sorted, and without the skipped packages.
 
 `test`, `infection` and `services test|record` run with `TMPDIR` under `var/tmp/` of the root, unless it already points
 inside the root: the test kernels that keep their cache under the system's temporary directory get one per checkout,

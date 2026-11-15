@@ -23,6 +23,11 @@ use Symfony\Component\Console\Output\OutputInterface;
     installs, phil/dev-tools beside it — are mounted read-only where the same relative path reaches them from /app,
     so that Composer and the autoloader find them in the container as on the host.
 
+    PHPStan's temporary directories — the tmpDir of the root's phpstan.neon, var/phpstan by default, and
+    var/phpstan-witnesses — are replaced in the container by directories of its own under var/phil-dev/php/<version>/:
+    PHPStan keys part of its cache by the PHP version it analyses for, not by where its phar lies, so a cache the
+    host wrote would send the container to the host's paths.
+
         phil-dev php next
         phil-dev php next -- php vendor/bin/phil-dev check-packages
         phil-dev php next -- php vendor/bin/phil-dev infection
@@ -58,9 +63,58 @@ final class PhpCommand extends WorkspaceCommand
         $arguments = $input->getArgument('arguments');
 
         return $this->runner->run(
-            ['docker', 'run', '--rm', '--volume', $root.':/app', ...$this->neighbours($root), '--workdir', '/app', $tag, ...([] === $arguments ? ['php', 'vendor/bin/phpunit'] : $arguments)],
+            ['docker', 'run', '--rm', '--volume', $root.':/app', ...$this->caches($root, $version->version), ...$this->neighbours($root), '--workdir', '/app', $tag, ...([] === $arguments ? ['php', 'vendor/bin/phpunit'] : $arguments)],
             $root,
         )->exitCode;
+    }
+
+    /**
+     * The `--volume` arguments that give the container PHPStan temporary directories of its own, created on the host
+     * under var/phil-dev/php/<version>/: the reflection cache stores the absolute path of the stubs inside the phar
+     * under a key the host and the container share, and the container then fails on a stub "is not a file".
+     *
+     * @return list<string>
+     */
+    private function caches(string $root, string $version): array
+    {
+        $volumes = [];
+
+        foreach ([$this->phpstanTmpDir($root), 'var/phpstan-witnesses'] as $directory) {
+            $host = $root.'/var/phil-dev/php/'.$version.'/'.str_replace('/', '-', $directory);
+
+            if (!is_dir($host)) {
+                mkdir($host, recursive: true);
+            }
+
+            $volumes[$directory] = ['--volume', $host.':/app/'.$directory];
+        }
+
+        return array_merge(...array_values($volumes));
+    }
+
+    /**
+     * The tmpDir the root's phpstan.neon, or else its phpstan.dist.neon, sets when it is a path inside the project;
+     * var/phpstan otherwise, the directory `phil-dev init` writes.
+     */
+    private function phpstanTmpDir(string $root): string
+    {
+        foreach (['phpstan.neon', 'phpstan.dist.neon'] as $file) {
+            if (!is_file($root.'/'.$file)) {
+                continue;
+            }
+
+            if (1 === preg_match('~^\s+tmpDir:\s*[\'"]?([\w./-]+?)[\'"]?\s*$~m', Files::read($root.'/'.$file), $match) && !str_starts_with($match[1], '/')) {
+                $segments = array_filter(explode('/', $match[1]), static fn (string $segment): bool => '' !== $segment && '.' !== $segment);
+
+                if ([] !== $segments && !\in_array('..', $segments, true)) {
+                    return implode('/', $segments);
+                }
+            }
+
+            break;
+        }
+
+        return 'var/phpstan';
     }
 
     /**
