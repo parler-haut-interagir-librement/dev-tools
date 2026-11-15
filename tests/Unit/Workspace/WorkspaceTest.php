@@ -95,6 +95,44 @@ final class WorkspaceTest extends TestCase
         self::assertSame(['phil/one'], array_map(static fn (Package $package): string => $package->name, Workspace::load($root)->members));
     }
 
+    public function testTheNeighbourRepositories(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', json_encode(['name' => 'phil/root', 'repositories' => [
+            ['type' => 'path', 'url' => ''],
+            ['type' => 'path'],
+            'not a repository',
+            ['type' => 'path', 'url' => './packages/*'],
+            ['type' => 'path', 'url' => '././../public/packages/*'],
+            ['type' => 'path', 'url' => '/opt/dev-tools'],
+            ['type' => 'path', 'url' => '../public/packages/*'],
+            ['type' => 'vcs', 'url' => 'https://example.com/repository.git'],
+        ]], \JSON_THROW_ON_ERROR));
+
+        self::assertSame([$root.'/../public/packages/*', '/opt/dev-tools'], Workspace::load($root)->neighbourRepositories());
+    }
+
+    public function testEveryGlobOfTheMembersIsLeftOutOfTheNeighbours(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', json_encode(['name' => 'phil/root', 'repositories' => [
+            ['type' => 'path', 'url' => 'libs/*'],
+            ['type' => 'path', 'url' => 'apps/*'],
+            ['type' => 'path', 'url' => 'other/*'],
+        ]], \JSON_THROW_ON_ERROR));
+        $this->put($root.'/'.Manifest::FILE, "<?php return ['packages' => ['libs/*', 'apps/*']];");
+
+        self::assertSame([$root.'/other/*'], Workspace::load($root)->neighbourRepositories());
+    }
+
+    public function testNoRepositoryNoNeighbour(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root", "repositories": "none"}');
+
+        self::assertSame([], Workspace::load($root)->neighbourRepositories());
+    }
+
     public function testTheRootIsAnalysedWhenNamed(): void
     {
         $workspace = Workspace::load($this->fixture('monorepo'), ['phil/example-monorepo']);

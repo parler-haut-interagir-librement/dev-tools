@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phil\DevTools\Workspace;
 
 use Phil\DevTools\Exception\WorkspaceNotFound;
+use Phil\DevTools\Files;
 
 /**
  * The packages the tools see from a root directory.
@@ -210,6 +211,36 @@ final readonly class Workspace
     public function packageGlobs(): array
     {
         return self::globs($this->root);
+    }
+
+    /**
+     * The URLs, absolute, of the root's path repositories other than the globs of its members: a neighbouring monorepo
+     * whose packages the members require, or a package checked out beside the root.
+     *
+     * @return list<string>
+     */
+    public function neighbourRepositories(): array
+    {
+        $composer = json_decode(Files::read($this->root->path('composer.json')), true);
+        $repositories = \is_array($composer) && \is_array($composer['repositories'] ?? null) ? $composer['repositories'] : [];
+        $globs = array_map($this->root->path(...), $this->packageGlobs());
+        $urls = [];
+
+        foreach ($repositories as $repository) {
+            $url = \is_array($repository) && 'path' === ($repository['type'] ?? null) ? $repository['url'] ?? null : null;
+
+            if (!\is_string($url) || '' === $url) {
+                continue;
+            }
+
+            $absolute = str_starts_with($url, '/') ? $url : $this->root->path(preg_replace('#^(\./)+#', '', $url) ?? $url);
+
+            if (!\in_array($absolute, [...$globs, ...$urls], true)) {
+                $urls[] = $absolute;
+            }
+        }
+
+        return $urls;
     }
 
     private function selected(Package $package): bool

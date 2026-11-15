@@ -135,6 +135,68 @@ final class WorkerBenchCommandTest extends CommandTestCase
         self::assertStringContainsString('ARG PIE_EXTENSIONS=""', $dockerfile);
     }
 
+    public function testTheRootsOtherPathRepositoriesAreMountedWhereTheLinksOfVendorLead(): void
+    {
+        $base = $this->temporaryDirectory().'/work';
+        $root = $base.'/root';
+        mkdir($base.'/public/packages/a', 0o777, true);
+        mkdir($base.'/public/tools', 0o777, true);
+        mkdir($base.'/usr/b', 0o777, true);
+        mkdir($root.'/extra/c', 0o777, true);
+        $this->package(['bench' => ['worker' => ['script' => 'worker.php', 'requests' => 1, 'warmup' => 0]]], ['repositories' => [
+            ['type' => 'path', 'url' => './extra/*'],
+            ['type' => 'path', 'url' => '../missing/*'],
+            ['type' => 'path', 'url' => '../public/packages/a'],
+            ['type' => 'path', 'url' => '../public/packages/*'],
+            ['type' => 'path', 'url' => '../public/packages/a'],
+            ['type' => 'path', 'url' => '../public/tools'],
+            ['type' => 'path', 'url' => '../usr/*'],
+            ['type' => 'path', 'url' => '..'],
+        ]], $root);
+        $this->put($root.'/worker.php', '<?php echo "ok";');
+        $port = $this->serve($root);
+        $tester = $this->tester($root, 'bench:worker');
+
+        $status = $this->withEnvironment('PHIL_DEV_FRANKENPHP_PORT', (string) $port, static fn (): int => $tester->execute(['--ext' => true]));
+
+        self::assertSame(0, $status, $tester->getDisplay());
+        $override = $root.'/var/phil-dev/bench/compose.neighbours.yaml';
+        $compose = 'docker compose --file '.TestServices::composeFile().' --file '.$override.' --project-name phil-dev-tools --profile bench-ext ';
+        self::assertSame([$compose.'up --detach --wait --force-recreate frankenphp-ext', $compose.'stop frankenphp-ext'], $this->runner->commands());
+        self::assertSame(['services' => ['frankenphp-ext' => ['volumes' => [
+            ['type' => 'bind', 'source' => $base.'/public/packages', 'target' => '/public/packages', 'read_only' => true],
+            ['type' => 'bind', 'source' => $base.'/public/tools', 'target' => '/public/tools', 'read_only' => true],
+        ]]]], json_decode((string) file_get_contents($override), true, flags: \JSON_THROW_ON_ERROR));
+        self::assertStringStartsWith(
+            $base."/usr is not mounted: its place in the container, /usr, would hide the image's own.\n"
+            .$base." is not mounted: its place in the container, /, would hide the image's own.\n",
+            $tester->getDisplay(),
+        );
+    }
+
+    public function testADirectoryBesideAFarRootIsMountedFromTheTopOfTheContainer(): void
+    {
+        $base = $this->temporaryDirectory();
+        $root = $base.'/deep/er/root';
+        mkdir($base.'/neighbour/packages/a', 0o777, true);
+        mkdir($root, 0o777, true);
+        $this->package(['bench' => ['worker' => ['script' => 'worker.php', 'requests' => 1, 'warmup' => 0]]], ['repositories' => [
+            ['type' => 'path', 'url' => $base.'/neighbour/packages/*'],
+        ]], $root);
+        $this->put($root.'/worker.php', '<?php echo "ok";');
+        $port = $this->serve($root);
+        $tester = $this->tester($root, 'bench:worker');
+
+        $status = $this->withEnvironment('PHIL_DEV_FRANKENPHP_PORT', (string) $port, static fn (): int => $tester->execute([]));
+
+        self::assertSame(0, $status, $tester->getDisplay());
+        $volumes = json_decode((string) file_get_contents($root.'/var/phil-dev/bench/compose.neighbours.yaml'), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['services' => ['frankenphp' => ['volumes' => [
+            ['type' => 'bind', 'source' => $base.'/neighbour/packages', 'target' => '/neighbour/packages', 'read_only' => true],
+        ]]]], $volumes);
+        self::assertStringNotContainsString('not mounted', $tester->getDisplay());
+    }
+
     /**
      * @return iterable<string, array{array<string, mixed>}>
      */
