@@ -112,6 +112,19 @@ final class WorkspaceTest extends TestCase
         self::assertSame([$root.'/../public/packages/*', '/opt/dev-tools'], Workspace::load($root)->neighbourRepositories());
     }
 
+    public function testEveryGlobOfTheMembersIsLeftOutOfTheNeighbours(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', json_encode(['name' => 'phil/root', 'repositories' => [
+            ['type' => 'path', 'url' => 'libs/*'],
+            ['type' => 'path', 'url' => 'apps/*'],
+            ['type' => 'path', 'url' => 'other/*'],
+        ]], \JSON_THROW_ON_ERROR));
+        $this->put($root.'/'.Manifest::FILE, "<?php return ['packages' => ['libs/*', 'apps/*']];");
+
+        self::assertSame([$root.'/other/*'], Workspace::load($root)->neighbourRepositories());
+    }
+
     public function testNoRepositoryNoNeighbour(): void
     {
         $root = $this->temporaryDirectory();
