@@ -33,6 +33,7 @@
 | `split [packages…] [--push] [--branch=NAME] [--tag=TAG] [--security-files]` | Splits the finished packages to their public repositories, with their security files; `--security-files` adds the missing `SECURITY.md` and badge to the members instead. |
 | `lint-docs [packages…]` | Lints the prose of the documentation with cspell, markdownlint and Vale. |
 | `lint-apps [packages…]` | Lints the container, the expressions and the YAML of each functional test application. |
+| `lsp [-- arguments]` | Checks each Symfony application with the diagnostics of Symfony Language Tools, every code blocking. |
 | `hotspots` | Lists the files that change most and are the most complex. |
 | `services up\|down\|env\|test\|record [-- arguments]` | Starts, stops and points the tests at MySQL, PostgreSQL and Gotenberg. |
 | `php <version> [--build] [-- command]` | Runs a command on a PHP version of the matrix, in its Docker image. |
@@ -185,9 +186,10 @@ See [Benchmarks](benchmarks.md).
 
 See [The monorepo workflow](workflow.md).
 
-## lint-apps
+## lint-apps, lsp
 
-See [Quality gates](quality-gates.md#the-functional-test-applications).
+See [Quality gates](quality-gates.md#the-functional-test-applications) and
+[Quality gates](quality-gates.md#the-diagnostics-of-symfony-language-tools).
 
 ## services, php, matrix
 

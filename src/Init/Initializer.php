@@ -47,7 +47,7 @@ final readonly class Initializer
      */
     public const array GATES = [
         '@deps', '@deps:audit', '@deps:unused', '@deps:normalize', '@cs', '@twig', '@js', '@phpstan', '@rector',
-        '@deptrac', '@arkitect', '@lint:apps', '@test', '@infection',
+        '@deptrac', '@arkitect', '@lint:apps', '@lsp', '@test', '@infection',
     ];
 
     public function __construct(private string $root)
@@ -151,6 +151,7 @@ final readonly class Initializer
             'docs:lint' => $bin.' lint-docs',
             'docs:translations' => $bin.' check-translations',
             'lint:apps' => $bin.' lint-apps',
+            'lsp' => $bin.' lsp',
             'hooks' => 'vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json',
             'packages' => $bin.' check-packages',
             'packages:next' => $bin.' php next -- php '.$binary.' check-packages',
@@ -201,6 +202,7 @@ final readonly class Initializer
             'docs:lint' => 'The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.',
             'docs:translations' => 'The French mirror of the documentation of each package, blocking or advisory by docs.translations.',
             'lint:apps' => 'The container, the expressions and the YAML of each functional test application, through its own console.',
+            'lsp' => 'The diagnostics of Symfony Language Tools on each Symfony application, every code blocking.',
             'hooks' => 'Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.',
             'split' => 'The finished packages split to their public repositories; dry run unless --push is given.',
         ];

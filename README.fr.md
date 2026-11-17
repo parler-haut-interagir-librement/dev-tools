@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=73f21fe816151c0c861d5a05cc56f9936ffd46d5a735bf8c691114807ed299b7 -->
+<!-- phil-dev source-sha256=92c1a13d200da25440059ecc3bedf0d2f3ecbc62105b26092fcd861dd03073f3 -->
 # phil/dev-tools
 
 **Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts,
@@ -34,6 +34,7 @@ dans son *worktree*.
 | `split`, la configuration de CaptainHook et `staged`, `lint-docs` et son dictionnaire français, `hotspots` | Implémentés et testés |
 | Les fichiers de sécurité d'un dépôt scindé (Dependabot, OpenSSF Scorecard), son badge, `split --security-files`, la politique Snyk d'un monodépôt public | Implémentés et testés |
 | `lint-apps` : `lint:container`, `lint:expressions` et `lint:yaml` sur chaque application de test fonctionnel | Implémenté et testé |
+| `lsp` : les diagnostics de Symfony Language Tools sur chaque application Symfony, chaque code bloquant | Implémenté et testé |
 | `check-translations`, `stamp-translations`, le miroir français de `new` | Implémentés et testés |
 
 ## Documentation
@@ -71,7 +72,7 @@ composer gates
 
 ## Prérequis
 
-PHP 8.5 ou une version plus récente ; Docker pour les vrais serveurs, FrankenPHP et la prochaine version de PHP de la
+PHP 8.5 ou une version plus récente ; la CLI de Symfony pour la porte `lsp` ; Docker pour les vrais serveurs, FrankenPHP et la prochaine version de PHP de la
 matrice ; git pour la scission ; cspell, markdownlint-cli2 et Vale, ou Node.js pour les deux premiers, pour vérifier la
 prose de la documentation.
 
