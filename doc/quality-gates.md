@@ -2,7 +2,8 @@
 
 `composer gates` runs them in this order, the order of a continuous integration job: the dependency analysis, the
 advisories, the unused packages, the normalized `composer.json`, the code style of PHP, of the Twig templates and of
-the scripts, PHPStan, Rector, Deptrac, Arkitect, the functional test applications, the tests and Infection. A gate is
+the scripts, PHPStan, Rector, Deptrac, Arkitect, the functional test applications, the diagnostics of Symfony Language
+Tools, the tests and Infection. A gate is
 in it when it is reliable and fast enough for every batch; the slower checks are scripts of their own.
 
 | Check | Script | Where |
@@ -11,6 +12,7 @@ in it when it is reliable and fast enough for every batch; the slower checks are
 | PHP-CS-Fixer, Twig-CS-Fixer, Biome | `cs`, `twig`, `js` | the gates |
 | PHPStan and its witnesses, Rector, Deptrac, Arkitect | `phpstan`, `rector`, `deptrac`, `arkitect` | the gates |
 | The container, the expressions and the YAML of each functional test application | `lint:apps` | the gates |
+| The diagnostics of Symfony Language Tools on each Symfony application | `lsp` | the gates |
 | PHPUnit through ParaTest, Infection | `test`, `infection` | the gates |
 | TwigStan | `twigstan` | its own script: young, and it compiles every template |
 | The taint analysis, fuzzing, the bill of materials | `taint`, `fuzz`, `sbom` | their own scripts: see [Security checks](security.md) |
@@ -20,7 +22,7 @@ in it when it is reliable and fast enough for every batch; the slower checks are
 | The file set and the links of the documentation | `docs` | its own script and the hooks: see [The package skeleton](skeleton.md#the-documentation-checks) |
 | The French mirror of the documentation | `docs:translations` | its own script and the hooks: see [below](#the-french-mirror-of-the-documentation) |
 
-The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig`, `js` and `apps` with
+The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig`, `js`, `apps` and `lsp` with
 `'gates' => ['<name>' => false]`: the gate then says it is off and passes. The fast gates also run on the staged files
 before each commit, through the hooks of [The monorepo workflow](workflow.md#the-hooks).
 
@@ -178,6 +180,23 @@ class in a namespace of the packages; `Domain\Model` final and not readonly; `Do
 `Domain\Repository` interfaces named `*Repository`; nothing of Doctrine in a domain but the mapping attributes, nor the
 validator, the container, HTTP, Messenger, the serializer, forms or security; no ORM nor DBAL in an application layer;
 no domain event that is a Messenger envelope. Each rule applies to `<Namespace>\<Layer>` and `<Namespace>\*\<Layer>`.
+
+## The diagnostics of Symfony Language Tools
+
+`phil-dev lsp` runs `symfony lsp:check`, through the Symfony CLI, on each Symfony application of the workspace: the
+root and each member whose `composer.json` type is `project` and that has a `bin/console`, such as a site or a project
+template. It reports what the language server reports in an editor: a route, a template, a service, a translation or
+a Stimulus controller that does not exist, an unknown configuration key or option, a handler with the wrong signature.
+
+Every code blocks. The command reads the codes `symfony lsp:check --list-codes` lists and gives them all to
+`--fail-on`, and reads no baseline: an application starts clean and stays clean. Under GitHub Actions the report uses
+the `github` format, which annotates the files. Arguments after `--` go to the tool; `--source-only` keeps it from
+booting the application, which it does otherwise to index what the application registers at runtime.
+
+A bundle or a library is no application: the tool reads only the files an application owns, and refuses the
+functional test application of a bundle. Such a package is skipped with a note, even when it has a `bin/console`, and a
+workspace without an application passes; `lint-apps` checks the test applications of the bundles. The Symfony CLI must
+be on the `PATH`; the root's `'gates' => ['lsp' => false]` turns the gate off.
 
 ## The functional test applications
 

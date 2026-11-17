@@ -14,8 +14,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'lsp', description: 'Checks each Symfony application with the diagnostics of Symfony Language Tools', help: <<<'TXT'
     Runs symfony lsp:check, the diagnostics of Symfony Language Tools through the Symfony CLI, on each Symfony
-    application of the workspace: the root and each member that has a bin/console, which is how the tool finds an
-    application. Every diagnostic code blocks: the codes the tool lists are all given to --fail-on, and no baseline is
+    application of the workspace: the root and each member whose composer.json type is project and that has a
+    bin/console, which is how the tool finds an application. A bundle or a library is no application — the tool reads
+    only the files an application owns — and is skipped with a note, even with a bin/console. Every diagnostic code
+    blocks: the codes the tool lists are all given to --fail-on, and no baseline is
     read. A workspace without an application passes. Under GitHub Actions the report uses the github format, which
     annotates the files.
 
@@ -40,10 +42,21 @@ final class LspCommand extends WorkspaceCommand
         }
 
         $workspace = $this->workspace();
-        $applications = array_values(array_filter(
-            [$workspace->root, ...$workspace->members],
-            static fn (Package $package): bool => is_file($package->path('bin/console')),
-        ));
+        $applications = [];
+
+        foreach ([$workspace->root, ...$workspace->members] as $package) {
+            if (!is_file($package->path('bin/console'))) {
+                continue;
+            }
+
+            if ('project' !== $package->type) {
+                $output->writeln(\sprintf('%s: a %s, not an application: skipped.', self::name($package), $package->type));
+
+                continue;
+            }
+
+            $applications[] = $package;
+        }
 
         if ([] === $applications) {
             $output->writeln('No Symfony application (bin/console): nothing to check.');
@@ -74,7 +87,7 @@ final class LspCommand extends WorkspaceCommand
         $status = self::SUCCESS;
 
         foreach ($applications as $application) {
-            $output->writeln(\sprintf('== %s', $application->isRoot() ? 'the root' : $application->relative));
+            $output->writeln(\sprintf('== %s', self::name($application)));
 
             $run = $this->runner->run([$symfony, 'lsp:check', '--format='.$format, '--fail-on='.implode(',', $list), ...$arguments], $application->dir);
 
@@ -84,5 +97,10 @@ final class LspCommand extends WorkspaceCommand
         }
 
         return $status;
+    }
+
+    private static function name(Package $package): string
+    {
+        return $package->isRoot() ? 'the root' : $package->relative;
     }
 }

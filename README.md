@@ -31,6 +31,7 @@ several batches can work at once in their own worktrees.
 | `split`, the CaptainHook configuration and `staged`, `lint-docs` and its French dictionary, `hotspots` | Implemented and tested |
 | The security files of a split repository (Dependabot, OpenSSF Scorecard), its badge, `split --security-files`, the Snyk policy of a public monorepo | Implemented and tested |
 | `lint-apps`: `lint:container`, `lint:expressions` and `lint:yaml` on each functional test application | Implemented and tested |
+| `lsp`: the diagnostics of Symfony Language Tools on each Symfony application, every code blocking | Implemented and tested |
 | `check-translations`, `stamp-translations`, the French mirror of `new` | Implemented and tested |
 
 ## Documentation
@@ -68,7 +69,7 @@ composer gates
 
 ## Requirements
 
-PHP 8.5 or later; Docker for the real servers, FrankenPHP and the next PHP of the matrix; git for the split; cspell,
+PHP 8.5 or later; the Symfony CLI for the `lsp` gate; Docker for the real servers, FrankenPHP and the next PHP of the matrix; git for the split; cspell,
 markdownlint-cli2 and Vale, or Node.js for the first two, to lint the prose of the documentation.
 
 ## Contributing

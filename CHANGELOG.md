@@ -15,6 +15,10 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   passes.
 - `ProcessRunner::capture()` takes `$withErrors`, which captures the error output with the standard one, in the order
   the command writes them.
+- `phil-dev lsp`, the gate of `symfony lsp:check` (Symfony Language Tools) on each Symfony application — a member of
+  type `project` with a `bin/console`, or such a root —, every code it lists given to `--fail-on`, without a baseline,
+  in the `github` format under GitHub Actions; a bundle or a library is skipped with a note. `init` adds the `lsp`
+  script and puts it in `composer gates`, after `lint:apps`; the root's `gates.lsp: false` turns it off.
 - `README.fr.md`, the French README.
 
 ### Changed

@@ -17,7 +17,8 @@ final class LspCommandTest extends CommandTestCase
     {
         $root = $this->fixture('monorepo');
         $this->put($root.'/bin/console', '');
-        $this->put($root.'/packages/slug-bundle/bin/console', '');
+        $this->put($root.'/packages/slug/composer.json', '{"name": "phil/slug-site", "type": "project"}');
+        $this->put($root.'/packages/slug/bin/console', '');
         $path = $this->executables(['symfony']);
         $tester = $this->tester($root, 'lsp', [new ProcessResult(0, self::CODES), new ProcessResult(0), new ProcessResult(1)]);
 
@@ -30,13 +31,13 @@ final class LspCommandTest extends CommandTestCase
             $path.'/symfony lsp:check --format=human --fail-on=config.unknown_key,route.not_found,template.not_found --source-only',
         ], $this->runner->commands());
         self::assertSame($root, $this->runner->runs[1]['directory']);
-        self::assertSame($root.'/packages/slug-bundle', $this->runner->runs[2]['directory']);
-        self::assertStringContainsString("== the root\n== packages/slug-bundle\n", $tester->getDisplay());
+        self::assertSame($root.'/packages/slug', $this->runner->runs[2]['directory']);
+        self::assertStringContainsString("packages/slug-bundle: a symfony-bundle, not an application: skipped.\n== the root\n== packages/slug\n", $tester->getDisplay());
     }
 
     public function testTheGitHubFormatUnderGitHubActions(): void
     {
-        $root = $this->package();
+        $root = $this->package([], ['type' => 'project']);
         $this->put($root.'/bin/console', '');
         $path = $this->executables(['symfony']);
         $tester = $this->tester($root, 'lsp', [new ProcessResult(0, self::CODES)]);
@@ -52,13 +53,13 @@ final class LspCommandTest extends CommandTestCase
         $tester = $this->tester($this->fixture('monorepo'), 'lsp');
 
         self::assertSame(0, $tester->execute([]));
-        self::assertStringContainsString('No Symfony application (bin/console): nothing to check.', $tester->getDisplay());
+        self::assertSame("packages/slug-bundle: a symfony-bundle, not an application: skipped.\nNo Symfony application (bin/console): nothing to check.\n", $tester->getDisplay());
         self::assertSame([], $this->runner->runs);
     }
 
     public function testWithoutTheSymfonyCli(): void
     {
-        $root = $this->package();
+        $root = $this->package([], ['type' => 'project']);
         $this->put($root.'/bin/console', '');
         $tester = $this->tester($root, 'lsp');
 
@@ -69,7 +70,7 @@ final class LspCommandTest extends CommandTestCase
 
     public function testNoCodeListed(): void
     {
-        $root = $this->package();
+        $root = $this->package([], ['type' => 'project']);
         $this->put($root.'/bin/console', '');
         $tester = $this->tester($root, 'lsp', [new ProcessResult(0, "nothing here\n")]);
 
@@ -80,7 +81,7 @@ final class LspCommandTest extends CommandTestCase
 
     public function testTheListingFails(): void
     {
-        $root = $this->package();
+        $root = $this->package([], ['type' => 'project']);
         $this->put($root.'/bin/console', '');
         $tester = $this->tester($root, 'lsp', [new ProcessResult(1, self::CODES)]);
 
