@@ -56,12 +56,13 @@ moved in a way the split cannot follow, or a tag already published, makes the pu
 
 ### The security files of a split repository
 
-The security commit adds two files to the tree of the split, from the templates of `resources/security/split/`:
+The security commit adds three files to the tree of the split, from the templates of `resources/security/split/`:
 
 | File | What it does |
 |---|---|
 | `.github/dependabot.yml` | Dependabot watches the `composer` dependencies, the `npm` ones when the member has a `package.json` at its root or under `assets/`, and the `github-actions` of the workflow below. |
 | `.github/workflows/scorecard.yml` | The OpenSSF Scorecard of the repository, at each push to its branch and each week, published for the badge and uploaded to code scanning. |
+| `.github/workflows/zizmor.yml` | zizmor audits the workflows of the repository, at each push to its branch, each pull request and each week: injection through untrusted inputs, credentials left to the checkout, permissions wider than needed, actions not pinned to a commit. Its findings fail the job and annotate the workflows. |
 
 The version updates of Dependabot open no pull request (`open-pull-requests-limit: 0`): a split repository is a
 read-only copy, and a change made there would be lost at the next split. Its alerts, and the security updates when
@@ -71,7 +72,7 @@ OIDC token of the workflow: it needs no secret and no account.
 
 The commit is built with git's plumbing in the monorepo, through an index of its own under
 `var/phil-dev/split/security-<vendor>-<name>/`, removed afterwards: no checkout, no branch, and nothing of the
-history rewritten. Its tree is the split's with the two files added or replaced; its author and committer are the
+history rewritten. Its tree is the split's with the three files added or replaced; its author and committer are the
 split commit's committer, at the same date, and it is not signed. The same split and the same templates therefore
 always give the same commit, which is how a dry run shows the commit the push would send.
 
@@ -107,6 +108,16 @@ repository of the badge is `split.repository` when it is on GitHub and the membe
 vendor; a member of another vendor gets no badge. A French mirror that was up to date is stamped with the new README,
 since the same line was added to both; a stale one stays stale. The changes are left in the working tree, to review
 and commit.
+
+### The security files of a monorepo
+
+`phil-dev split --security-files`, run at the root of a monorepo, also copies to the root, from
+`resources/security/monorepo/`, the files it misses; a file already there is kept:
+
+| File | What it does |
+|---|---|
+| `.github/dependabot.yml` | Dependabot watches the `composer` dependencies of the root and of each `vendor-bin/` directory, the `npm` ones of the root, of each member and of its `assets/`, and the `github-actions`. A release waits seven days before Dependabot proposes it (`cooldown`), so that a compromised or broken release is usually withdrawn first; the security updates do not wait. The updates come grouped: Symfony, then the other development and production dependencies, then every action. |
+| `.github/workflows/zizmor.yml` | zizmor audits the workflows of the monorepo, as in a split repository, at each push to `main`, each pull request and each week. |
 
 ### Snyk on a public monorepo
 

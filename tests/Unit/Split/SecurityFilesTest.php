@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Tests\Unit\Split;
 
+use Phil\DevTools\DevTools;
 use Phil\DevTools\Split\SecurityFiles;
 use Phil\DevTools\Tests\Unit\Support\TemporaryDirectory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -19,7 +20,7 @@ final class SecurityFilesTest extends TestCase
     {
         $files = SecurityFiles::forPackage($this->temporaryDirectory(), '1.x');
 
-        self::assertSame([SecurityFiles::DEPENDABOT, SecurityFiles::SCORECARD], array_keys($files));
+        self::assertSame([SecurityFiles::DEPENDABOT, SecurityFiles::SCORECARD, SecurityFiles::ZIZMOR], array_keys($files));
         self::assertStringEndsWith(
             "version: 2\nupdates:\n"
             ."  - package-ecosystem: composer\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 0\n"
@@ -31,6 +32,23 @@ final class SecurityFilesTest extends TestCase
         self::assertStringNotContainsString('{{', $files[SecurityFiles::SCORECARD]);
         self::assertSame(4, preg_match_all('/uses: [a-z\/-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m', $files[SecurityFiles::SCORECARD]));
         self::assertDoesNotMatchRegularExpression('/uses: [^@]+@(?![0-9a-f]{40} )/', $files[SecurityFiles::SCORECARD], 'every action is pinned to a commit');
+        self::assertStringContainsString("    branches: ['1.x']\n", $files[SecurityFiles::ZIZMOR]);
+        self::assertStringNotContainsString('{{', $files[SecurityFiles::ZIZMOR]);
+        self::assertSame(2, preg_match_all('/uses: [a-z\/-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m', $files[SecurityFiles::ZIZMOR]));
+        self::assertStringContainsString("permissions: {}\n", $files[SecurityFiles::ZIZMOR]);
+        self::assertStringContainsString("persist-credentials: false\n", $files[SecurityFiles::ZIZMOR]);
+    }
+
+    public function testTheFilesOfAMonorepo(): void
+    {
+        $dependabot = (string) file_get_contents(DevTools::resource(SecurityFiles::MONOREPO[SecurityFiles::DEPENDABOT]));
+        $zizmor = (string) file_get_contents(DevTools::resource(SecurityFiles::MONOREPO[SecurityFiles::ZIZMOR]));
+
+        self::assertSame(3, substr_count($dependabot, "    cooldown:\n      default-days: 7\n"));
+        self::assertSame(3, substr_count($dependabot, '    groups:'));
+        self::assertStringNotContainsString('open-pull-requests-limit', $dependabot);
+        self::assertSame(2, preg_match_all('/uses: [a-z\/-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/m', $zizmor));
+        self::assertStringContainsString("    branches: ['main']\n", $zizmor);
     }
 
     /**

@@ -49,7 +49,7 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame(0, $status);
         self::assertSame('git subtree split --prefix=packages/slug HEAD', $this->runner->commands()[0]);
         self::assertSame('git read-tree '.self::SHA, $this->runner->commands()[1]);
-        self::assertCount(9, $this->runner->runs);
+        self::assertCount(11, $this->runner->runs);
         self::assertTrue($this->runner->runs[0]['capture']);
         self::assertSame($root, $this->runner->runs[0]['directory']);
         self::assertSame(
@@ -154,7 +154,7 @@ final class SplitCommandTest extends CommandTestCase
 
         self::assertSame(1, $this->withEnvironment('PATH', '', static fn (): int => $tester->execute(['packages' => ['slug', 'tilttek-dice']])));
         self::assertStringStartsWith("phil/slug: the split failed.\ntilttek/dice: would push ", $tester->getDisplay());
-        self::assertCount(1 + 9, $this->runner->runs);
+        self::assertCount(1 + 11, $this->runner->runs);
     }
 
     public function testADryRunIntoAMonorepo(): void
@@ -273,7 +273,7 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame(1, preg_match('/^phil\/slug: would push ([0-9a-f]{12}), the split '.substr($split, 0, 12).' and its security files, to /', $display, $match), $display);
         $head = $this->git($root, 'rev-parse', $match[1]);
         self::assertSame($split, $this->git($root, 'rev-parse', $head.'^1'));
-        self::assertSame(".github/dependabot.yml\n.github/workflows/scorecard.yml", $this->git($root, 'diff-tree', '--no-commit-id', '--name-only', '-r', $head));
+        self::assertSame(".github/dependabot.yml\n.github/workflows/scorecard.yml\n.github/workflows/zizmor.yml", $this->git($root, 'diff-tree', '--no-commit-id', '--name-only', '-r', $head));
         self::assertStringContainsString('directory: /assets', $this->git($root, 'show', $head.':.github/dependabot.yml'));
         self::assertSame($this->git($root, 'show', $split.':composer.json'), $this->git($root, 'show', $head.':composer.json'));
         self::assertSame('', $this->git($remote, 'for-each-ref'));
@@ -338,6 +338,8 @@ final class SplitCommandTest extends CommandTestCase
             "phil/slug: added SECURITY.md and the badge of its README.\n"
             ."phil/slug-bundle: added the badge of its README.\n"
             ."tilttek/dice: added SECURITY.md.\n"
+            ."The root: added .github/dependabot.yml.\n"
+            ."The root: added .github/workflows/zizmor.yml.\n"
             ."The root: added .github/workflows/snyk.yml.\n"
             ."Nothing was split or committed: review the changes, then commit them.\n",
             $tester->getDisplay(),
@@ -356,6 +358,8 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame('kept', file_get_contents($root.'/packages/slug-bundle/SECURITY.md'));
         self::assertSame('kept', file_get_contents($root.'/.snyk'));
         self::assertFileEquals(DevTools::resource('security/monorepo/snyk.yml'), $root.'/.github/workflows/snyk.yml');
+        self::assertFileEquals(DevTools::resource('security/monorepo/dependabot.yml'), $root.'/.github/dependabot.yml');
+        self::assertFileEquals(DevTools::resource('security/monorepo/zizmor.yml'), $root.'/.github/workflows/zizmor.yml');
 
         $tester->execute(['--security-files' => true, 'packages' => ['slug']]);
         self::assertSame("phil/slug: nothing to add.\nNothing was split or committed: review the changes, then commit them.\n", $tester->getDisplay());
@@ -373,6 +377,7 @@ final class SplitCommandTest extends CommandTestCase
         self::assertSame("acme/thing: nothing to add.\nNothing was split or committed: review the changes, then commit them.\n", $tester->getDisplay());
         self::assertSame("# acme/thing\n", file_get_contents($root.'/README.md'));
         self::assertFileDoesNotExist($root.'/.snyk');
+        self::assertFileDoesNotExist($root.'/.github/dependabot.yml');
     }
 
     public function testThePreparationAddsTheRootFilesOfAPublicMonorepo(): void
@@ -395,6 +400,8 @@ final class SplitCommandTest extends CommandTestCase
     private function security(): array
     {
         return [
+            new ProcessResult(0),
+            new ProcessResult(0, self::BLOB."\n"),
             new ProcessResult(0),
             new ProcessResult(0, self::BLOB."\n"),
             new ProcessResult(0),

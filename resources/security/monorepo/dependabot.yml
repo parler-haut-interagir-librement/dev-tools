@@ -1,0 +1,51 @@
+# The dependencies of a monorepo, watched by Dependabot. phil-dev split --security-files copies this file from
+# phil/dev-tools when it is missing.
+#
+# A release waits seven days before Dependabot proposes it (cooldown), so that a compromised or broken release is
+# usually withdrawn before it reaches the monorepo; the security updates do not wait. The updates of an ecosystem come
+# grouped, Symfony together, then the other development and production dependencies, so that one batch reviews them
+# at once.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directories:
+      - '/'
+      - '/vendor-bin/*'
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      symfony:
+        patterns:
+          - 'symfony/*'
+      development:
+        dependency-type: development
+      production:
+        dependency-type: production
+
+  - package-ecosystem: npm
+    directories:
+      - '/'
+      - '/packages/*'
+      - '/packages/*/assets'
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      development:
+        dependency-type: development
+      production:
+        dependency-type: production
+
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - '*'

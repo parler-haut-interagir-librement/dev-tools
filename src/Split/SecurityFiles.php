@@ -28,6 +28,15 @@ final class SecurityFiles
 
     public const string SCORECARD = '.github/workflows/scorecard.yml';
 
+    public const string ZIZMOR = '.github/workflows/zizmor.yml';
+
+    /**
+     * The files a monorepo gets at its root, by path, each with its resource.
+     *
+     * @var array<string, string>
+     */
+    public const array MONOREPO = [self::DEPENDABOT => 'security/monorepo/dependabot.yml', self::ZIZMOR => 'security/monorepo/zizmor.yml'];
+
     /**
      * What a README shows when it has a security badge: an OpenSSF Scorecard, or a Snyk badge.
      */
@@ -48,12 +57,13 @@ final class SecurityFiles
             }
         }
 
-        // The Scorecard workflow is one, so that Dependabot also keeps its pinned actions current.
+        // The Scorecard and zizmor workflows are some, so that Dependabot also keeps their pinned actions current.
         $updates[] = self::update('github-actions', '/');
 
         return [
             self::DEPENDABOT => strtr(Files::read(DevTools::resource('security/split/dependabot.yml.tpl')), ['{{updates}}' => implode("\n", $updates)]),
             self::SCORECARD => strtr(Files::read(DevTools::resource('security/split/scorecard.yml.tpl')), ['{{branch}}' => $branch]),
+            self::ZIZMOR => strtr(Files::read(DevTools::resource('security/split/zizmor.yml.tpl')), ['{{branch}}' => $branch]),
         ];
     }
 

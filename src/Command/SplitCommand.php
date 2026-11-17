@@ -36,8 +36,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     Nothing is pushed without --push: the command says what it would do. It never forces a push.
 
     --security-files splits nothing: it adds to each member the SECURITY.md of the skeleton and the security badge
-    of its README when they are missing, and, when the root's split.snyk is true, the Snyk policy and workflow of
-    a public monorepo. The changes are left to review and commit.
+    of its README when they are missing; at the root of a monorepo, the Dependabot configuration, with its cooldown
+    and its groups, and the zizmor workflow; and, when the root's split.snyk is true, the Snyk policy and workflow of
+    a public monorepo. A file already there is kept. The changes are left to review and commit.
     TXT)]
 final class SplitCommand extends WorkspaceCommand
 {
@@ -218,8 +219,9 @@ final class SplitCommand extends WorkspaceCommand
 
     /**
      * Adds what the members miss of the security files to their directories: the SECURITY.md of the skeleton, the badge
-     * of the README and of its French mirror — restamped when it was up to date — and, when the root's `split.snyk` is
-     * true, the Snyk policy and workflow at the root.
+     * of the README and of its French mirror — restamped when it was up to date —; at the root of a monorepo, its
+     * Dependabot configuration and its zizmor workflow; and, when the root's `split.snyk` is true, the Snyk policy and
+     * workflow.
      *
      * @param list<string> $names
      */
@@ -242,18 +244,22 @@ final class SplitCommand extends WorkspaceCommand
             $output->writeln(\sprintf('%s: %s.', $package->name, [] === $added ? 'nothing to add' : 'added '.implode(' and ', $added)));
         }
 
+        $files = $workspace->isMonorepo() ? SecurityFiles::MONOREPO : [];
+
         if ($workspace->root->manifest->flag('split', 'snyk')) {
-            foreach (['.snyk' => 'security/monorepo/.snyk', '.github/workflows/snyk.yml' => 'security/monorepo/snyk.yml'] as $file => $resource) {
-                $target = $workspace->root->path($file);
+            $files += ['.snyk' => 'security/monorepo/.snyk', '.github/workflows/snyk.yml' => 'security/monorepo/snyk.yml'];
+        }
 
-                if (!is_file($target)) {
-                    if (!is_dir(\dirname($target))) {
-                        mkdir(\dirname($target), recursive: true);
-                    }
+        foreach ($files as $file => $resource) {
+            $target = $workspace->root->path($file);
 
-                    copy(DevTools::resource($resource), $target);
-                    $output->writeln(\sprintf('The root: added %s.', $file));
+            if (!is_file($target)) {
+                if (!is_dir(\dirname($target))) {
+                    mkdir(\dirname($target), recursive: true);
                 }
+
+                copy(DevTools::resource($resource), $target);
+                $output->writeln(\sprintf('The root: added %s.', $file));
             }
         }
 

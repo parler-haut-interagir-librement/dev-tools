@@ -19,6 +19,11 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
   type `project` with a `bin/console`, or such a root —, every code it lists given to `--fail-on`, without a baseline,
   in the `github` format under GitHub Actions; a bundle or a library is skipped with a note. `init` adds the `lsp`
   script and puts it in `composer gates`, after `lint:apps`; the root's `gates.lsp: false` turns it off.
+- `.github/workflows/zizmor.yml` in the security commit of each split repository: zizmor audits its workflows at
+  each push to its branch, each pull request and each week, its findings failing the job.
+- `split --security-files`, at the root of a monorepo, adds `.github/dependabot.yml` — the `composer` dependencies of
+  the root and of `vendor-bin/*`, the `npm` ones of the root and of the members, the `github-actions`, each release
+  waiting a `cooldown` of seven days, the updates grouped — and `.github/workflows/zizmor.yml`, when they are missing.
 - `README.fr.md`, the French README.
 
 ### Changed

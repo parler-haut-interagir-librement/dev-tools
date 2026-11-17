@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=92c1a13d200da25440059ecc3bedf0d2f3ecbc62105b26092fcd861dd03073f3 -->
+<!-- phil-dev source-sha256=8759616f7fe103bf1091f63f3e8eb5e867c622d140eba393222cec1acd3a23e9 -->
 # phil/dev-tools
 
 **Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts,
@@ -32,7 +32,7 @@ dans son *worktree*.
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implémentés et testés |
 | `bench --baseline` et `--compare`, `bench:worker` et le service FrankenPHP, l'image `bench-ext` | Implémentés et testés |
 | `split`, la configuration de CaptainHook et `staged`, `lint-docs` et son dictionnaire français, `hotspots` | Implémentés et testés |
-| Les fichiers de sécurité d'un dépôt scindé (Dependabot, OpenSSF Scorecard), son badge, `split --security-files`, la politique Snyk d'un monodépôt public | Implémentés et testés |
+| Les fichiers de sécurité d'un dépôt scindé (Dependabot, OpenSSF Scorecard, zizmor), son badge, `split --security-files`, les fichiers Dependabot et zizmor d'un monodépôt, la politique Snyk d'un monodépôt public | Implémentés et testés |
 | `lint-apps` : `lint:container`, `lint:expressions` et `lint:yaml` sur chaque application de test fonctionnel | Implémenté et testé |
 | `lsp` : les diagnostics de Symfony Language Tools sur chaque application Symfony, chaque code bloquant | Implémenté et testé |
 | `check-translations`, `stamp-translations`, le miroir français de `new` | Implémentés et testés |
@@ -47,7 +47,7 @@ dans son *worktree*.
 | [Quality gates](doc/quality-gates.md) | Ce que vérifie chaque porte, les vérifications qui ont leur propre script, les témoins de PHPStan, les modes d'Infection, le miroir français. |
 | [Security checks](doc/security.md) | Les avis de sécurité, l'analyse de propagation de Psalm, le *fuzzing*, la nomenclature logicielle. |
 | [Benchmarks](doc/benchmarks.md) | PHPBench, les régressions par rapport à une référence, le mode *worker* de FrankenPHP. |
-| [The monorepo workflow](doc/workflow.md) | Les crochets, la scission des paquets finis et leurs fichiers de sécurité, la prose de la documentation, les points chauds. |
+| [The monorepo workflow](doc/workflow.md) | Les crochets, la scission des paquets finis et leurs fichiers de sécurité, ceux d'un monodépôt, la prose de la documentation, les points chauds. |
 | [Dependencies](doc/dependencies.md) | Ce que chaque librairie peut utiliser par défaut, et ce qui est permis à chaque paquet. |
 | [Real servers](doc/services.md) | MySQL, PostgreSQL et Gotenberg dans Docker, et leurs variables. |
 | [HTTP recordings](doc/http-recordings.md) | L'enregistrement et la relecture des services HTTP avec l'enregistreur de Symfony 8.2. |
