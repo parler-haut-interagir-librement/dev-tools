@@ -11,14 +11,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(LspCommand::class)]
 final class LspCommandTest extends CommandTestCase
 {
-    private const string CODES = "config.unknown_key\nroute.not_found\n\nSome note\ntemplate.not_found\n";
+    private const string CODES = "config.unknown_key\n  route.not_found\r\n\nSome note\nsee config.duplicate_key\nroute.missing_parameters below\ntemplate.not_found\n";
 
     public function testEachApplicationWithEveryCodeBlocking(): void
     {
         $root = $this->fixture('monorepo');
         $this->put($root.'/bin/console', '');
-        $this->put($root.'/packages/slug/composer.json', '{"name": "phil/slug-site", "type": "project"}');
-        $this->put($root.'/packages/slug/bin/console', '');
+        $this->put($root.'/packages/tilttek-dice/composer.json', '{"name": "tilttek/dice-site", "type": "project"}');
+        $this->put($root.'/packages/tilttek-dice/bin/console', '');
         $path = $this->executables(['symfony']);
         $tester = $this->tester($root, 'lsp', [new ProcessResult(0, self::CODES), new ProcessResult(0), new ProcessResult(1)]);
 
@@ -31,8 +31,8 @@ final class LspCommandTest extends CommandTestCase
             $path.'/symfony lsp:check --format=human --fail-on=config.unknown_key,route.not_found,template.not_found --source-only',
         ], $this->runner->commands());
         self::assertSame($root, $this->runner->runs[1]['directory']);
-        self::assertSame($root.'/packages/slug', $this->runner->runs[2]['directory']);
-        self::assertStringContainsString("packages/slug-bundle: a symfony-bundle, not an application: skipped.\n== the root\n== packages/slug\n", $tester->getDisplay());
+        self::assertSame($root.'/packages/tilttek-dice', $this->runner->runs[2]['directory']);
+        self::assertStringContainsString("packages/slug-bundle: a symfony-bundle, not an application: skipped.\n== the root\n== packages/tilttek-dice\n", $tester->getDisplay());
     }
 
     public function testTheGitHubFormatUnderGitHubActions(): void
@@ -91,7 +91,7 @@ final class LspCommandTest extends CommandTestCase
 
     public function testTurnedOff(): void
     {
-        $root = $this->package(['gates' => ['lsp' => false]]);
+        $root = $this->package(['gates' => ['lsp' => false]], ['type' => 'project']);
         $this->put($root.'/bin/console', '');
         $tester = $this->tester($root, 'lsp');
 

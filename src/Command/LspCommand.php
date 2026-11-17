@@ -73,7 +73,7 @@ final class LspCommand extends WorkspaceCommand
         }
 
         $codes = $this->runner->capture([$symfony, 'lsp:check', '--list-codes'], $workspace->root->dir);
-        $list = array_values(array_filter(array_map(trim(...), explode("\n", $codes->output)), static fn (string $code): bool => 1 === preg_match('/^[a-z_]+\.[a-z_]+$/', $code)));
+        $list = array_filter(array_map(trim(...), explode("\n", $codes->output)), static fn (string $code): bool => 1 === preg_match('/^[a-z_]+\.[a-z_]+$/', $code));
 
         if (!$codes->successful() || [] === $list) {
             $output->writeln('<error>symfony lsp:check --list-codes listed no diagnostic code.</error>');
