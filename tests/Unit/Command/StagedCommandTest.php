@@ -97,10 +97,10 @@ final class StagedCommandTest extends CommandTestCase
     public function testPhpStanIsCapturedWithItsErrors(): void
     {
         $root = $this->package();
-        $tester = $this->tester($root, 'staged', [new ProcessResult(0, "src/A.php\0"), new ProcessResult(1, " [ERROR] Found 1 error\n")]);
+        $tester = $this->tester($root, 'staged', [new ProcessResult(0, "src/A.php\0src/B.php\0"), new ProcessResult(1, " [ERROR] Found 1 error\n")]);
 
         self::assertSame(1, $tester->execute(['tool' => 'phpstan']));
-        self::assertSame([$root.'/vendor-bin/phpstan/vendor/bin/phpstan', 'analyse', '--no-progress', '--no-ansi', '--', 'src/A.php'], $this->runner->runs[1]['command']);
+        self::assertSame([$root.'/vendor-bin/phpstan/vendor/bin/phpstan', 'analyse', '--no-progress', '--no-ansi', '--', 'src/A.php', 'src/B.php'], $this->runner->runs[1]['command']);
         self::assertTrue($this->runner->runs[1]['capture']);
         self::assertTrue($this->runner->runs[1]['withErrors']);
         self::assertSame(" [ERROR] Found 1 error\n", $tester->getDisplay());
