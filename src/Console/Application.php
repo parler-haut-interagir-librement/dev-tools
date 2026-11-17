@@ -19,6 +19,7 @@ use Phil\DevTools\Command\InitCommand;
 use Phil\DevTools\Command\JsCommand;
 use Phil\DevTools\Command\LintAppsCommand;
 use Phil\DevTools\Command\LintDocsCommand;
+use Phil\DevTools\Command\LspCommand;
 use Phil\DevTools\Command\MatrixCommand;
 use Phil\DevTools\Command\NewCommand;
 use Phil\DevTools\Command\NormalizeCommand;
@@ -69,6 +70,7 @@ final class Application extends Console
             new UnusedCommand($root, $runner),
             new TwigCommand($root, $runner),
             new StagedCommand($root, $runner),
+            new LspCommand($root, $runner),
             new TwigStanCommand($root, $runner),
             new JsCommand($root, $runner),
             new TaintCommand($root, $runner),
