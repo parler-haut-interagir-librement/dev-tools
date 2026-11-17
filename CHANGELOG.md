@@ -5,6 +5,34 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- `phil-dev staged php-cs-fixer|phpstan|twig-cs-fixer [--in-dir=DIR…]`, the fast gates of the pre-commit hook on the
+  staged files: the names are read from `git diff --cached -z` and handed to the tool as arguments of their own, after
+  `--`, never through a shell. PHPStan given only files its configuration excludes ((`No files found to analyse.`))
+  passes.
+- `ProcessRunner::capture()` takes `$withErrors`, which captures the error output with the standard one, in the order
+  the command writes them.
+- `README.fr.md`, the French README.
+
+### Changed
+
+- The `captainhook.json` `init` writes calls `phil-dev staged` instead of naming the staged files through CaptainHook's
+  `{$STAGED_FILES}`, which joined them unquoted into a shell command: a staged file named `a; command;.php` ran that
+  command on the next commit. Run `phil-dev init --force`, or replace the three actions by hand, in each project.
+- `infection` run from the directory of a member of a monorepo, without an Infection of its own under `vendor-bin/`,
+  runs from the monorepo's root on that member alone.
+- `phil-dev php` also gives the container its own `var/tmp`, the `TMPDIR` of the tests, and `var/infection/tmp`, under
+  `var/phil-dev/php/<version>/`: the test kernels the host compiled hold the host's paths.
+
+### Fixed
+
+- The PHPUnit configuration generated under `var/phil-dev/phpunit/` writes `noNamespaceSchemaLocation` as a path
+  relative to itself, or keeps the URL the root wrote: Infection resolves a schema path that is not a URL against the
+  directory of the configuration, even an absolute one, and stopped on `Invalid schema path found` before mutating.
+
 ## 0.1.4-alpha - 2026-11-15
 
 ### Added

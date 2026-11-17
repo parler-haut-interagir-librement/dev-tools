@@ -28,7 +28,7 @@ several batches can work at once in their own worktrees.
 | The gates `audit`, `unused`, `normalize`, `twig` and `js`, ParaTest, the PHPStan extensions | Implemented and tested |
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implemented and tested |
 | `bench --baseline` and `--compare`, `bench:worker` and the FrankenPHP service, the `bench-ext` image | Implemented and tested |
-| `split`, the CaptainHook configuration, `lint-docs` and its French dictionary, `hotspots` | Implemented and tested |
+| `split`, the CaptainHook configuration and `staged`, `lint-docs` and its French dictionary, `hotspots` | Implemented and tested |
 | The security files of a split repository (Dependabot, OpenSSF Scorecard), its badge, `split --security-files`, the Snyk policy of a public monorepo | Implemented and tested |
 | `lint-apps`: `lint:container`, `lint:expressions` and `lint:yaml` on each functional test application | Implemented and tested |
 | `check-translations`, `stamp-translations`, the French mirror of `new` | Implemented and tested |
