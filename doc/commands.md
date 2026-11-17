@@ -17,6 +17,7 @@
 | `witnesses` | Checks that PHPStan still reports each forbidden call in its witness. |
 | `generate` | Writes the generated Deptrac, Infection, Psalm, Biome and churn-php configurations under `var/phil-dev/`. |
 | `test [--suite=NAME] [-- arguments]` | Runs the tests with ParaTest, or PHPUnit when ParaTest is missing. |
+| `staged <php-cs-fixer\|phpstan\|twig-cs-fixer> [--in-dir=DIR…]` | Runs a fast gate on the staged files, for the pre-commit hook. |
 | `audit` | Checks the installed packages against the security advisories. |
 | `unused` | Finds the required packages the code never uses. |
 | `normalize [--fix]` | Checks, or fixes, that every `composer.json` is normalized. |
@@ -122,6 +123,15 @@ the branch left the base ref, committed or not, and the untracked files git does
 `PHIL_DEV_BASE_REF`, else whichever of `origin/main` and `main` the branch left last, else `main`. Nothing changed
 passes. Arguments after `--` go to Infection.
 
+Run from the directory of a member of a monorepo, `php ../../vendor/bin/phil-dev infection`, it moves to the nearest
+parent whose workspace counts that directory among its members and mutates that member alone, as `PHIL_DEV_PACKAGES`
+would narrow it: a member has neither Infection under `vendor-bin/` nor the root's PHPUnit configuration. A member that
+has its own `vendor-bin/infection` is run where it is.
+
+The PHPUnit configuration generated under `var/phil-dev/phpunit/` keeps its schema as a path relative to itself, or as
+the URL the root wrote: Infection resolves a schema path that is not a URL against the directory of the configuration,
+even an absolute one, and stopped on `Invalid schema path found` before mutating anything.
+
 ## deptrac, witnesses, generate
 
 `deptrac` writes `var/phil-dev/deptrac.yaml` (see [Dependencies](dependencies.md)), runs Deptrac on it with
@@ -141,6 +151,15 @@ with each glob replaced by the directories it matches, sorted, and without the s
 `test`, `infection` and `services test|record` run with `TMPDIR` under `var/tmp/` of the root, unless it already points
 inside the root: the test kernels that keep their cache under the system's temporary directory get one per checkout,
 and a clone and its worktrees can run their tests at the same time.
+
+## staged
+
+The pre-commit hook's gates on the files of the index: `staged php-cs-fixer` and `staged phpstan` on the PHP files
+added, copied, modified or renamed, `staged twig-cs-fixer` on the Twig templates; `--in-dir=packages/`, repeatable,
+keeps those under a directory. Nothing staged of the type passes. The names are read from `git diff --cached -z` and
+handed to the tool as arguments of their own, after `--`, never through a shell: see
+[The monorepo workflow](workflow.md#the-hooks). PHPStan given only files its configuration excludes says
+`No files found to analyse.` and fails; `staged phpstan` passes then.
 
 ## audit, unused, normalize, twig, js
 

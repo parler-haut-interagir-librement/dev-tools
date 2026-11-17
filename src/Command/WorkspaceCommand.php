@@ -6,6 +6,7 @@ namespace Phil\DevTools\Command;
 
 use Override;
 use Phil\DevTools\DevTools;
+use Phil\DevTools\Exception\DevToolsException;
 use Phil\DevTools\Exception\WorkspaceNotFound;
 use Phil\DevTools\Process\LocalProcessRunner;
 use Phil\DevTools\Process\ProcessRunner;
@@ -26,6 +27,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 abstract class WorkspaceCommand extends Command
 {
+    /**
+     * The monorepo the command moved to from one of its members, and that member's directory relative to it.
+     *
+     * @var array{string, string}|null
+     */
+    private ?array $enclosing = null;
+
     public function __construct(
         private readonly ?string $root = null,
         protected readonly ProcessRunner $runner = new LocalProcessRunner(),
@@ -59,12 +67,49 @@ abstract class WorkspaceCommand extends Command
 
     protected function root(): string
     {
-        return $this->root ?? DevTools::root();
+        return $this->enclosing[0] ?? $this->root ?? DevTools::root();
     }
 
     protected function workspace(): Workspace
     {
-        return Workspace::load($this->root());
+        return null === $this->enclosing ? Workspace::load($this->root()) : Workspace::load($this->enclosing[0], [$this->enclosing[1]]);
+    }
+
+    /**
+     * Moves the command to the monorepo whose member the root is, narrowed to that member: the nearest parent
+     * directory whose workspace counts the root among its members. A member of a monorepo has neither the tools
+     * under `vendor-bin/` nor the root's PHPUnit configuration. Returns the member, or null when the root is no
+     * member of a parent's workspace.
+     */
+    protected function enterEnclosingMonorepo(): ?Package
+    {
+        $directory = realpath($this->root());
+
+        if (false === $directory) {
+            return null;
+        }
+
+        for ($parent = \dirname($directory); $parent !== \dirname($parent); $parent = \dirname($parent)) {
+            if (!is_file($parent.'/composer.json')) {
+                continue;
+            }
+
+            try {
+                $members = Workspace::load($parent)->members;
+            } catch (DevToolsException) {
+                continue;
+            }
+
+            foreach ($members as $member) {
+                if ($member->dir === $directory) {
+                    $this->enclosing = [$parent, $member->relative];
+
+                    return $member;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

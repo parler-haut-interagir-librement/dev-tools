@@ -14,8 +14,14 @@ prose of the documentation and the hotspots of the code.
 
 `init` writes `captainhook.json`. Before each commit, CaptainHook, in its own `vendor-bin/captainhook/`, runs the fast
 gates on the staged files only, each when a file of its type is staged: PHP-CS-Fixer and PHPStan on the PHP files,
-Twig-CS-Fixer on the templates, `phil-dev normalize` for a `composer.json`, `phil-dev check-docs` and
-`phil-dev check-translations` for a Markdown file.
+Twig-CS-Fixer on the templates, through `phil-dev staged`, `phil-dev normalize` for a `composer.json`,
+`phil-dev check-docs` and `phil-dev check-translations` for a Markdown file.
+
+No action of the hooks names a staged file. CaptainHook's `{$STAGED_FILES}` joins the names, unquoted, into a command
+its shell runs: a file staged as `a; curl … | sh;.php` would run that command on the next commit of whoever pulled it.
+`phil-dev staged` reads the names from git itself, separated by NUL bytes, and hands them to the tool as arguments of
+their own, after `--`, so that a name with spaces, quotes, a semicolon or a leading dash stays one path. A project
+that adds its own action keeps to fixed command lines, or to an action of CaptainHook's `php` type.
 The slow gates — Deptrac, the tests, Infection — stay in `composer gates`. `composer hooks` installs the hooks once
 per clone; a worktree shares them.
 

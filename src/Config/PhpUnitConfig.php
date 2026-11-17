@@ -17,7 +17,9 @@ use Phil\DevTools\Workspace\Workspace;
  * The suites of a monorepo find every package by their globs. The generated configuration is a copy of the root's,
  * under `var/phil-dev/`, each relative path made absolute and each glob replaced by the directories it matches when
  * the configuration is generated, sorted: PHPUnit and Infection read a fixed list of directories, whatever the
- * checkout's path, and a package added later is found by the next generation. A skipped package is left out of the
+ * checkout's path, and a package added later is found by the next generation. The schema stays a path relative to
+ * the generated file, or a URL as written: Infection resolves a schema path that is not a URL against the directory
+ * of the configuration, absolute or not. A skipped package is left out of the
  * directories and excluded from every suite and from the source. A `**` pattern is left for PHPUnit to expand.
  */
 final readonly class PhpUnitConfig
@@ -42,6 +44,11 @@ final readonly class PhpUnitConfig
      * @var list<string>
      */
     private const array PATH_ELEMENTS = ['directory', 'file', 'exclude'];
+
+    /**
+     * Where the generated configuration is written, under the root.
+     */
+    public const string GENERATED = 'var/phil-dev/phpunit/phpunit.xml';
 
     private const string SCHEMA_NAMESPACE = 'http://www.w3.org/2001/XMLSchema-instance';
 
@@ -183,7 +190,7 @@ final readonly class PhpUnitConfig
             }
 
             if ($element->hasAttributeNS(self::SCHEMA_NAMESPACE, 'noNamespaceSchemaLocation')) {
-                $element->setAttributeNS(self::SCHEMA_NAMESPACE, 'xsi:noNamespaceSchemaLocation', $this->absolute($element->getAttributeNS(self::SCHEMA_NAMESPACE, 'noNamespaceSchemaLocation')));
+                $element->setAttributeNS(self::SCHEMA_NAMESPACE, 'xsi:noNamespaceSchemaLocation', $this->schema($element->getAttributeNS(self::SCHEMA_NAMESPACE, 'noNamespaceSchemaLocation')));
             }
 
             if (\in_array($element->localName, self::PATH_ELEMENTS, true) && null === $element->firstElementChild) {
@@ -227,6 +234,47 @@ final readonly class PhpUnitConfig
                 $exclude->appendChild($document->createElement('directory', $package->dir));
             }
         }
+    }
+
+    /**
+     * The schema's location as the generated file reaches it: a URL as written, a path relative to the generated
+     * file's directory otherwise.
+     */
+    private function schema(string $location): string
+    {
+        if (str_contains($location, '://')) {
+            return $location;
+        }
+
+        $from = self::segments(\dirname($this->workspace->root->path(self::GENERATED)));
+        $to = self::segments($this->absolute($location));
+
+        while (isset($from[0], $to[0]) && $from[0] === $to[0]) {
+            array_shift($from);
+            array_shift($to);
+        }
+
+        return str_repeat('../', \count($from)).implode('/', $to);
+    }
+
+    /**
+     * The segments of an absolute path, without `.` and with each `..` taking back the segment before it.
+     *
+     * @return list<string>
+     */
+    private static function segments(string $path): array
+    {
+        $segments = [];
+
+        foreach (explode('/', $path) as $segment) {
+            if ('..' === $segment) {
+                array_pop($segments);
+            } elseif ('' !== $segment && '.' !== $segment) {
+                $segments[] = $segment;
+            }
+        }
+
+        return $segments;
     }
 
     private function absolute(string $path): string

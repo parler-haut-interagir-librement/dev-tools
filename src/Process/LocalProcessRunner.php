@@ -47,8 +47,12 @@ final class LocalProcessRunner implements ProcessRunner
         }
     }
 
-    public function capture(array $command, string $directory, array $environment = []): ProcessResult
+    public function capture(array $command, string $directory, array $environment = [], bool $withErrors = false): ProcessResult
     {
+        if ($withErrors) {
+            return $this->captureWithErrors($command, $directory, $environment);
+        }
+
         $process = $this->open($command, [1 => ['pipe', 'w']], $directory, $environment, $pipes);
         $output = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
@@ -57,16 +61,39 @@ final class LocalProcessRunner implements ProcessRunner
     }
 
     /**
-     * @param non-empty-list<string>    $command
-     * @param array<int, list<string>>  $descriptors
-     * @param array<string, string>     $environment
-     * @param array<int, resource>|null $pipes
+     * Both streams into one temporary file, in the order the command writes them: two pipes read one after the other
+     * would block once the second fills.
+     *
+     * @param non-empty-list<string> $command
+     * @param array<string, string>  $environment
+     */
+    private function captureWithErrors(array $command, string $directory, array $environment): ProcessResult
+    {
+        $file = tmpfile();
+
+        if (false === $file) {
+            throw new RuntimeException(\sprintf('Cannot capture the output of %s.', $command[0]));
+        }
+
+        $exitCode = proc_close($this->open($command, [1 => $file, 2 => $file], $directory, $environment, $pipes));
+        rewind($file);
+        $output = stream_get_contents($file);
+        fclose($file);
+
+        return new ProcessResult($exitCode, false === $output ? '' : $output);
+    }
+
+    /**
+     * @param non-empty-list<string>            $command
+     * @param array<int, list<string>|resource> $descriptors
+     * @param array<string, string>             $environment
+     * @param array<int, resource>|null         $pipes
      *
      * @param-out array<int, resource> $pipes
      *
      * @return resource
      */
-    private function open(array $command, array $descriptors, string $directory, array $environment, ?array &$pipes) // @phpstan-ignore typeCoverage.returnTypeCoverage (a process is a resource, which PHP has no type for)
+    private function open(array $command, array $descriptors, string $directory, array $environment, ?array &$pipes): mixed
     {
         // The point of this class: every process of phil-dev goes through here, without a shell.
         $process = proc_open($command, $descriptors, $pipes, $directory, [...getenv(), ...$environment]); // @phpstan-ignore disallowed.function

@@ -68,7 +68,11 @@ a path inside the project, `var/phpstan` otherwise, and `var/phpstan-witnesses` 
 directories of its own, `var/phil-dev/php/<version>/var-phpstan` and the like. PHPStan keys its reflection cache by
 the PHP version it analyses for, not by where its phar lies, and stores the absolute path of the stubs inside the phar:
 a cache the host wrote sends the container to a stub under `/Users/…`, which stops the run with the internal error
-`… standard_10.stub" is not a file`. The full analysis on the next PHP runs as:
+`… standard_10.stub" is not a file`. The temporary directory of the tests, `var/tmp`, and Infection's,
+`var/infection/tmp`, are replaced the same way, by `var/phil-dev/php/<version>/var-tmp` and
+`var/phil-dev/php/<version>/var-infection-tmp`: the test kernels compile their containers with the paths of the
+checkout, `/app` in the container and the host's path outside, and neither may read the other's. The full analysis on
+the next PHP runs as:
 
 ```bash
 vendor/bin/phil-dev php next -- php vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress

@@ -11,7 +11,7 @@
         "enabled": true,
         "actions": [
             {
-                "action": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff --path-mode=intersection -- {$STAGED_FILES|of-type:php}",
+                "action": "php @bin@ staged php-cs-fixer",
                 "conditions": [
                     {
                         "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",
@@ -22,7 +22,7 @@
                 ]
             },
             {
-                "action": "vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress -- {$STAGED_FILES|of-type:php}",
+                "action": "php @bin@ staged phpstan",
                 "conditions": [
                     {
                         "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",
@@ -33,7 +33,7 @@
                 ]
             },
             {
-                "action": "vendor-bin/twig/vendor/bin/twig-cs-fixer lint --no-cache {$STAGED_FILES|of-type:twig}",
+                "action": "php @bin@ staged twig-cs-fixer",
                 "conditions": [
                     {
                         "exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType",

@@ -23,6 +23,41 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertStringContainsString('"minCoveredMsi": 100', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
     }
 
+    public function testFromTheDirectoryOfAMemberItRunsFromTheMonorepoOnThatMemberAlone(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root.'/packages/slug', 'infection', [new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertStringContainsString('Running from the monorepo at '.$root.', on ', $tester->getDisplay());
+        self::assertSame([$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max'], $this->runner->commands());
+        self::assertSame($root, $this->runner->runs[0]['directory']);
+        $config = (string) file_get_contents($root.'/var/phil-dev/infection.json');
+        self::assertStringContainsString($root.'/packages/slug/src', $config);
+        self::assertStringNotContainsString($root.'/packages/slug-bundle/src', $config);
+        self::assertFileDoesNotExist($root.'/packages/slug/var/phil-dev/infection.json');
+    }
+
+    public function testAMemberWithItsOwnInfectionStaysWhereItIs(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/packages/slug/vendor-bin/infection/vendor/bin/infection', '');
+        $tester = $this->tester($root.'/packages/slug', 'infection', [new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertSame($root.'/packages/slug', $this->runner->runs[0]['directory']);
+    }
+
+    public function testAPackageOutsideAnyMonorepoStaysWhereItIs(): void
+    {
+        $root = $this->package();
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute([]));
+        self::assertStringNotContainsString('Running from the monorepo', $tester->getDisplay());
+        self::assertSame($root, $this->runner->runs[0]['directory']);
+    }
+
     public function testTheTimeoutOfAPackage(): void
     {
         $root = $this->fixture('monorepo');

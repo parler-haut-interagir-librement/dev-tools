@@ -14,7 +14,7 @@
 | `Config\BiomeConfig` | The generated Biome configuration and the Biome version. |
 | `Config\ChurnConfig` | The generated churn-php configuration. |
 | `Config\DocsLintConfig` | The generated configurations of cspell, markdownlint and Vale, and the files they read. |
-| `Config\CaptainHookConfig` | The `captainhook.json` `init` writes. |
+| `Config\CaptainHookConfig` | The `captainhook.json` `init` writes: fixed command lines, the staged files read by `phil-dev staged`. |
 | `Config\YamlWriter` | The YAML of the generated configurations. |
 | `Matrix\Matrix`, `Version`, `VersionStatus` | The versions of PHP and Symfony of `config/matrix.json`. |
 | `Init\Initializer`, `ComposerJson`, `InitResult`, `InitStatus` | What `init` writes. |
@@ -28,7 +28,7 @@
 | `Workspace\TestKernels` | The kernels of a package's functional test applications, found by reading the files. |
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
-| `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, with a timeout when one is given. |
+| `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, without a shell, with a timeout when one is given, their error output captured with the standard one on request. |
 | `Split\SecurityFiles` | The security files of a split repository, the repository a package is split to, and its OpenSSF Scorecard badge. |
 | `Split\SecurityCommit` | The commit of the security files on top of a split commit, and the tip of the published branch it merges. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |

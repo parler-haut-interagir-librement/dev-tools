@@ -438,7 +438,7 @@ final class SplitCommandTest extends CommandTestCase
             }
 
             #[Override]
-            public function capture(array $command, string $directory, array $environment = []): ProcessResult
+            public function capture(array $command, string $directory, array $environment = [], bool $withErrors = false): ProcessResult
             {
                 return new LocalProcessRunner()->capture(['/bin/sh', '-c', 'exec "$@" 2>/dev/null', 'sh', ...$command], $directory, $environment);
             }

@@ -33,6 +33,28 @@ final class LocalProcessRunnerTest extends TestCase
         self::assertSame(realpath(sys_get_temp_dir()).'|probe|inherited|an argument; with $hell', $result->output);
     }
 
+    public function testItCapturesTheErrorsWithTheOutputOnRequest(): void
+    {
+        $directory = sys_get_temp_dir();
+
+        $result = new LocalProcessRunner()->capture(['/bin/sh', '-c', 'echo out; echo err >&2; exit 3'], $directory, withErrors: true);
+
+        self::assertSame(3, $result->exitCode);
+        self::assertSame("out\nerr\n", $result->output);
+    }
+
+    /**
+     * Without `$withErrors`, the error output stays phil-dev's own, apart from the captured one; the command tells
+     * which, so that nothing is written there: Infection stops its initial run at the first byte on stderr.
+     */
+    public function testItLeavesTheErrorsOnTheTerminalByDefault(): void
+    {
+        $command = ['/bin/sh', '-c', '[ /dev/fd/1 -ef /dev/fd/2 ] && echo one || echo apart'];
+
+        self::assertSame("apart\n", new LocalProcessRunner()->capture($command, sys_get_temp_dir())->output);
+        self::assertSame("one\n", new LocalProcessRunner()->capture($command, sys_get_temp_dir(), withErrors: true)->output);
+    }
+
     public function testItRunsWithTheStreamsOfPhilDev(): void
     {
         $file = sys_get_temp_dir().'/phil-dev-runner-'.getmypid();

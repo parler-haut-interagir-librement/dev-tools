@@ -7,6 +7,7 @@ namespace Phil\DevTools\Command;
 use Override;
 use Phil\DevTools\Config\InfectionConfig;
 use Phil\DevTools\Config\PhpUnitConfig;
+use Phil\DevTools\Workspace\Package;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +24,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     --changed: the PHP files added, modified or renamed since the base ref, committed or not, and the untracked
     ones git does not ignore, once per batch before its commit; nothing to mutate passes. Without a ref, the base is
     PHIL_DEV_BASE_REF, else whichever of origin/main and main the branch left last, else main.
+
+    Run from the directory of a member of a monorepo that has no Infection of its own under vendor-bin/, it
+    runs from the monorepo's root on that member alone, as PHIL_DEV_PACKAGES would narrow it.
 
     While the planned packages are skipped (--skip-planned, PHIL_DEV_SKIP_PLANNED=1), their code is not mutated
     and their tests do not run: Infection reads var/phil-dev/phpunit/phpunit.xml, the root's configuration
@@ -43,6 +47,10 @@ final class InfectionCommand extends WorkspaceCommand
     #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if (!is_file($this->tool('infection', 'infection')) && ($member = $this->enterEnclosingMonorepo()) instanceof Package) {
+            $output->writeln(\sprintf('Running from the monorepo at %s, on %s alone.', $this->root(), $member->name));
+        }
+
         $workspace = $this->workspace();
         $phpUnit = new PhpUnitConfig($workspace)->generated();
         $phpUnitDirectory = null === $phpUnit ? null : \dirname($this->generate('phpunit/phpunit.xml', $phpUnit));

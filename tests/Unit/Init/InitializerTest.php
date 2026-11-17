@@ -60,7 +60,7 @@ final class InitializerTest extends TestCase
         self::assertSame(Initializer::GATES, $composer['scripts']['gates']);
         self::assertSame(['@deps', '@deps:audit', '@deps:unused', '@deps:normalize', '@cs', '@twig', '@js', '@phpstan', '@rector', '@deptrac', '@arkitect', '@lint:apps', '@test', '@infection'], Initializer::GATES);
         self::assertArrayNotHasKey('split', $composer['scripts']);
-        self::assertStringContainsString('{$STAGED_FILES|of-type:php}', (string) file_get_contents($root.'/captainhook.json'));
+        self::assertStringContainsString(' staged phpstan"', (string) file_get_contents($root.'/captainhook.json'));
         self::assertSame('@php '.DevTools::binary($root).' infection --changed', $composer['scripts']['infection:changed']);
         self::assertSame(new Initializer($root)->descriptions(false), $composer['scripts-descriptions']);
     }

@@ -9,6 +9,7 @@ use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Tests\Unit\Support\TemporaryDirectory;
 use Phil\DevTools\Workspace\Workspace;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(PhpUnitConfig::class)]
@@ -123,7 +124,7 @@ final class PhpUnitConfigTest extends TestCase
 
         self::assertSame(<<<XML
             <?xml version="1.0" encoding="UTF-8"?>
-            <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="{$root}/vendor/phpunit/phpunit/phpunit.xsd" bootstrap="{$root}/tests/bootstrap.php" cacheDirectory="{$root}/var/phpunit" colors="true">
+            <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../vendor/phpunit/phpunit/phpunit.xsd" bootstrap="{$root}/tests/bootstrap.php" cacheDirectory="{$root}/var/phpunit" colors="true">
                 <php>
                     <env name="COLUMNS" value="240"/>
                 </php>
@@ -148,6 +149,47 @@ final class PhpUnitConfigTest extends TestCase
             </phpunit>
 
             XML, $xml);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function schemas(): iterable
+    {
+        yield 'relative to the root' => ['vendor/phpunit/phpunit/phpunit.xsd', '../../../vendor/phpunit/phpunit/phpunit.xsd'];
+        yield 'dotted' => ['./vendor/../vendor/phpunit/phpunit.xsd', '../../../vendor/phpunit/phpunit.xsd'];
+        yield 'inside var' => ['var/phil-dev/schema.xsd', '../schema.xsd'];
+        yield 'beside the generated file' => ['var/phil-dev/phpunit/phpunit.xsd', 'phpunit.xsd'];
+        yield 'a parent of the generated file' => ['var', '../../'];
+        yield 'outside the root' => ['../phpunit.xsd', '../../../../phpunit.xsd'];
+        yield 'a URL' => ['https://schema.phpunit.de/13.0/phpunit.xsd', 'https://schema.phpunit.de/13.0/phpunit.xsd'];
+    }
+
+    /**
+     * Infection resolves a schema path that is not a URL against the directory of the configuration, even an
+     * absolute one ("Invalid schema path found"): the path stays relative to the generated file.
+     */
+    #[DataProvider('schemas')]
+    public function testTheSchemaIsReachedFromTheGeneratedFile(string $location, string $expected): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.dist.xml', '<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="'.$location.'"><source><include><directory>packages/*/src</directory></include></source></phpunit>');
+
+        $xml = (string) new PhpUnitConfig(Workspace::load($root, null, false))->generated();
+
+        self::assertStringContainsString('xsi:noNamespaceSchemaLocation="'.$expected.'"', $xml);
+    }
+
+    public function testTheSchemaOfTheGeneratedFileExistsFromItsDirectory(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/vendor/phpunit/phpunit/phpunit.xsd', '<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"/>');
+        $this->put($root.'/phpunit.dist.xml', self::CONFIGURATION);
+        $xml = (string) new PhpUnitConfig(Workspace::load($root, null, false))->generated();
+        $this->put($root.'/'.PhpUnitConfig::GENERATED, $xml);
+
+        self::assertSame(1, preg_match('~noNamespaceSchemaLocation="([^"]+)"~', $xml, $match));
+        self::assertFileExists(\dirname($root.'/'.PhpUnitConfig::GENERATED).'/'.$match[1]);
     }
 
     public function testAnExistingExclusionOfTheSourceIsKept(): void

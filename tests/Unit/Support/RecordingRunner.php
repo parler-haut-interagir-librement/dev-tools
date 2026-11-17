@@ -14,7 +14,7 @@ use Phil\DevTools\Process\ProcessRunner;
  */
 final class RecordingRunner implements ProcessRunner
 {
-    /** @var list<array{command: list<string>, directory: string, environment: array<string, string>, capture: bool, timeout: int|null}> */
+    /** @var list<array{command: list<string>, directory: string, environment: array<string, string>, capture: bool, withErrors: bool, timeout: int|null}> */
     public array $runs = [];
 
     /**
@@ -34,7 +34,7 @@ final class RecordingRunner implements ProcessRunner
     #[Override]
     public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult
     {
-        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => false, 'timeout' => $timeout];
+        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => false, 'withErrors' => false, 'timeout' => $timeout];
 
         if ($this->onRun instanceof Closure) {
             ($this->onRun)($command);
@@ -44,9 +44,9 @@ final class RecordingRunner implements ProcessRunner
     }
 
     #[Override]
-    public function capture(array $command, string $directory, array $environment = []): ProcessResult
+    public function capture(array $command, string $directory, array $environment = [], bool $withErrors = false): ProcessResult
     {
-        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => true, 'timeout' => null];
+        $this->runs[] = ['command' => $command, 'directory' => $directory, 'environment' => $environment, 'capture' => true, 'withErrors' => $withErrors, 'timeout' => null];
 
         return array_shift($this->results) ?? new ProcessResult(0);
     }

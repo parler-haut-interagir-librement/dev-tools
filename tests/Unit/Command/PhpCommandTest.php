@@ -116,6 +116,8 @@ final class PhpCommandTest extends CommandTestCase
         self::assertStringContainsString(' '.$this->caches($root, $next).'--workdir ', $this->runner->commands()[1]);
         self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-phpstan');
         self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-phpstan-witnesses');
+        self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-tmp');
+        self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-infection-tmp');
 
         // A second run finds the directories already there.
         $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'next']);
@@ -172,7 +174,7 @@ final class PhpCommandTest extends CommandTestCase
         $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'floor']);
 
         self::assertStringContainsString(
-            ':/app --volume '.$root.'/var/phil-dev/php/'.$floor.'/var-phpstan-witnesses:/app/var/phpstan-witnesses --workdir ',
+            ':/app --volume '.$root.'/var/phil-dev/php/'.$floor.'/var-phpstan-witnesses:/app/var/phpstan-witnesses --volume '.$root.'/var/phil-dev/php/'.$floor.'/var-tmp:/app/var/tmp --volume ',
             $this->runner->commands()[1],
         );
     }
@@ -191,7 +193,7 @@ final class PhpCommandTest extends CommandTestCase
     {
         $volumes = '';
 
-        foreach ([$tmpDir, 'var/phpstan-witnesses'] as $directory) {
+        foreach (array_unique([$tmpDir, 'var/phpstan-witnesses', 'var/tmp', 'var/infection/tmp']) as $directory) {
             $volumes .= '--volume '.$root.'/var/phil-dev/php/'.$version.'/'.str_replace('/', '-', $directory).':/app/'.$directory.' ';
         }
 

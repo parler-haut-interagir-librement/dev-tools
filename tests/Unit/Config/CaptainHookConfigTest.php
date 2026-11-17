@@ -21,9 +21,9 @@ final class CaptainHookConfigTest extends TestCase
         self::assertSame([
             'enabled' => true,
             'actions' => [
-                ['action' => 'vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff --path-mode=intersection -- {$STAGED_FILES|of-type:php}', 'conditions' => $of('php')],
-                ['action' => 'vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress -- {$STAGED_FILES|of-type:php}', 'conditions' => $of('php')],
-                ['action' => 'vendor-bin/twig/vendor/bin/twig-cs-fixer lint --no-cache {$STAGED_FILES|of-type:twig}', 'conditions' => $of('twig')],
+                ['action' => 'php vendor/bin/phil-dev staged php-cs-fixer', 'conditions' => $of('php')],
+                ['action' => 'php vendor/bin/phil-dev staged phpstan', 'conditions' => $of('php')],
+                ['action' => 'php vendor/bin/phil-dev staged twig-cs-fixer', 'conditions' => $of('twig')],
                 ['action' => 'php vendor/bin/phil-dev normalize', 'conditions' => $of('json')],
                 ['action' => 'php vendor/bin/phil-dev check-docs', 'conditions' => $of('md')],
                 ['action' => 'php vendor/bin/phil-dev check-translations', 'conditions' => $of('md')],
@@ -39,6 +39,11 @@ final class CaptainHookConfigTest extends TestCase
         self::assertStringContainsString('"action": "php bin/phil-dev normalize",', $json);
         self::assertStringContainsString('"exec": "\\\\CaptainHook\\\\App', $json);
         self::assertStringEndsWith("}\n", $json);
+    }
+
+    public function testNoStagedFileNameReachesAShell(): void
+    {
+        self::assertStringNotContainsString('STAGED_FILES', new CaptainHookConfig('vendor/bin/phil-dev')->json());
     }
 
     public function testABinaryThatCannotBeWritten(): void

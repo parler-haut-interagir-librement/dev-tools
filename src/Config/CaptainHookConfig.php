@@ -11,7 +11,9 @@ use RuntimeException;
  * The CaptainHook configuration `init` writes: before each commit, the fast gates on the staged files only — the code
  * style and PHPStan on the PHP files, the code style of the Twig templates, the normalized `composer.json`, the
  * documentation checks and those of its translations. Each action runs only when a file of its type is staged; the slow gates stay in
- * `composer gates`.
+ * `composer gates`. The staged files reach the tools through `phil-dev staged`, which reads them from git and hands
+ * them over as arguments, never through CaptainHook's `{$STAGED_FILES}`, which joins the names into a shell command
+ * unquoted.
  */
 final readonly class CaptainHookConfig
 {
@@ -39,9 +41,9 @@ final readonly class CaptainHookConfig
             'pre-commit' => [
                 'enabled' => true,
                 'actions' => [
-                    $this->action('vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff --path-mode=intersection -- {$STAGED_FILES|of-type:php}', 'php'),
-                    $this->action('vendor-bin/phpstan/vendor/bin/phpstan analyse --no-progress -- {$STAGED_FILES|of-type:php}', 'php'),
-                    $this->action('vendor-bin/twig/vendor/bin/twig-cs-fixer lint --no-cache {$STAGED_FILES|of-type:twig}', 'twig'),
+                    $this->action('php '.$this->binary.' staged php-cs-fixer', 'php'),
+                    $this->action('php '.$this->binary.' staged phpstan', 'php'),
+                    $this->action('php '.$this->binary.' staged twig-cs-fixer', 'twig'),
                     $this->action('php '.$this->binary.' normalize', 'json'),
                     $this->action('php '.$this->binary.' check-docs', 'md'),
                     $this->action('php '.$this->binary.' check-translations', 'md'),

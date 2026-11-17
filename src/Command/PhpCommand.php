@@ -23,10 +23,11 @@ use Symfony\Component\Console\Output\OutputInterface;
     installs, phil/dev-tools beside it — are mounted read-only where the same relative path reaches them from /app,
     so that Composer and the autoloader find them in the container as on the host.
 
-    PHPStan's temporary directories — the tmpDir of the root's phpstan.neon, var/phpstan by default, and
-    var/phpstan-witnesses — are replaced in the container by directories of its own under var/phil-dev/php/<version>/:
-    PHPStan keys part of its cache by the PHP version it analyses for, not by where its phar lies, so a cache the
-    host wrote would send the container to the host's paths.
+    The temporary directories — PHPStan's, the tmpDir of the root's phpstan.neon (var/phpstan by default) and
+    var/phpstan-witnesses, the TMPDIR of the tests (var/tmp) and Infection's (var/infection/tmp) — are replaced in the
+    container by directories of its own under var/phil-dev/php/<version>/: PHPStan keys part of its cache by the PHP
+    version it analyses for, not by where its phar lies, and the test kernels compile their containers with the
+    paths of the checkout, so a cache the host wrote would send the container to the host's paths.
 
         phil-dev php next
         phil-dev php next -- php vendor/bin/phil-dev check-packages
@@ -69,9 +70,10 @@ final class PhpCommand extends WorkspaceCommand
     }
 
     /**
-     * The `--volume` arguments that give the container PHPStan temporary directories of its own, created on the host
-     * under var/phil-dev/php/<version>/: the reflection cache stores the absolute path of the stubs inside the phar
-     * under a key the host and the container share, and the container then fails on a stub "is not a file".
+     * The `--volume` arguments that give the container temporary directories of its own, created on the host under
+     * var/phil-dev/php/<version>/: PHPStan's reflection cache stores the absolute path of the stubs inside the phar
+     * under a key the host and the container share, and the container then fails on a stub "is not a file"; the test
+     * kernels under the TMPDIR of the tests and Infection's copies under its tmpDir hold the host's paths too.
      *
      * @return list<string>
      */
@@ -79,7 +81,7 @@ final class PhpCommand extends WorkspaceCommand
     {
         $volumes = [];
 
-        foreach ([$this->phpstanTmpDir($root), 'var/phpstan-witnesses'] as $directory) {
+        foreach ([$this->phpstanTmpDir($root), 'var/phpstan-witnesses', 'var/tmp', 'var/infection/tmp'] as $directory) {
             $host = $root.'/var/phil-dev/php/'.$version.'/'.str_replace('/', '-', $directory);
 
             if (!is_dir($host)) {

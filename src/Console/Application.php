@@ -26,6 +26,7 @@ use Phil\DevTools\Command\PhpCommand;
 use Phil\DevTools\Command\SbomCommand;
 use Phil\DevTools\Command\ServicesCommand;
 use Phil\DevTools\Command\SplitCommand;
+use Phil\DevTools\Command\StagedCommand;
 use Phil\DevTools\Command\StampTranslationsCommand;
 use Phil\DevTools\Command\TaintCommand;
 use Phil\DevTools\Command\TestCommand;
@@ -67,6 +68,7 @@ final class Application extends Console
             new NormalizeCommand($root, $runner),
             new UnusedCommand($root, $runner),
             new TwigCommand($root, $runner),
+            new StagedCommand($root, $runner),
             new TwigStanCommand($root, $runner),
             new JsCommand($root, $runner),
             new TaintCommand($root, $runner),

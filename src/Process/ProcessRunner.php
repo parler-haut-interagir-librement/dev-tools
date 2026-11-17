@@ -21,10 +21,11 @@ interface ProcessRunner
     public function run(array $command, string $directory, array $environment = [], ?int $timeout = null): ProcessResult;
 
     /**
-     * Runs the command in the directory and captures its standard output, for a command whose output is read.
+     * Runs the command in the directory and captures its standard output, for a command whose output is read; with
+     * `$withErrors`, its error output too, interleaved with the standard one as the command writes them.
      *
      * @param non-empty-list<string> $command
      * @param array<string, string>  $environment variables added to the inherited environment
      */
-    public function capture(array $command, string $directory, array $environment = []): ProcessResult;
+    public function capture(array $command, string $directory, array $environment = [], bool $withErrors = false): ProcessResult;
 }
