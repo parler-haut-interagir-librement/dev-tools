@@ -119,6 +119,7 @@ final class DocsCheckerTest extends TestCase
         self::assertSame([
             '[table-shape] doc/tables.md:2: 3 cells, the header has 2',
             '[table-shape] doc/tables.md:7: 3 cells, the header has 2',
+            '[table-code-pipe] doc/tables.md:8: `a|b`: a pipe in a code span splits the cell, write \\|',
         ], $this->check($dir));
     }
 
@@ -215,7 +216,46 @@ final class DocsCheckerTest extends TestCase
             MD);
         $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Spans](doc/spans.md)');
 
-        self::assertSame(['[table-shape] doc/spans.md:5: 3 cells, the header has 2'], $this->check($dir));
+        self::assertSame([
+            '[table-shape] doc/spans.md:5: 3 cells, the header has 2',
+            '[table-code-pipe] doc/spans.md:4: `` `a|b` ``: a pipe in a code span splits the cell, write \\|',
+            '[table-code-pipe] doc/spans.md:4: `` c|d ``: a pipe in a code span splits the cell, write \\|',
+            '[table-code-pipe] doc/spans.md:5: ``a`|`b``: a pipe in a code span splits the cell, write \\|',
+        ], $this->check($dir));
+    }
+
+    public function testAPipeInACodeSpanOfATableRowIsEscaped(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/doc/pipes.md', $this->spaces(<<<'MD'
+            | Syntax | Meaning |
+            |---|---|
+            | `2d6|3d4` | refused |
+            | `2d6\|3d4` | escaped |
+            | a \| b | outside code |
+              | `x\|y|z` | one escaped, one not |~~
+            | ``a|b`` and `` `c|d` `` | double backticks |
+            | `\|` and ``|`` | an escaped pipe, then a bare one |
+
+            ```
+            | `fenced|code` | left out |
+            ```
+
+            Prose with `a|b` is not a table row.
+            | `starts|only` without an end
+            `ends|only` without a start |
+            MD));
+        $this->put($dir.'/README.md', file_get_contents($dir.'/README.md').'[Pipes](doc/pipes.md)');
+
+        $message = ': a pipe in a code span splits the cell, write \\|';
+
+        self::assertSame([
+            '[table-code-pipe] doc/pipes.md:3: `2d6|3d4`'.$message,
+            '[table-code-pipe] doc/pipes.md:6: `x\\|y|z`'.$message,
+            '[table-code-pipe] doc/pipes.md:7: ``a|b``'.$message,
+            '[table-code-pipe] doc/pipes.md:7: `` `c|d` ``'.$message,
+            '[table-code-pipe] doc/pipes.md:8: ``|``'.$message,
+        ], $this->check($dir));
     }
 
     public function testAnEscapedPipeIsNotACellSeparator(): void

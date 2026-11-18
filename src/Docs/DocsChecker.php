@@ -54,6 +54,12 @@ final readonly class DocsChecker
     /** @var list<string> */
     private const array ROOT_DOCUMENTS = ['README.md', 'README.fr.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CODE_OF_CONDUCT.md'];
 
+    /**
+     * A code span: as in CommonMark, a run of backticks opens a span that only the next run of exactly as many backticks
+     * closes; a run without one is literal.
+     */
+    private const string CODE_SPAN = '/(?<![`\\\\])(`+)(?!`).*?(?<!`)\\1(?!`)/su';
+
     /** @var list<string> */
     private const array SCANNED_EXTENSIONS = ['md', 'php', 'json', 'yaml', 'yml', 'twig', 'xml', 'neon', 'txt', 'tpl', 'dist'];
 
@@ -122,8 +128,8 @@ final readonly class DocsChecker
     }
 
     /**
-     * Every relative link resolves, every table row has as many cells as its header, and `**` pairs balance within
-     * each paragraph — code blocks and code spans left out.
+     * Every relative link resolves, every table row has as many cells as its header, no code span of a table row holds
+     * an unescaped pipe, and `**` pairs balance within each paragraph — code blocks and code spans left out.
      *
      * @return list<Finding>
      */
@@ -134,6 +140,7 @@ final readonly class DocsChecker
         return [
             ...$this->checkLinks($package, $file, $lines),
             ...$this->checkTables($file, $lines),
+            ...$this->checkTableCodePipes($file, $lines),
             ...$this->checkBold($file, $lines),
         ];
     }
@@ -192,6 +199,36 @@ final readonly class DocsChecker
             }
 
             $previous = $line;
+        }
+
+        return $findings;
+    }
+
+    /**
+     * In a table row, a pipe a code span holds splits the cell, on GitHub as in phil/markup: it is written `\|`.
+     *
+     * @param array<int, string> $lines
+     *
+     * @return list<Finding>
+     */
+    private function checkTableCodePipes(string $file, array $lines): array
+    {
+        $findings = [];
+
+        foreach ($lines as $number => $line) {
+            $row = trim($line);
+
+            if (!str_starts_with($row, '|') || !str_ends_with($row, '|')) {
+                continue;
+            }
+
+            preg_match_all(self::CODE_SPAN, $row, $spans);
+
+            foreach ($spans[0] as $span) {
+                if (1 === preg_match('/(?<!\\\\)\|/', $span)) {
+                    $findings[] = new Finding('table-code-pipe', $file, $number, $span.': a pipe in a code span splits the cell, write \\|');
+                }
+            }
         }
 
         return $findings;

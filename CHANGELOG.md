@@ -5,6 +5,15 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- `check-docs` refuses, in a table row of the Markdown files it checks — a line that starts and ends with `|` —, a code
+  span holding a pipe without a backslash before it (`table-code-pipe`): on GitHub as in phil/markup, `` `a|b` `` splits
+  the cell, and is written `` `a\|b` ``. Fenced code blocks are left out; code spans of several backticks are read as
+  in CommonMark.
+
 ## 0.1.5-alpha - 2026-11-17
 
 ### Added
