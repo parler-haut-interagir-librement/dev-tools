@@ -16,14 +16,26 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 # A coverage driver for Infection, built from its source since the newer images have no PECL: pcov, or Xdebug in
-# coverage mode on a PHP pcov does not build on yet (8.6 removed the INI_* macros it uses).
+# coverage mode on a PHP pcov does not build on yet (8.6 removed the INI_* macros it uses). Each source is a released
+# tag, fetched alone and checked against the commit pinned here, so that a moved tag or a new commit on a default
+# branch never changes the image.
+ARG PCOV_TAG=v1.0.9
+ARG PCOV_COMMIT=a2f930e98c9f5380af82f218916427b3a61f6e81
+ARG XDEBUG_TAG=3.6.0alpha1
+ARG XDEBUG_COMMIT=653e0443683790877b99e4e7a8adedf84b8e298b
 RUN set -eux; \
-    git clone --depth 1 https://github.com/krakjoe/pcov.git /tmp/pcov; \
+    fetch() { \
+        git init -q "$1"; \
+        git -C "$1" fetch -q --depth 1 "$2" "refs/tags/$3:refs/tags/$3"; \
+        test "$(git -C "$1" rev-parse "$3^{commit}")" = "$4"; \
+        git -C "$1" -c advice.detachedHead=false checkout -q "$4"; \
+    }; \
+    fetch /tmp/pcov https://github.com/krakjoe/pcov.git "$PCOV_TAG" "$PCOV_COMMIT"; \
     cd /tmp/pcov; \
     if phpize && ./configure --enable-pcov && make -j"$(nproc)" && make install; then \
         docker-php-ext-enable pcov; \
     else \
-        git clone --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug; \
+        fetch /tmp/xdebug https://github.com/xdebug/xdebug.git "$XDEBUG_TAG" "$XDEBUG_COMMIT"; \
         cd /tmp/xdebug; phpize; ./configure; make -j"$(nproc)"; make install; \
         docker-php-ext-enable xdebug; \
         echo 'xdebug.mode = coverage' > "$PHP_INI_DIR/conf.d/xdebug-coverage.ini"; \

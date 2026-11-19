@@ -5,6 +5,19 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Changed
+
+- The next PHP of the matrix, 8.6, is built from its release image, `php:8.6-cli`, instead of `php:8.6-rc-cli`; it
+  stays `next`, the floor being raised at PHP 8.6.3.
+
+### Security
+
+- The image of `phil-dev php` builds its coverage driver from a released tag, checked against a pinned commit, instead
+  of the default branch: pcov `v1.0.9` (`a2f930e98c9f5380af82f218916427b3a61f6e81`) and, where pcov does not build,
+  Xdebug `3.6.0alpha1` (`653e0443683790877b99e4e7a8adedf84b8e298b`). A moved tag fails the build.
+
 ## 0.1.6-alpha - 2026-11-18
 
 ### Added
