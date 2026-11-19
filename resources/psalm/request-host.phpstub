@@ -1,0 +1,161 @@
+<?php
+
+// The taint `request_host` of `phil-dev taint`: the host a request names, which its client chooses, followed to the
+// body of an email, where a link built on it sends the reader — and the token the link carries — to that host.
+//
+// Sources: the methods that return the host or an address built on it; the `Host` and `X-Forwarded-Host` headers and
+// their server variables, read by a literal key, or by a key Psalm cannot tell; an address the router builds with its
+// request context — an absolute URL, a network path, or a reference type Psalm cannot tell. The other keys and the
+// paths escape the taint. Sinks: the body, the template context and the action of an email. A Twig render and the
+// signature of an address pass the taint they are given on.
+//
+// Each class keeps the declaration of its library; the methods it does not list keep theirs.
+
+namespace Symfony\Component\HttpFoundation {
+    class HeaderBag implements \IteratorAggregate, \Countable, \Stringable
+    {
+        /**
+         * @psalm-taint-source request_host
+         * @psalm-taint-escape ($key is 'host'|'Host'|'HOST'|'x-forwarded-host'|'X-Forwarded-Host'|'X-FORWARDED-HOST' ? null : 'request_host')
+         */
+        public function get(string $key, ?string $default = null): ?string {}
+    }
+
+    class ServerBag extends ParameterBag
+    {
+        /**
+         * @psalm-taint-source request_host
+         * @psalm-taint-escape ($key is 'HTTP_HOST'|'SERVER_NAME'|'HTTP_X_FORWARDED_HOST' ? null : 'request_host')
+         */
+        public function get(string $key, mixed $default = null): mixed {}
+    }
+
+    class Request
+    {
+        /** @psalm-taint-source request_host */
+        public function getHost(): string {}
+
+        /** @psalm-taint-source request_host */
+        public function getHttpHost(): string {}
+
+        /** @psalm-taint-source request_host */
+        public function getSchemeAndHttpHost(): string {}
+
+        /** @psalm-taint-source request_host */
+        public function getUri(): string {}
+
+        /** @psalm-taint-source request_host */
+        public function getUriForPath(string $path): string {}
+    }
+
+    final class UrlHelper
+    {
+        /** @psalm-taint-source request_host */
+        public function getAbsoluteUrl(string $path): string {}
+    }
+
+    class UriSigner
+    {
+        /**
+         * @psalm-taint-specialize
+         * @psalm-flow ($uri) -> return
+         */
+        public function sign(string $uri, \DateTimeInterface|\DateInterval|int|null $expiration = null): string {}
+    }
+}
+
+namespace Symfony\Component\Routing {
+    class RequestContext
+    {
+        /** @psalm-taint-source request_host */
+        public function getHost(): string {}
+    }
+}
+
+namespace Symfony\Component\Routing\Generator {
+    interface UrlGeneratorInterface extends \Symfony\Component\Routing\RequestContextAwareInterface
+    {
+        /**
+         * ABSOLUTE_PATH (1) and RELATIVE_PATH (2) hold no host.
+         *
+         * @psalm-taint-source request_host
+         * @psalm-taint-escape ($referenceType is 1|2 ? 'request_host' : null)
+         */
+        public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string;
+    }
+}
+
+namespace Symfony\Component\Security\Http\LoginLink {
+    class LoginLinkDetails
+    {
+        /** @psalm-taint-source request_host */
+        public function getUrl(): string {}
+    }
+}
+
+namespace Symfony\Component\Mime {
+    class Email extends Message
+    {
+        /**
+         * @param resource|string|null $body
+         * @psalm-taint-sink request_host $body
+         */
+        public function text($body, string $charset = 'utf-8'): static {}
+
+        /**
+         * @param resource|string|null $body
+         * @psalm-taint-sink request_host $body
+         */
+        public function html($body, string $charset = 'utf-8'): static {}
+    }
+}
+
+namespace Symfony\Bridge\Twig\Mime {
+    class TemplatedEmail extends \Symfony\Component\Mime\Email
+    {
+        /** @psalm-taint-sink request_host $context[*] */
+        public function context(array $context): static {}
+    }
+
+    class NotificationEmail extends TemplatedEmail
+    {
+        /** @psalm-taint-sink request_host $content */
+        public function markdown(string $content): static {}
+
+        /** @psalm-taint-sink request_host $content */
+        public function content(string $content, bool $raw = false): static {}
+
+        /** @psalm-taint-sink request_host $url */
+        public function action(string $text, string $url): static {}
+
+        /** @psalm-taint-sink request_host $context[*] */
+        public function context(array $context): static {}
+    }
+}
+
+namespace Twig {
+    class Environment
+    {
+        /**
+         * @param string|TemplateWrapper $name
+         * @psalm-taint-specialize
+         * @psalm-flow ($context) -> return
+         */
+        public function render($name, array $context = []): string {}
+    }
+
+    final class TemplateWrapper
+    {
+        /**
+         * @psalm-taint-specialize
+         * @psalm-flow ($context) -> return
+         */
+        public function render(array $context = []): string {}
+
+        /**
+         * @psalm-taint-specialize
+         * @psalm-flow ($context) -> return
+         */
+        public function renderBlock(string $name, array $context = []): string {}
+    }
+}

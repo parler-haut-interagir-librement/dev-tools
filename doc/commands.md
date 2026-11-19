@@ -12,7 +12,7 @@
 | `check-translations [packages…]` | Compares the English documentation of each package with its French mirror. |
 | `stamp-translations <packages>… [--file=PATH…]` | Records, in each French mirror, the English document it now follows. |
 | `check-packages [packages…] [--symfony=VERSION] [--keep]` | Installs each package on its own, then runs its dependency analysis and its tests. |
-| `infection [--changed[=REF]] [-- arguments]` | Mutation testing, of the whole code or of the files changed since a ref. |
+| `infection [--changed[=REF]] [-- arguments]` | Mutation testing, of the whole code or of the files changed since a ref, with the tests of their packages. |
 | `deptrac` | Generates the Deptrac configuration and checks the layers. |
 | `witnesses` | Checks that PHPStan still reports each forbidden call in its witness. |
 | `generate` | Writes the generated Deptrac, Infection, Psalm, Biome and churn-php configurations under `var/phil-dev/`. |
@@ -22,8 +22,8 @@
 | `unused` | Finds the required packages the code never uses. |
 | `normalize [--fix]` | Checks, or fixes, that every `composer.json` is normalized. |
 | `twig [--fix]` | Checks, or fixes, the code style of the Twig templates. |
-| `twigstan` | Analyses the Twig templates with TwigStan. |
-| `js [--fix]` | Checks, or fixes, the Stimulus controllers and other scripts with Biome. |
+| `twigstan [--strict]` | Analyses the Twig templates with TwigStan, advisory unless `--strict`. |
+| `js [--fix]` | Checks, or fixes, the Stimulus controllers and other scripts with Biome, then runs their tests with Node.js. |
 | `taint [-- arguments]` | Runs the taint analysis of Psalm on the production code. |
 | `fuzz [targets…] [--budget=SECONDS] [--max-runs=N]` | Fuzzes the parsers the packages declare. |
 | `sbom [packages…]` | Writes the CycloneDX bill of materials of each package. |
@@ -103,7 +103,21 @@ absolute, all copied, not linked; installs it, runs `composer-dependency-analyse
 then PHPUnit with the package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is
 reported and the next package is checked. `--keep` keeps the copies.
 
-Before installing a package, it warns, without failing, when the package has no `SECURITY.md` or when its README shows
+Before installing a package, it checks what the Composer archive of the package — the archive of its split repository
+— keeps: the paths its `autoload` and `autoload-dev` name, so the tests `autoload-dev` points to ship with the code, and
+its `LICENSE` and `README.md`. A path its `.gitattributes` marks `export-ignore`, or its `archive.exclude` names, fails
+the package, with the rule that leaves it out:
+
+```text
+phil/example: the archive leaves out tests/ (autoload-dev psr-4), through "/tests" in .gitattributes
+```
+
+The patterns are read as git reads them: a pattern with a slash other than a trailing one is anchored to the package,
+any other matches at every depth; a trailing slash matches a directory only; `*` and `?` stop at a slash, `**` crosses
+it, `[a-z]` and `[!a-z]` are classes; a `!` in `archive.exclude` takes a path back, and the last pattern that matches
+decides. A directory left out takes its whole content with it.
+
+It also warns, without failing, when the package has no `SECURITY.md` or when its README shows
 no security badge — what its split repository would lack; `phil-dev split --security-files` adds both. See
 [The monorepo workflow](workflow.md#the-badge-and-the-files-of-the-existing-members).
 
@@ -119,10 +133,12 @@ without touching its `composer.json`. See [The version matrix](version-matrix.md
 ## infection
 
 Generates `var/phil-dev/infection.json` — see [Quality gates](quality-gates.md#infection) — and runs Infection on the
-Unit suite with all threads. `--changed` mutates only the PHP files added, modified or renamed since the point where
+Unit suite with all threads, under the memory limit of the root's `infection.memoryLimit`, `4G` by default.
+`--changed` mutates only the PHP files added, modified or renamed since the point where
 the branch left the base ref, committed or not, and the untracked files git does not ignore: the ref given, else
 `PHIL_DEV_BASE_REF`, else whichever of `origin/main` and `main` the branch left last, else `main`. Nothing changed
-passes. Arguments after `--` go to Infection.
+passes. In a monorepo, `--changed` also runs only the tests of the packages that hold the changed files, and covers
+only their code; it names them on a line of its own. Arguments after `--` go to Infection.
 
 Run from the directory of a member of a monorepo, `php ../../vendor/bin/phil-dev infection`, it moves to the nearest
 parent whose workspace counts that directory among its members and mutates that member alone, as `PHIL_DEV_PACKAGES`
@@ -165,7 +181,8 @@ handed to the tool as arguments of their own, after `--`, never through a shell:
 ## audit, unused, normalize, twig, js
 
 The gates added to `composer gates`, each turned off by `'gates' => ['<name>' => false]` in the root's `phil-dev.php`:
-see [Quality gates](quality-gates.md). `normalize --fix`, `twig --fix` and `js --fix` apply the fixes.
+see [Quality gates](quality-gates.md). `normalize --fix`, `twig --fix` and `js --fix` apply the fixes. `js` also runs
+the script tests of each package that has a `tests/js` directory, with Node.js; `js --fix` leaves them alone.
 
 ## taint, fuzz, sbom
 
@@ -173,8 +190,8 @@ See [Security checks](security.md).
 
 ## twigstan, bc
 
-`twigstan` writes `var/phil-dev/twigstan.php` and its PHPStan configuration, then runs TwigStan: see
-[Quality gates](quality-gates.md#twig-templates). `bc` compares the public API with the latest tag of the root's
+`twigstan` writes `var/phil-dev/twigstan.php` and its PHPStan configuration, then runs TwigStan, advisory: it passes
+whatever TwigStan finds, unless `--strict`. See [Quality gates](quality-gates.md#twig-templates). `bc` compares the public API with the latest tag of the root's
 `bc.tags` glob, every tag by default; a repository without a tag passes, and a monorepo leaves the check to the split
 repositories of its members, where their tags are.
 

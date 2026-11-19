@@ -55,6 +55,26 @@ and the known, reviewed exceptions by issue type:
 ],
 ```
 
+### The host of the request
+
+Besides the taints Psalm knows, the analysis follows `request_host`, the host a request names, which its client
+chooses: `Request::getHost()`, `getHttpHost()`, `getSchemeAndHttpHost()`, `getUri()`, `getUriForPath()`, the host of
+the router's request context, `UrlHelper::getAbsoluteUrl()` and the address of a login link; the `Host` and
+`X-Forwarded-Host` headers and the server variables `HTTP_HOST`, `SERVER_NAME` and `HTTP_X_FORWARDED_HOST`, or a key
+Psalm cannot tell; an address of the router that is absolute, a network path, or of a kind Psalm cannot tell. Its sinks
+are the text and the HTML of an email, the template context of a templated email, and the content and the action of a
+notification email; a Twig render and the signature of an address pass the taint on. A link built on it sends its
+reader, and the token the link carries, to the host the client chose:
+
+```php
+$email->text('https://'.$request->getHost().'/reset?token='.$token); // TaintedCustom: request_host
+$email->text($this->origin.$this->urls->generate('reset', ['token' => $token])); // passes
+```
+
+Psalm reports such a path as `TaintedCustom`. A link in an email is built on an address the configuration sets, never
+on the request. The model is the stub `resources/psalm/request-host.phpstub`, which the generated `psalm.xml` names
+with the custom taint.
+
 ## Fuzzing
 
 A parser of markup, CSS, SVG, dice notation or JSON documents meets inputs nobody wrote. `nikic/php-fuzzer`, in its

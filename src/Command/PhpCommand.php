@@ -17,7 +17,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'php', description: 'Runs a command on a PHP version of the matrix, in its Docker image', help: <<<'TXT'
     Runs the command — PHPUnit by default — with the project mounted at /app, in the image of the PHP version the matrix
     (config/matrix.json) names: a version such as 8.6, or "floor" or "next". The image is built from resources/php the
-    first time, or again with --build.
+    first time, again when resources/php/Dockerfile changed since it was built — the image carries the hash of the
+    Dockerfile it was built from in its label phil-dev.recipe —, or again with --build.
 
     The directories outside the project that its path repositories name — a neighbouring monorepo whose packages it
     installs, phil/dev-tools beside it — are mounted read-only where the same relative path reaches them from /app,
@@ -35,6 +36,11 @@ use Symfony\Component\Console\Output\OutputInterface;
     TXT)]
 final class PhpCommand extends WorkspaceCommand
 {
+    /**
+     * The label of an image that holds the hash of the Dockerfile it was built from.
+     */
+    public const string RECIPE_LABEL = 'phil-dev.recipe';
+
     #[Override]
     protected function configure(): void
     {
@@ -51,9 +57,10 @@ final class PhpCommand extends WorkspaceCommand
         $version = Matrix::load()->find('php', \is_string($name) ? $name : '');
         $tag = 'phil-dev/php:'.$version->version;
         $root = $this->workspace()->root->dir;
+        $recipe = hash_file('sha256', DevTools::resource('php/Dockerfile'));
 
-        if (true === $input->getOption('build') || !$this->runner->capture(['docker', 'image', 'inspect', $tag], $root)->successful()) {
-            $build = $this->runner->run(['docker', 'build', '--build-arg', 'PHP_IMAGE='.$version->image, '--tag', $tag, DevTools::resource('php')], $root);
+        if (true === $input->getOption('build') || $this->builtFrom($tag, $root) !== $recipe) {
+            $build = $this->runner->run(['docker', 'build', '--build-arg', 'PHP_IMAGE='.$version->image, '--label', self::RECIPE_LABEL.'='.$recipe, '--tag', $tag, DevTools::resource('php')], $root);
 
             if (!$build->successful()) {
                 return $build->exitCode;
@@ -67,6 +74,17 @@ final class PhpCommand extends WorkspaceCommand
             ['docker', 'run', '--rm', '--volume', $root.':/app', ...$this->caches($root, $version->version), ...$this->neighbours($root), '--workdir', '/app', $tag, ...([] === $arguments ? ['php', 'vendor/bin/phpunit'] : $arguments)],
             $root,
         )->exitCode;
+    }
+
+    /**
+     * The hash of the Dockerfile the image was built from, its label `phil-dev.recipe`; null when the image is missing:
+     * an image built from an older Dockerfile lacks what the newer one adds, an extension or a program of the tests.
+     */
+    private function builtFrom(string $tag, string $root): ?string
+    {
+        $inspect = $this->runner->capture(['docker', 'image', 'inspect', '--format', '{{ index .Config.Labels "'.self::RECIPE_LABEL.'" }}', $tag], $root);
+
+        return $inspect->successful() ? trim($inspect->output) : null;
     }
 
     /**

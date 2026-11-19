@@ -21,9 +21,9 @@ final class PhpCommandTest extends CommandTestCase
         $root = $this->project();
         $floor = Matrix::load()->floor('php');
 
-        self::assertSame(3, $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(3)])->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
+        self::assertSame(3, $this->tester($root, 'php', [$this->built(), new ProcessResult(3)])->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
         self::assertSame([
-            'docker image inspect phil-dev/php:'.$floor->version,
+            $this->inspect($floor->version),
             'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor->version).'--workdir /app phil-dev/php:'.$floor->version.' php -v',
         ], $this->runner->commands());
         self::assertTrue($this->runner->runs[0]['capture']);
@@ -36,8 +36,8 @@ final class PhpCommandTest extends CommandTestCase
 
         self::assertSame(0, $this->tester($root, 'php', [new ProcessResult(1)])->execute(['version' => $floor->version]));
         self::assertSame([
-            'docker image inspect phil-dev/php:'.$floor->version,
-            'docker build --build-arg PHP_IMAGE='.$floor->image.' --tag phil-dev/php:'.$floor->version.' '.DevTools::resource('php'),
+            $this->inspect($floor->version),
+            'docker build --build-arg PHP_IMAGE='.$floor->image.' --label phil-dev.recipe='.$this->recipe().' --tag phil-dev/php:'.$floor->version.' '.DevTools::resource('php'),
             'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor->version).'--workdir /app phil-dev/php:'.$floor->version.' php vendor/bin/phpunit',
         ], $this->runner->commands());
     }
@@ -88,7 +88,7 @@ final class PhpCommandTest extends CommandTestCase
         ]], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES));
         $floor = Matrix::load()->floor('php');
 
-        $this->tester($root, 'php', [new ProcessResult(0)])->execute(['version' => 'floor']);
+        $this->tester($root, 'php', [$this->built()])->execute(['version' => 'floor']);
 
         self::assertSame(
             'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor->version).'--volume '.$base.'/lib/packages:/lib/packages:ro --volume '.$base.'/work/dev-tools:/dev-tools:ro --volume '.$base.'/dev-tools:'.$base.'/dev-tools:ro --volume '.$root.'/packages:/project/packages:ro --volume '.$base.'/other:/other:ro --workdir /app phil-dev/php:'.$floor->version.' php vendor/bin/phpunit',
@@ -101,7 +101,7 @@ final class PhpCommandTest extends CommandTestCase
         $root = $this->temporaryDirectory();
         $this->put($root.'/composer.json', '{"name": "phil/x", "repositories": {"a": {"type": "path", "url": "/"}}}');
 
-        $this->tester($root, 'php', [new ProcessResult(0)])->execute(['version' => 'floor']);
+        $this->tester($root, 'php', [$this->built()])->execute(['version' => 'floor']);
 
         self::assertStringStartsWith('docker run --rm --volume '.$root.':/app '.$this->caches($root, Matrix::load()->floor('php')->version).'--workdir /app ', $this->runner->commands()[1]);
     }
@@ -111,7 +111,7 @@ final class PhpCommandTest extends CommandTestCase
         $root = $this->project();
         $next = Matrix::load()->find('php', 'next')->version;
 
-        $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'next']);
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'next']);
 
         self::assertStringContainsString(' '.$this->caches($root, $next).'--workdir ', $this->runner->commands()[1]);
         self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-phpstan');
@@ -120,7 +120,7 @@ final class PhpCommandTest extends CommandTestCase
         self::assertDirectoryExists($root.'/var/phil-dev/php/'.$next.'/var-infection-tmp');
 
         // A second run finds the directories already there.
-        $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'next']);
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'next']);
         self::assertStringContainsString(' '.$this->caches($root, $next).'--workdir ', $this->runner->commands()[1]);
     }
 
@@ -148,7 +148,7 @@ final class PhpCommandTest extends CommandTestCase
         $this->put($root.'/'.$file, $neon);
         $floor = Matrix::load()->floor('php')->version;
 
-        $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'floor']);
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
 
         self::assertStringContainsString(' '.$this->caches($root, $floor, $expected).'--workdir ', $this->runner->commands()[1]);
     }
@@ -160,7 +160,7 @@ final class PhpCommandTest extends CommandTestCase
         $this->put($root.'/phpstan.dist.neon', "parameters:\n    tmpDir: cache\n");
         $floor = Matrix::load()->floor('php')->version;
 
-        $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'floor']);
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
 
         self::assertStringContainsString(' '.$this->caches($root, $floor).'--workdir ', $this->runner->commands()[1]);
     }
@@ -171,7 +171,7 @@ final class PhpCommandTest extends CommandTestCase
         $this->put($root.'/phpstan.neon', "parameters:\n    tmpDir: var/phpstan-witnesses\n");
         $floor = Matrix::load()->floor('php')->version;
 
-        $this->tester($root, 'php', [new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'floor']);
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
 
         self::assertStringContainsString(
             ':/app --volume '.$root.'/var/phil-dev/php/'.$floor.'/var-phpstan-witnesses:/app/var/phpstan-witnesses --volume '.$root.'/var/phil-dev/php/'.$floor.'/var-tmp:/app/var/tmp --volume ',
@@ -206,5 +206,38 @@ final class PhpCommandTest extends CommandTestCase
         $this->put($root.'/composer.json', '{"name": "phil/x"}');
 
         return $root;
+    }
+
+    public function testAnImageBuiltFromAnotherDockerfileIsBuiltAgain(): void
+    {
+        $root = $this->project();
+        $floor = Matrix::load()->floor('php');
+
+        self::assertSame(0, $this->tester($root, 'php', [new ProcessResult(0, "0123abcd\n"), new ProcessResult(0), new ProcessResult(0)])->execute(['version' => 'floor']));
+        self::assertSame('docker build --build-arg PHP_IMAGE='.$floor->image.' --label phil-dev.recipe='.$this->recipe().' --tag phil-dev/php:'.$floor->version.' '.DevTools::resource('php'), $this->runner->commands()[1]);
+        self::assertCount(3, $this->runner->runs);
+    }
+
+    public function testTheDockerfileOfTheImageInstallsPcntl(): void
+    {
+        self::assertMatchesRegularExpression('/docker-php-ext-install [^;]*\bpcntl\b/', (string) file_get_contents(DevTools::resource('php/Dockerfile')));
+    }
+
+    /**
+     * What `docker image inspect` gives for an image built from the Dockerfile of this version of phil-dev.
+     */
+    private function built(): ProcessResult
+    {
+        return new ProcessResult(0, $this->recipe()."\n");
+    }
+
+    private function recipe(): string
+    {
+        return (string) hash_file('sha256', DevTools::resource('php/Dockerfile'));
+    }
+
+    private function inspect(string $version): string
+    {
+        return 'docker image inspect --format {{ index .Config.Labels "phil-dev.recipe" }} phil-dev/php:'.$version;
     }
 }

@@ -14,7 +14,7 @@ in it when it is reliable and fast enough for every batch; the slower checks are
 | The container, the expressions and the YAML of each functional test application | `lint:apps` | the gates |
 | The diagnostics of Symfony Language Tools on each Symfony application | `lsp` | the gates |
 | PHPUnit through ParaTest, Infection | `test`, `infection` | the gates |
-| TwigStan | `twigstan` | its own script: young, and it compiles every template |
+| TwigStan | `twigstan` | its own script, advisory: it reports and passes, `--strict` fails |
 | The taint analysis, fuzzing, the bill of materials | `taint`, `fuzz`, `sbom` | their own scripts: see [Security checks](security.md) |
 | The backward-compatibility check | `bc` | its own script: it installs two revisions |
 | The benchmarks against their baseline | `bench:compare` | its own script: see [Benchmarks](benchmarks.md) |
@@ -60,6 +60,10 @@ context the PHP code renders them with. TwigStan runs its own PHPStan, without t
 Twig loader only knows the template directories: a package whose templates need its own extensions names, under
 `twig.loader`, a PHP file that returns its `Twig\Environment`.
 
+TwigStan is advisory. It is in no gate, and it passes whatever it finds, with a line that gives TwigStan's exit code:
+without the Twig extensions of each bundle, the shared loader stops the analysis of their templates short of a verdict,
+so a failure says nothing yet about the templates. `phil-dev twigstan --strict` returns TwigStan's own exit code.
+
 ## Scripts
 
 `phil-dev js` runs Biome on the scripts of every package analysed — the Stimulus controllers — from the directories of
@@ -67,6 +71,19 @@ each manifest's `js.paths`, else `assets`: the recommended rules, and a format c
 spaces, single quotes and 120 columns. Biome is a single binary, without Node.js: the first run downloads it to
 `var/phil-dev/bin/` through `kocal/biome-js-bundle`, at the version of the root's `js.biome` or the one this package
 pins. A manifest's `js.rules` changes a rule by group.
+
+Then, unless `--fix`, the gate runs the script tests of each package analysed that has a `tests/js` directory, with the
+test runner of Node.js, from the package's directory:
+
+```sh
+node --import ./tests/js/register.mjs --test 'tests/js/**/*.test.mjs'
+```
+
+`--import` is given only when the package has `tests/js/register.mjs`, the module hooks that resolve the imports of its
+controllers — `@hotwired/stimulus` and the like — to the stubs of its tests. The pattern is handed to Node.js as one
+argument, without a shell, and Node.js expands it. A failure of Biome stops the gate before the tests; every package's
+tests run, and the gate fails when one of them fails. Node.js must be on the `PATH` when a package has script tests: a
+workspace with script tests and without `node` fails, one without script tests needs no Node.js.
 
 ## PHPStan
 
@@ -261,6 +278,24 @@ return [
 Infection reads one configuration, so `var/phil-dev/infection.json` takes the longest timeout of the packages
 analysed: the whole monorepo in the global run, the members `PHIL_DEV_PACKAGES` names when it narrows them. The value
 is a positive integer; anything else stops the command.
+
+Infection and its initial test run, which collects the coverage of the suite, run with the memory limit of the root's
+`infection.memoryLimit`, `4G` by default: a monorepo suite of thousands of tests under coverage outgrows the limit of a
+`php.ini`. The value is a limit of `php.ini`, digits with an optional `K`, `M` or `G`, or `-1` for none; anything else
+stops the command. Infection then gives each mutant's run a limit drawn from what the initial run used.
+
+```php
+return [
+    'infection' => ['memoryLimit' => '6G'],
+];
+```
+
+`infection --changed` runs only the tests of the packages that hold the changed files: a file belongs to the member
+whose directory holds it, else to the root. The others are left out of the PHPUnit configuration it generates, as
+the planned packages are when they are skipped — their test directories removed from each suite and excluded, their
+code excluded from the source —, so neither the initial run nor a mutant runs their tests, and only the changed
+packages' code is covered. The root's own paths stay. A change to one member of a large monorepo runs that member's
+tests, not the whole monorepo's.
 
 Infection reads the suites and the source of `var/phil-dev/phpunit/phpunit.xml` when the root's PHPUnit configuration
 holds a glob: each `packages/*/src` or `packages/*/tests/Unit` is written as the list of directories it matches when

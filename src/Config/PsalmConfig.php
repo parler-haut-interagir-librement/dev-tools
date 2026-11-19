@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Config;
 
+use Phil\DevTools\DevTools;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Matrix\Matrix;
 use Phil\DevTools\Workspace\Workspace;
@@ -16,9 +17,19 @@ use Phil\DevTools\Workspace\Workspace;
  * It covers the production code of every package analysed, without the tests. Each manifest adds its
  * `psalm.excludes`, paths left out, and its `psalm.suppress`, an issue type with the paths where it is a known and
  * reviewed exception.
+ *
+ * Besides the taints Psalm knows, it follows `request_host`: the host a request names — `Request::getHost()` and the
+ * addresses built on it, the `Host` header, an absolute address of the router — to the body, the template context or
+ * the action of an email, where a link on it would send its reader and its token to the client's host. The model is
+ * the stub `resources/psalm/request-host.phpstub`; Psalm reports such a path as `TaintedCustom`.
  */
 final readonly class PsalmConfig
 {
+    /**
+     * The custom taint of the host a request names.
+     */
+    public const string REQUEST_HOST = 'request_host';
+
     public function __construct(private Workspace $workspace)
     {
     }
@@ -74,6 +85,14 @@ final readonly class PsalmConfig
             ...array_map(static fn (string $path): string => '            '.self::entry($path), array_unique($ignores)),
             '        </ignoreFiles>',
             '    </projectFiles>',
+            '    <taintAnalysis>',
+            '        <taints>',
+            '            <taint name="'.self::REQUEST_HOST.'" />',
+            '        </taints>',
+            '    </taintAnalysis>',
+            '    <stubs>',
+            '        <file name="'.self::escape(DevTools::resource('psalm/request-host.phpstub')).'" />',
+            '    </stubs>',
         ];
 
         if ([] !== $suppressions) {

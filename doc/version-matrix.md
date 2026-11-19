@@ -52,11 +52,16 @@ vendor/bin/phil-dev check-packages --symfony=next
 ```
 
 `phil-dev php` builds `resources/php/Dockerfile` from the image of the version — with intl, sodium, openssl, zip,
-pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring and gd with JPEG, PNG, WebP and AVIF, the `sqlite3` command, the
+pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring, gd with JPEG, PNG, WebP and AVIF, and pcntl, the `sqlite3` command, the
 `lou_translate` command and the tables of liblouis for the integration tests of a braille translator, Composer, and
 pcov, or Xdebug in coverage mode where pcov does not build yet — and runs the command with the project mounted at
 `/app`. Every deprecation is reported and fails the tests, which run with `failOnDeprecation`. The project's `vendor/`
 is shared with the host.
+
+The image carries, in its label `phil-dev.recipe`, the SHA-256 of the Dockerfile it was built from. When the Dockerfile
+of the installed `phil/dev-tools` differs — a newer version added an extension or a program —, `phil-dev php` builds
+the image again before running the command; `--build` builds it again in any case. An image built before the label
+existed has none, and is built again on its first run.
 
 Each directory outside the project that a path repository of its `composer.json` names is mounted read-only where its
 relative URL reaches from `/app` — `../../Phil/phil-prerelease/packages/*` at `/Phil/phil-prerelease/packages`, since

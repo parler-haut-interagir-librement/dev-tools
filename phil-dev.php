@@ -34,8 +34,9 @@ return [
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],
     'fuzz' => [
-        // The reader of the kernels of functional test applications, from the seeds of tests/Fuzz/corpus/<target>.
-        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php'],
+        // The reader of the kernels of functional test applications and the rules of a Composer archive, from the
+        // seeds of tests/Fuzz/corpus/<target>.
+        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php', 'archive-rules' => 'tests/Fuzz/archive-rules.php'],
     ],
     'infection' => [
         'mutators' => [

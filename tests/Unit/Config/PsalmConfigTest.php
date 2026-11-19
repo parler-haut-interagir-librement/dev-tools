@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phil\DevTools\Tests\Unit\Config;
 
 use Phil\DevTools\Config\PsalmConfig;
+use Phil\DevTools\DevTools;
 use Phil\DevTools\Exception\InvalidManifest;
 use Phil\DevTools\Tests\Unit\Support\TemporaryDirectory;
 use Phil\DevTools\Workspace\Workspace;
@@ -22,6 +23,7 @@ final class PsalmConfigTest extends TestCase
         $root = $this->temporaryDirectory();
         $this->put($root.'/composer.json', '{"name": "phil/x", "autoload": {"psr-4": {"Phil\\\\X\\\\": "src/"}}}');
         mkdir($root.'/src');
+        $stub = DevTools::resource('psalm/request-host.phpstub');
 
         $expected = <<<XML
             <?xml version="1.0"?>
@@ -43,6 +45,14 @@ final class PsalmConfigTest extends TestCase
                         <directory name="{$root}/var" />
                     </ignoreFiles>
                 </projectFiles>
+                <taintAnalysis>
+                    <taints>
+                        <taint name="request_host" />
+                    </taints>
+                </taintAnalysis>
+                <stubs>
+                    <file name="{$stub}" />
+                </stubs>
             </psalm>
 
             XML;

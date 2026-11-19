@@ -30,6 +30,7 @@
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, without a shell, with a timeout when one is given, their error output captured with the standard one on request. |
 | `Split\SecurityFiles` | The security files of a split repository and of a monorepo, the repository a package is split to, and its OpenSSF Scorecard badge. |
+| `Split\ArchiveRules` | What the Composer archive of a package leaves out, from its `.gitattributes` and its `archive.exclude`, and what it must keep. |
 | `Split\SecurityCommit` | The commit of the security files on top of a split commit, and the tip of the published branch it merges. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |
 | `Bench\WorkerBench`, `WorkerBenchResult` | The requests of the worker-mode benchmark and their percentiles. |
@@ -56,6 +57,7 @@
 | `resources/biome/download.php` | Downloads Biome through `kocal/biome-js-bundle`, without a Symfony kernel. |
 | `resources/docs/words.txt`, `resources/docs/vale/Phil/` | The shared words of cspell, and the Vale style. |
 | `resources/php/Dockerfile` | The image of a PHP of the matrix. |
+| `resources/psalm/request-host.phpstub` | The model of the `request_host` taint of `phil-dev taint`. |
 | `resources/autoload-members.php` | The member autoloader, for a monorepo's `autoload-dev`. |
 
 ## PHPStan rules

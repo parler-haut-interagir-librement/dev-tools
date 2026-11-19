@@ -91,6 +91,7 @@ return [
 | `infection` | `directories` | The source directories; those of `autoload` by default. |
 | | `excludes` | Paths left out of mutation, relative to each source directory. |
 | | `mutators` | The named exceptions of the package, merged with the others. |
+| | `memoryLimit` | The memory limit of Infection and of its initial test run, read from the root only: a `php.ini` limit such as `4G`, `512M` or `-1`; `4G` by default. |
 | | `timeout` | The seconds a mutant's tests may take, a positive integer; Infection's 10 by default. The longest of the packages analysed wins; see [Quality gates](quality-gates.md#infection). |
 | | `testFrameworkOptions` | Root only: the PHPUnit options; `--testsuite=Unit` by default. |
 | `deptrac` | `allow` | The dependencies the package is allowed besides the default; see [Dependencies](dependencies.md). |
