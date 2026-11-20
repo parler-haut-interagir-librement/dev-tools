@@ -50,6 +50,9 @@ return [
             'IncrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
             'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
             'GreaterThanOrEqualTo' => ['ignore' => [LocalProcessRunner::class.'::run']],
+            // A type that is all objects is never an array too: before the arrays of a context are read, nothing has been
+            // found, so keeping it or not changes nothing.
+            'ArrayItemRemoval' => ['ignoreSourceCodeByRegex' => ['.*\$found = \[\.\.\.\$found, \.\.\.\$this->objectsIn\(\$array->getIterableValueType\(\).*']],
             // Closing a finished process frees its resource, and the pause between two looks spares the processor: a
             // test sees neither.
             'FunctionCallRemoval' => ['ignoreSourceCodeByRegex' => ['proc_close\(\$process\);', 'usleep\(self::POLL_MICROSECONDS\);']],

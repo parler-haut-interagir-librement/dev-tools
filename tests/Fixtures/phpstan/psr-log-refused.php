@@ -13,8 +13,9 @@ use Stringable;
 
 /**
  * @param list<DateTimeImmutable> $dates
+ * @param list<list<list<list<DateTimeImmutable>>>> $four
  */
-function refusedLogging(LoggerInterface $logger, ?LoggerInterface $optional, NullLogger $concrete, int $order, string $name, DateTimeImmutable $date, Stringable|RuntimeException $either, array $dates, object $anything): void
+function refusedLogging(LoggerInterface $logger, ?LoggerInterface $optional, NullLogger $concrete, int $order, string $name, DateTimeImmutable $date, Stringable|RuntimeException $either, array $dates, object $anything, array $four, DateTimeImmutable|Stringable $both): void
 {
     $logger->info("Order {$order} shipped.");
     $logger->error('Order '.$order.' failed.');
@@ -31,4 +32,8 @@ function refusedLogging(LoggerInterface $logger, ?LoggerInterface $optional, Nul
     $logger->log(LogLevel::INFO, context: ['date' => $date], message: 'Order {order}.');
     $optional->warning("Order {$name}");
     $logger->debug('Order {order}.', ['a' => ['b' => ['c' => ['d' => $date]]]]);
+    $logger->info(context: ['order' => $order], message: "Order {$order}");
+    $logger->debug('Order {order}.', ['first' => $date, 'second' => $date]);
+    $logger->debug('Order {order}.', $four);
+    $logger->debug('Order {order}.', ['a' => ['b' => ['c' => ['d' => $both]]]]);
 }
