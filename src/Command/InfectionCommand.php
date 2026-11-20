@@ -79,7 +79,7 @@ final class InfectionCommand extends WorkspaceCommand
                 $output->writeln('With the tests of '.implode(', ', array_map(static fn (Package $package): string => $package->name, $workspace->analysed())).'.');
             }
 
-            // The paths to mutate, as arguments of their own; a change without a mutant passes.
+            // The paths to mutate, as arguments of their own and absolute, since Infection resolves a relative one against its configuration's directory; a change without a mutant passes.
             $changedOnly[] = '--ignore-msi-with-no-mutations';
             $paths = $files;
         }
@@ -103,7 +103,7 @@ final class InfectionCommand extends WorkspaceCommand
             '--threads=max',
             ...$changedOnly,
             ...$arguments,
-            ...$paths,
+            ...array_map(static fn (string $file): string => $workspace->root->path($file), $paths),
         ], $workspace->root->dir, $this->testEnvironment())->exitCode;
     }
 

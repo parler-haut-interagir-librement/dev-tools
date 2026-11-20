@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Phil\DevTools\Command\InfectionCommand;
 use Phil\DevTools\Command\WorkspaceCommand;
 use Phil\DevTools\Config\PhpUnitConfig;
 use Phil\DevTools\Matrix\Version;
@@ -55,6 +56,13 @@ return [
             'ArrayItemRemoval' => ['ignoreSourceCodeByRegex' => ['.*\$found = \[\.\.\.\$found, \.\.\.\$this->objectsIn\(\$array->getIterableValueType\(\).*']],
             // Closing a finished process frees its resource, and the pause between two looks spares the processor: a
             // test sees neither.
+            // A package on its own is reloaded as itself, its own name for the only package analysed, which is all it holds either way;
+            // and the names reach a test that only asks whether one is among them, as a list or as a map.
+            'ReturnRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
+            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners']],
+            // The members are sorted by directory, so a member whose directory is the start of another's comes first and the
+            // longer one, tested later, takes the file back: the slash only keeps the first from being the last match.
+            'ConcatOperandRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
             'FunctionCallRemoval' => ['ignoreSourceCodeByRegex' => ['proc_close\(\$process\);', 'usleep\(self::POLL_MICROSECONDS\);']],
         ],
     ],
