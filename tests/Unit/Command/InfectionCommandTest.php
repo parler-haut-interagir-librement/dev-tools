@@ -17,7 +17,7 @@ final class InfectionCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'infection', [new ProcessResult(3)]);
 
         self::assertSame(3, $tester->execute(['arguments' => ['--filter=X']]));
-        self::assertSame([$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --filter=X'], $this->runner->commands());
+        self::assertSame([\PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --filter=X'], $this->runner->commands());
         self::assertSame($root, $this->runner->runs[0]['directory']);
         self::assertSame(['TMPDIR' => realpath($root).'/var/tmp'], $this->runner->runs[0]['environment']);
         self::assertStringContainsString('"minCoveredMsi": 100', (string) file_get_contents($root.'/var/phil-dev/infection.json'));
@@ -30,7 +30,7 @@ final class InfectionCommandTest extends CommandTestCase
 
         self::assertSame(0, $tester->execute([]));
         self::assertStringContainsString('Running from the monorepo at '.$root.', on ', $tester->getDisplay());
-        self::assertSame([$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max'], $this->runner->commands());
+        self::assertSame([\PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max'], $this->runner->commands());
         self::assertSame($root, $this->runner->runs[0]['directory']);
         $config = (string) file_get_contents($root.'/var/phil-dev/infection.json');
         self::assertStringContainsString($root.'/packages/slug/src', $config);
@@ -118,12 +118,12 @@ final class InfectionCommandTest extends CommandTestCase
         ]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'release/1.0']));
-        self::assertSame("Mutating the 3 source files changed since release/1.0.\n", $tester->getDisplay());
+        self::assertSame("Mutating the 3 source files changed since release/1.0.\nWith the tests of phil/example-monorepo, phil/slug.\n", $tester->getDisplay());
         self::assertSame([
             'git merge-base release/1.0 HEAD',
             'git diff --name-only --diff-filter=AMR abc123 -- '.$directories,
             'git ls-files --others --exclude-standard -- '.$directories,
-            $root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --filter=packages/slug/src/B.php,packages/slug/src/C.php,src/A.php',
+            \PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations packages/slug/src/B.php packages/slug/src/C.php src/A.php',
         ], $this->runner->commands());
         self::assertSame([true, true, true, false], array_column($this->runner->runs, 'capture'));
         self::assertSame([$root, $root, $root, $root], array_column($this->runner->runs, 'directory'));
@@ -134,8 +134,8 @@ final class InfectionCommandTest extends CommandTestCase
         $root = $this->fixture('monorepo');
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0), new ProcessResult(0, "src/New.php\n")]);
 
-        self::assertSame(0, $tester->execute(['--changed' => 'main']));
-        self::assertStringEndsWith(' --filter=src/New.php', $this->runner->commands()[3]);
+        self::assertSame(0, $tester->execute(['--changed' => 'main', 'arguments' => ['--mutators=Plus']]));
+        self::assertStringEndsWith(' --threads=max --ignore-msi-with-no-mutations --mutators=Plus src/New.php', $this->runner->commands()[3]);
     }
 
     public function testTheChangedAndTheNewFilesAreSplitOnTheirOwnLines(): void
@@ -144,7 +144,7 @@ final class InfectionCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, 'src/A.php'), new ProcessResult(0, 'src/B.php')]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'main']));
-        self::assertSame("Mutating the 2 source files changed since main.\n", $tester->getDisplay());
+        self::assertSame("Mutating the 2 source files changed since main.\nWith the tests of phil/example-monorepo.\n", $tester->getDisplay());
     }
 
     public function testNothingChanged(): void
@@ -172,7 +172,7 @@ final class InfectionCommandTest extends CommandTestCase
 
         self::assertSame('git merge-base develop HEAD', $this->runner->commands()[0]);
         self::assertStringContainsString(' --diff-filter=AMR def456 -- ', $this->runner->commands()[1]);
-        self::assertSame("Mutating the 1 source files changed since develop.\n", $tester->getDisplay());
+        self::assertSame("Mutating the 1 source files changed since develop.\nWith the tests of phil/example-monorepo.\n", $tester->getDisplay());
     }
 
     public function testTheBaseIsTheMainTheBranchLeftLast(): void
@@ -197,7 +197,7 @@ final class InfectionCommandTest extends CommandTestCase
             'git merge-base --is-ancestor old111 new222',
         ], \array_slice($this->runner->commands(), 0, 5));
         self::assertStringContainsString(' --diff-filter=AMR new222 -- ', $this->runner->commands()[5]);
-        self::assertSame("Mutating the 1 source files changed since main.\n", $tester->getDisplay());
+        self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/example-monorepo.\n", $tester->getDisplay());
     }
 
     public function testTheRemoteMainWhenTheLocalOneIsBehind(): void
@@ -215,7 +215,7 @@ final class InfectionCommandTest extends CommandTestCase
         $tester->execute(['--changed' => null]);
 
         self::assertStringContainsString(' --diff-filter=AMR new222 -- ', $this->runner->commands()[5]);
-        self::assertSame("Mutating the 1 source files changed since origin/main.\n", $tester->getDisplay());
+        self::assertSame("Mutating the 1 source files changed since origin/main.\nWith the tests of phil/example-monorepo.\n", $tester->getDisplay());
     }
 
     public function testTheLocalMainWithoutARemote(): void
@@ -237,5 +237,39 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertSame(0, $tester->execute(['--changed' => null]));
         self::assertStringContainsString(' --diff-filter=AMR main -- ', $this->runner->commands()[2]);
         self::assertSame("No source file changed since main: nothing to mutate.\n", $tester->getDisplay());
+    }
+
+    public function testTheChangedFilesNarrowTheTestsToTheirPackages(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/phpunit.dist.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>packages/*/tests</directory></testsuite></testsuites><source><include><directory>packages/*/src</directory></include></source></phpunit>');
+        $this->put($root.'/phil-dev.php', "<?php return ['infection' => ['memoryLimit' => '6G']];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\n"), new ProcessResult(0)]);
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, static fn (): int => $tester->execute(['--changed' => 'main']));
+
+        self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug.\n", $tester->getDisplay());
+        self::assertSame(\PHP_BINARY.' -d memory_limit=6G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations packages/slug/src/C.php', $this->runner->commands()[3]);
+        $config = json_decode((string) file_get_contents($root.'/var/phil-dev/infection.json'), true);
+        self::assertIsArray($config);
+        self::assertSame(['directories' => [$root.'/packages/slug/src']], $config['source']);
+        self::assertSame(['configDir' => $root.'/var/phil-dev/phpunit'], $config['phpUnit']);
+        self::assertSame('-d memory_limit=6G', $config['initialTestsPhpOptions']);
+        $phpUnit = (string) file_get_contents($root.'/var/phil-dev/phpunit/phpunit.xml');
+        self::assertStringContainsString('<directory>'.$root.'/packages/slug/tests</directory>', $phpUnit);
+        self::assertStringNotContainsString($root.'/packages/slug-bundle/tests', $phpUnit);
+        self::assertStringContainsString('<exclude>'.$root.'/packages/slug-bundle</exclude>', $phpUnit);
+        self::assertStringContainsString('<exclude>'.$root.'/packages/tilttek-dice</exclude>', $phpUnit);
+        self::assertStringNotContainsString('<exclude>'.$root.'/packages/slug</exclude>', $phpUnit);
+    }
+
+    public function testAPackageOnItsOwnKeepsItsWholeSuite(): void
+    {
+        $root = $this->package();
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "src/A.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame("Mutating the 1 source files changed since main.\n", $tester->getDisplay());
+        self::assertStringStartsWith(\PHP_BINARY.' -d memory_limit=4G ', $this->runner->commands()[3]);
     }
 }

@@ -7,8 +7,37 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
 
 ## Unreleased
 
+The next version is 0.1.7-alpha.
+
+### Added
+
+- `infection.memoryLimit` in the root's `phil-dev.php`, the memory limit of Infection and of its initial test run, a
+  `php.ini` limit such as `4G`, `512M` or `-1`; `4G` by default.
+- The `js` gate runs, after Biome and unless `--fix`, the script tests of each package analysed that has a `tests/js`
+  directory: `node --test 'tests/js/**/*.test.mjs'` from the package's directory, after
+  `--import ./tests/js/register.mjs` when the package has that file. A workspace with script tests and without `node`
+  on the `PATH` fails.
+- `check-packages` fails a package whose Composer archive leaves out what it must keep — the paths of its `autoload`
+  and `autoload-dev`, its `LICENSE` and `README.md` — through a pattern of its `.gitattributes` (`export-ignore`) or
+  of its `archive.exclude`, and names the pattern. `Split\ArchiveRules` reads those patterns as git
+  does; it is fuzzed by the `archive-rules` target.
+- `phil-dev taint` follows the custom taint `request_host`: the host a request names, through `Request::getHost()`,
+  `getSchemeAndHttpHost()`, `getUri()`, the `Host` and `X-Forwarded-Host` headers, their server variables and the
+  absolute addresses of the router, to the body, the template context or the action of an email, reported as
+  `TaintedCustom`. The model is `resources/psalm/request-host.phpstub`, named by the generated `psalm.xml`.
+- `twigstan --strict`, which returns TwigStan's own exit code.
+- `pcntl` in the image of `phil-dev php`, for the tests that send a worker a signal.
+- The installation note for Symfony 8.2 while it is in BETA: `minimum-stability: beta` with `prefer-stable: true`.
+
 ### Changed
 
+- `infection --changed` runs, in a monorepo, only the tests of the packages that hold the changed files, and covers
+  only their code: the other members are left out of the generated PHPUnit configuration, as the skipped planned
+  packages are. It names those packages on a line of its own.
+- `twigstan` is advisory: it passes whatever TwigStan finds, with a line that gives TwigStan's exit code. The shared
+  Twig loader lacks the Twig extensions of the bundles, so the analysis of their templates stops short of a verdict.
+- `phil-dev php` builds the image again when `resources/php/Dockerfile` changed since the image was built: the image
+  carries the SHA-256 of its Dockerfile in its label `phil-dev.recipe`.
 - The next PHP of the matrix, 8.6, is built from its release image, `php:8.6-cli`, instead of `php:8.6-rc-cli`; it
   stays `next`, the floor being raised at PHP 8.6.3.
 

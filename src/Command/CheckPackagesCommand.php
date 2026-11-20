@@ -8,6 +8,7 @@ use FilesystemIterator;
 use Override;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
+use Phil\DevTools\Split\ArchiveRules;
 use Phil\DevTools\Split\SecurityFiles;
 use Phil\DevTools\Workspace\Package;
 use Phil\DevTools\Workspace\Workspace;
@@ -36,6 +37,10 @@ use Symfony\Component\Console\Output\OutputInterface;
     root — are given to the copy too, with their URL made absolute, copied as well. It needs the network for
     everything else. The tests of each copy run with TMPDIR
     inside the copy.
+
+    The archive Composer would make of each package must keep what it needs: the paths its autoload and
+    autoload-dev name — the tests autoload-dev points to ship with the code — and its LICENSE and README.md. A
+    path its .gitattributes marks export-ignore, or its archive.exclude names, fails the package.
 
     It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge:
     phil-dev split --security-files adds both.
@@ -73,6 +78,13 @@ final class CheckPackagesCommand extends WorkspaceCommand
 
             foreach ($this->securityWarnings($package) as $warning) {
                 $output->writeln('   warning: '.$warning);
+            }
+
+            $composer = json_decode(Files::read($package->path('composer.json')), true);
+            $composer = \is_array($composer) ? $composer : [];
+
+            foreach (ArchiveRules::of($package->dir, $composer)->missing($package->dir, $composer) as $missing) {
+                $failures[] = $package->name.': '.$missing;
             }
 
             $work = tempnam(sys_get_temp_dir(), 'phil-dev-');

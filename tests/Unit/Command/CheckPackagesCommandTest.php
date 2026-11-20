@@ -63,6 +63,24 @@ final class CheckPackagesCommandTest extends CommandTestCase
         );
     }
 
+    public function testAnArchiveThatLeavesOutTheTestsFailsThePackage(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug/composer.json', '{"name": "phil/slug", "autoload": {"psr-4": {"Phil\\\\Slug\\\\": "src/"}}, "autoload-dev": {"psr-4": {"Phil\\\\Slug\\\\Tests\\\\": "tests/"}}}');
+        $this->put($root.'/packages/slug/tests/SlugTest.php', '<?php');
+        $this->put($root.'/packages/slug/.gitattributes', "/tests export-ignore\n");
+        $this->put($root.'/packages/slug/SECURITY.md', '# Security Policy');
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(1, $tester->execute(['packages' => ['slug']]));
+        self::assertSame(
+            "== phil/slug\n"
+            ."phil/slug: the archive leaves out tests/ (autoload-dev psr-4), through \"/tests\" in .gitattributes\n",
+            $tester->getDisplay(),
+        );
+        self::assertCount(4, $this->runner->runs);
+    }
+
     public function testAFailureStopsThatPackageAndIsReported(): void
     {
         $root = $this->fixture('monorepo');

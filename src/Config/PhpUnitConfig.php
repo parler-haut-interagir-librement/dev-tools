@@ -21,6 +21,10 @@ use Phil\DevTools\Workspace\Workspace;
  * the generated file, or a URL as written: Infection resolves a schema path that is not a URL against the directory
  * of the configuration, absolute or not. A skipped package is left out of the
  * directories and excluded from every suite and from the source. A `**` pattern is left for PHPUnit to expand.
+ *
+ * Narrowed, for Infection, the members the workspace does not analyse — those `PHIL_DEV_PACKAGES` leaves out, or the
+ * packages of the changed files — are left out the same way: their tests do not run and their code is not covered.
+ * The root's own paths stay.
  */
 final readonly class PhpUnitConfig
 {
@@ -52,17 +56,20 @@ final readonly class PhpUnitConfig
 
     private const string SCHEMA_NAMESPACE = 'http://www.w3.org/2001/XMLSchema-instance';
 
-    public function __construct(private Workspace $workspace)
+    /**
+     * @param bool $narrowed whether the members the workspace does not analyse are left out, as the skipped ones are
+     */
+    public function __construct(private Workspace $workspace, private bool $narrowed = false)
     {
     }
 
     /**
-     * The configuration with explicit directories and without the skipped packages; null when no package is skipped
-     * and no path holds a glob, or when the root has no configuration.
+     * The configuration with explicit directories and without the packages left out; null when none is left out and
+     * no path holds a glob, or when the root has no configuration.
      */
     public function generated(): ?string
     {
-        $skipped = $this->workspace->skipped();
+        $leftOut = $this->leftOut();
         $file = $this->source();
 
         if (null === $file) {
@@ -75,16 +82,32 @@ final readonly class PhpUnitConfig
             throw new InvalidManifest(\sprintf('%s is not valid XML.', $file));
         }
 
-        $expanded = $this->expand($document, $skipped);
+        $expanded = $this->expand($document, $leftOut);
 
-        if ([] === $skipped && !$expanded) {
+        if ([] === $leftOut && !$expanded) {
             return null;
         }
 
         $this->absolutize($document);
-        $this->exclude($document, $skipped);
+        $this->exclude($document, $leftOut);
 
         return (string) $document->saveXML();
+    }
+
+    /**
+     * The members left out: the skipped ones; narrowed, every member the workspace does not analyse.
+     *
+     * @return list<Package>
+     */
+    private function leftOut(): array
+    {
+        if (!$this->narrowed) {
+            return $this->workspace->skipped();
+        }
+
+        $analysed = $this->workspace->analysed();
+
+        return array_values(array_filter($this->workspace->members, static fn (Package $member): bool => !\in_array($member, $analysed, true)));
     }
 
     /**
@@ -104,14 +127,14 @@ final readonly class PhpUnitConfig
     }
 
     /**
-     * Replaces each path element whose text is a glob by one element per path it matches, in the order glob() sorts them, outside the skipped
-     * packages; an element that matches nothing is removed.
+     * Replaces each path element whose text is a glob by one element per path it matches, in the order glob() sorts them,
+     * outside the packages left out; an element that matches nothing is removed.
      *
-     * @param list<Package> $skipped
+     * @param list<Package> $leftOut
      *
      * @return bool whether a glob was found
      */
-    private function expand(DOMDocument $document, array $skipped): bool
+    private function expand(DOMDocument $document, array $leftOut): bool
     {
         $found = false;
 
@@ -127,7 +150,7 @@ final readonly class PhpUnitConfig
 
             $found = true;
 
-            foreach ($this->matches($this->absolute($path), 'directory' === $element->localName, $skipped) as $match) {
+            foreach ($this->matches($this->absolute($path), 'directory' === $element->localName, $leftOut) as $match) {
                 $copy = match ($element->localName) {
                     'directory' => $document->createElement('directory'),
                     'file' => $document->createElement('file'),
@@ -156,18 +179,18 @@ final readonly class PhpUnitConfig
     }
 
     /**
-     * @param list<Package> $skipped
+     * @param list<Package> $leftOut
      *
      * @return list<string>
      */
-    private function matches(string $pattern, bool $directoriesOnly, array $skipped): array
+    private function matches(string $pattern, bool $directoriesOnly, array $leftOut): array
     {
         $matches = [];
 
         $found = glob($pattern, $directoriesOnly ? \GLOB_ONLYDIR : 0);
 
         foreach (false === $found ? [] : $found as $match) {
-            foreach ($skipped as $package) {
+            foreach ($leftOut as $package) {
                 if (str_starts_with($match.'/', $package->dir.'/')) {
                     continue 2;
                 }
@@ -200,17 +223,17 @@ final readonly class PhpUnitConfig
     }
 
     /**
-     * @param list<Package> $skipped
+     * @param list<Package> $leftOut
      */
-    private function exclude(DOMDocument $document, array $skipped): void
+    private function exclude(DOMDocument $document, array $leftOut): void
     {
-        if ([] === $skipped) {
+        if ([] === $leftOut) {
             return;
         }
 
         /** @var DOMElement $suite */
         foreach ($document->getElementsByTagName('testsuite') as $suite) {
-            foreach ($skipped as $package) {
+            foreach ($leftOut as $package) {
                 $suite->appendChild($document->createElement('exclude', $package->dir));
             }
         }
@@ -230,7 +253,7 @@ final readonly class PhpUnitConfig
                 $source->appendChild($exclude);
             }
 
-            foreach ($skipped as $package) {
+            foreach ($leftOut as $package) {
                 $exclude->appendChild($document->createElement('directory', $package->dir));
             }
         }
@@ -246,8 +269,8 @@ final readonly class PhpUnitConfig
             return $location;
         }
 
-        $from = self::segments(\dirname($this->workspace->root->path(self::GENERATED)));
-        $to = self::segments($this->absolute($location));
+        $from = $this->segments(\dirname($this->workspace->root->path(self::GENERATED)));
+        $to = $this->segments($this->absolute($location));
 
         while (isset($from[0], $to[0]) && $from[0] === $to[0]) {
             array_shift($from);
@@ -262,7 +285,7 @@ final readonly class PhpUnitConfig
      *
      * @return list<string>
      */
-    private static function segments(string $path): array
+    private function segments(string $path): array
     {
         $segments = [];
 

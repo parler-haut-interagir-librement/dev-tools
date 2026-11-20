@@ -50,7 +50,7 @@ final class LspCommand extends WorkspaceCommand
             }
 
             if ('project' !== $package->type) {
-                $output->writeln(\sprintf('%s: a %s, not an application: skipped.', self::name($package), $package->type));
+                $output->writeln(\sprintf('%s: a %s, not an application: skipped.', $this->name($package), $package->type));
 
                 continue;
             }
@@ -87,7 +87,7 @@ final class LspCommand extends WorkspaceCommand
         $status = self::SUCCESS;
 
         foreach ($applications as $application) {
-            $output->writeln(\sprintf('== %s', self::name($application)));
+            $output->writeln(\sprintf('== %s', $this->name($application)));
 
             $run = $this->runner->run([$symfony, 'lsp:check', '--format='.$format, '--fail-on='.implode(',', $list), ...$arguments], $application->dir);
 
@@ -99,7 +99,7 @@ final class LspCommand extends WorkspaceCommand
         return $status;
     }
 
-    private static function name(Package $package): string
+    private function name(Package $package): string
     {
         return $package->isRoot() ? 'the root' : $package->relative;
     }

@@ -37,7 +37,7 @@ sorts the scripts `init` added, and `composer hooks` installs the git hooks of `
 |---|---|
 | `composer taint`, `fuzz`, `sbom` | The taint analysis, the fuzz targets and the bill of materials: see [Security checks](security.md). |
 | `composer bc` | The public API against the latest tag, in a package's own repository. |
-| `composer twigstan` | The Twig templates analysed by TwigStan. |
+| `composer twigstan` | The Twig templates analysed by TwigStan, advisory. |
 | `composer bench:baseline`, `bench:compare`, `bench:worker` | The benchmarks: see [Benchmarks](benchmarks.md). |
 | `composer docs:lint`, `hotspots`, `split` | The prose, the hotspots and the split: see [The monorepo workflow](workflow.md). |
 
@@ -50,6 +50,24 @@ vendor/bin/phil-dev new tilttek/example --bundle
 
 [The package skeleton](skeleton.md) describes what is written.
 
+## Symfony 8.2 before its release
+
+While Symfony 8.2 is in BETA, a project whose packages require `^8.2` installs it only when its root `composer.json`
+lets beta releases in, and still prefers a stable release wherever one exists:
+
+```json
+{
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
+```
+
+`prefer-stable` keeps every other dependency on its stable release; only the packages with no stable release that
+matches, Symfony 8.2 and what requires it, come in as betas. The two lines are removed once Symfony 8.2.0 is out.
+`phil-dev check-packages --symfony=next` installs each copy with release candidates allowed on its own: see
+[The version matrix](version-matrix.md).
+
 ## Requirements
 
-PHP 8.5 or later, and Docker for the real servers and the next PHP of the matrix.
+PHP 8.5 or later, and Docker for the real servers and the next PHP of the matrix. Node.js, for the packages with script
+tests under `tests/js`, which the `js` gate runs.

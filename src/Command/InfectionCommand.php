@@ -8,6 +8,7 @@ use Override;
 use Phil\DevTools\Config\InfectionConfig;
 use Phil\DevTools\Config\PhpUnitConfig;
 use Phil\DevTools\Workspace\Package;
+use Phil\DevTools\Workspace\Workspace;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,8 +23,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 
     Full: every source directory, once a week and before each release.
     --changed: the PHP files added, modified or renamed since the base ref, committed or not, and the untracked
-    ones git does not ignore, once per batch before its commit; nothing to mutate passes. Without a ref, the base is
+    ones git does not ignore, once per batch before its commit; nothing to mutate passes, and so do changed files
+    without a mutant. Infection receives the files as paths after the other arguments. Without a ref, the base is
     PHIL_DEV_BASE_REF, else whichever of origin/main and main the branch left last, else main.
+
+    The changed files narrow the run to the packages that hold them, as PHIL_DEV_PACKAGES would: only their tests
+    run, to collect the coverage and against each mutant, and only their code is covered. Infection and its initial
+    test run get the memory limit of the root's infection.memoryLimit, 4G by default.
 
     Run from the directory of a member of a monorepo that has no Infection of its own under vendor-bin/, it
     runs from the monorepo's root on that member alone, as PHIL_DEV_PACKAGES would narrow it.
@@ -52,22 +58,13 @@ final class InfectionCommand extends WorkspaceCommand
         }
 
         $workspace = $this->workspace();
-        $phpUnit = new PhpUnitConfig($workspace)->generated();
-        $phpUnitDirectory = null === $phpUnit ? null : \dirname($this->generate('phpunit/phpunit.xml', $phpUnit));
-        $config = $this->generate('infection.json', new InfectionConfig($workspace, $phpUnitDirectory)->json());
-        $command = [
-            $this->tool('infection', 'infection'),
-            '--configuration='.$config,
-            '--no-progress',
-            '--show-mutations',
-            '--threads=max',
-        ];
-
+        $changedOnly = [];
+        $paths = [];
         $changed = $input->getOption('changed');
 
         if (false !== $changed) {
             [$base, $since] = \is_string($changed) && '' !== $changed ? [$changed, $this->mergeBase($changed)] : $this->defaultBase();
-            $files = $this->changedFiles($since);
+            $files = $this->changedFiles($workspace, $since);
 
             if ([] === $files) {
                 $output->writeln(\sprintf('No source file changed since %s: nothing to mutate.', $base));
@@ -75,14 +72,69 @@ final class InfectionCommand extends WorkspaceCommand
                 return self::SUCCESS;
             }
 
+            $workspace = $this->owners($workspace, $files);
             $output->writeln(\sprintf('Mutating the %d source files changed since %s.', \count($files), $base));
-            $command[] = '--filter='.implode(',', $files);
+
+            if ($workspace->isMonorepo()) {
+                $output->writeln('With the tests of '.implode(', ', array_map(static fn (Package $package): string => $package->name, $workspace->analysed())).'.');
+            }
+
+            // The paths to mutate, as arguments of their own; a change without a mutant passes.
+            $changedOnly[] = '--ignore-msi-with-no-mutations';
+            $paths = $files;
         }
+
+        $phpUnit = new PhpUnitConfig($workspace, narrowed: true)->generated();
+        $phpUnitDirectory = null === $phpUnit ? null : \dirname($this->generate('phpunit/phpunit.xml', $phpUnit));
+        $infection = new InfectionConfig($workspace, $phpUnitDirectory);
+        $config = $this->generate('infection.json', $infection->json());
 
         /** @var list<string> $arguments */
         $arguments = $input->getArgument('arguments');
 
-        return $this->runner->run([...$command, ...$arguments], $this->workspace()->root->dir, $this->testEnvironment())->exitCode;
+        return $this->runner->run([
+            \PHP_BINARY,
+            '-d',
+            'memory_limit='.$infection->memoryLimit(),
+            $this->tool('infection', 'infection'),
+            '--configuration='.$config,
+            '--no-progress',
+            '--show-mutations',
+            '--threads=max',
+            ...$changedOnly,
+            ...$arguments,
+            ...$paths,
+        ], $workspace->root->dir, $this->testEnvironment())->exitCode;
+    }
+
+    /**
+     * The workspace narrowed to the packages that hold the changed files, so that only their tests run, first to
+     * collect the coverage and then against each mutant: a file belongs to the member whose directory holds it, else
+     * to the root. A package on its own stays as it is.
+     *
+     * @param non-empty-list<string> $files relative to the root
+     */
+    private function owners(Workspace $workspace, array $files): Workspace
+    {
+        if (!$workspace->isMonorepo()) {
+            return $workspace;
+        }
+
+        $names = [];
+
+        foreach ($files as $file) {
+            $owner = $workspace->root;
+
+            foreach ($workspace->members as $member) {
+                if (str_starts_with($workspace->root->path($file), $member->dir.'/')) {
+                    $owner = $member;
+                }
+            }
+
+            $names[$owner->name] = $owner->isRoot() ? $owner->name : $owner->relative;
+        }
+
+        return Workspace::load($workspace->root->dir, array_values($names));
     }
 
     /**
@@ -93,12 +145,12 @@ final class InfectionCommand extends WorkspaceCommand
      *
      * @return list<string>
      */
-    private function changedFiles(string $since): array
+    private function changedFiles(Workspace $workspace, string $since): array
     {
-        $root = $this->workspace()->root->dir;
+        $root = $workspace->root->dir;
         $directories = [];
 
-        foreach ($this->workspace()->analysed() as $package) {
+        foreach ($workspace->analysed() as $package) {
             array_push($directories, ...$package->sourceDirectories());
         }
 

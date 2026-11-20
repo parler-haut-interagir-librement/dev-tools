@@ -20,10 +20,19 @@ use Phil\DevTools\Workspace\Workspace;
  * Each manifest may give its `infection.timeout`, the seconds a mutant's tests may take before it counts as timed
  * out: the configuration takes the longest of the packages analysed, and leaves Infection's own ten seconds when none
  * gives one.
+ *
+ * The initial test run, which collects the coverage of the whole suite, gets the memory limit of the root's
+ * `infection.memoryLimit`, 4G by default: a suite of tens of thousands of tests under coverage outgrows the limit of a
+ * php.ini. The limit is a php.ini value — a number of bytes, with K, M or G — or -1 for none.
  */
 final readonly class InfectionConfig
 {
     public const int MINIMUM_MSI = 100;
+
+    /**
+     * The memory limit of Infection and of its initial test run when the root's manifest names none.
+     */
+    public const string MEMORY_LIMIT = '4G';
 
     /**
      * @param string|null $phpUnitDirectory the directory of the PHPUnit configuration Infection reads; the root's by default
@@ -66,6 +75,7 @@ final readonly class InfectionConfig
             ], static fn (array $value): bool => [] !== $value),
             'phpUnit' => ['configDir' => $this->phpUnitDirectory ?? $root->dir],
             'testFrameworkOptions' => \is_string($options) ? $options : '--testsuite=Unit',
+            'initialTestsPhpOptions' => '-d memory_limit='.$this->memoryLimit(),
             'minMsi' => self::MINIMUM_MSI,
             'minCoveredMsi' => self::MINIMUM_MSI,
             'timeout' => $timeout,
@@ -77,6 +87,24 @@ final readonly class InfectionConfig
             'tmpDir' => $root->path('var/infection/tmp'),
             'mutators' => $mutators,
         ], static fn (mixed $value): bool => null !== $value);
+    }
+
+    /**
+     * The root's `infection.memoryLimit`, else 4G: a php.ini value, digits with an optional K, M or G, or -1.
+     */
+    public function memoryLimit(): string
+    {
+        $limit = $this->workspace->root->manifest->get('infection', 'memoryLimit');
+
+        if (null === $limit) {
+            return self::MEMORY_LIMIT;
+        }
+
+        if (!\is_string($limit) || 1 !== preg_match('/^(?:-1|[1-9]\d*[KMG]?)$/D', $limit)) {
+            throw new InvalidManifest('infection.memoryLimit is a memory limit of php.ini, such as 4G, 512M or -1.');
+        }
+
+        return $limit;
     }
 
     /**

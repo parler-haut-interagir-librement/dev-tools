@@ -230,6 +230,34 @@ final class PhpUnitConfigTest extends TestCase
     /**
      * A monorepo with one active member and two planned ones, and the PHPUnit configuration above.
      */
+    public function testNarrowedTheMembersNotAnalysedAreLeftOut(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>tests</directory><directory>packages/*/tests/Unit</directory></testsuite></testsuites><source><include><directory>packages/*/src</directory></include></source></phpunit>');
+
+        self::assertSame(<<<XML
+            <?xml version="1.0"?>
+            <phpunit><testsuites><testsuite name="Unit"><directory>{$root}/tests</directory><directory>{$root}/packages/later/tests/Unit</directory><exclude>{$root}/packages/active</exclude><exclude>{$root}/packages/someday</exclude></testsuite></testsuites><source><include><directory>{$root}/packages/later/src</directory></include><exclude><directory>{$root}/packages/active</directory><directory>{$root}/packages/someday</directory></exclude></source></phpunit>
+
+            XML, new PhpUnitConfig(Workspace::load($root, ['later'], false), narrowed: true)->generated());
+    }
+
+    public function testNarrowedWithEveryMemberAnalysedOnlyTheGlobsChange(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>tests</directory></testsuite></testsuites></phpunit>');
+
+        self::assertNull(new PhpUnitConfig(Workspace::load($root, null, false), narrowed: true)->generated());
+    }
+
+    public function testNotNarrowedTheMembersNotAnalysedStay(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/phpunit.xml', '<phpunit><testsuites><testsuite name="Unit"><directory>tests</directory></testsuite></testsuites></phpunit>');
+
+        self::assertNull(new PhpUnitConfig(Workspace::load($root, ['later'], false))->generated());
+    }
+
     private function monorepo(): string
     {
         $root = $this->temporaryDirectory();

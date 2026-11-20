@@ -28,6 +28,7 @@ final class InfectionConfigTest extends TestCase
             ],
             'phpUnit' => ['configDir' => $root],
             'testFrameworkOptions' => '--testsuite=Fast',
+            'initialTestsPhpOptions' => '-d memory_limit=4G',
             'minMsi' => 100,
             'minCoveredMsi' => 100,
             'logs' => [
@@ -172,5 +173,60 @@ final class InfectionConfigTest extends TestCase
     private function timeout(?int $timeout): string
     {
         return null === $timeout ? '' : ", 'infection' => ['timeout' => ".$timeout.']';
+    }
+
+    #[DataProvider('memoryLimits')]
+    public function testTheMemoryLimitOfTheRoot(string $limit): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root"}');
+        $this->put($root.'/phil-dev.php', "<?php return ['infection' => ['memoryLimit' => '".$limit."']];");
+
+        $config = new InfectionConfig(Workspace::load($root));
+
+        self::assertSame($limit, $config->memoryLimit());
+        self::assertSame('-d memory_limit='.$limit, $config->build()['initialTestsPhpOptions']);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function memoryLimits(): iterable
+    {
+        yield 'gigabytes' => ['8G'];
+        yield 'megabytes' => ['512M'];
+        yield 'kilobytes' => ['900K'];
+        yield 'bytes' => ['1073741824'];
+        yield 'none' => ['-1'];
+    }
+
+    #[DataProvider('invalidMemoryLimits')]
+    public function testAMemoryLimitThatPhpWouldNotRead(mixed $limit): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root"}');
+        $this->put($root.'/phil-dev.php', '<?php return '.var_export(['infection' => ['memoryLimit' => $limit]], true).';');
+
+        $this->expectException(InvalidManifest::class);
+        $this->expectExceptionMessageIsOrContains('infection.memoryLimit is a memory limit of php.ini, such as 4G, 512M or -1.');
+
+        new InfectionConfig(Workspace::load($root))->memoryLimit();
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function invalidMemoryLimits(): iterable
+    {
+        yield 'an integer' => [4096];
+        yield 'a unit alone' => ['G'];
+        yield 'a leading zero' => ['04G'];
+        yield 'zero' => ['0'];
+        yield 'a lowercase unit' => ['4g'];
+        yield 'two units' => ['4GB'];
+        yield 'another negative' => ['-2'];
+        yield 'a suffix after a line break' => ["4G\n"];
+        yield 'a prefix' => [' 4G'];
+        yield 'an option smuggled in' => ['4G -d auto_prepend_file=x'];
     }
 }

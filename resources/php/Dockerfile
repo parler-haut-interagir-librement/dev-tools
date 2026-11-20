@@ -5,14 +5,15 @@ ARG PHP_IMAGE=php:8.5-cli
 FROM ${PHP_IMAGE}
 
 # The extensions the packages need, besides those the image builds in (openssl, sodium, pdo_sqlite): GD reads and
-# writes JPEG, PNG, WebP and AVIF. git and unzip for Composer; the sqlite3 command for the tests that inspect a
-# database file; lou_translate and the tables of liblouis for the integration tests of a braille translator.
+# writes JPEG, PNG, WebP and AVIF; pcntl for the tests that send a worker a signal. git and unzip for Composer; the
+# sqlite3 command for the tests that inspect a database file; lou_translate and the tables of liblouis for the
+# integration tests of a braille translator. `phil-dev php` builds the image again when this file changes.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends git unzip sqlite3 libicu-dev libonig-dev libzip-dev libpq-dev \
         libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev liblouis-bin liblouis-data; \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif; \
-    docker-php-ext-install -j"$(nproc)" intl mbstring zip pdo_mysql pdo_pgsql gd; \
+    docker-php-ext-install -j"$(nproc)" intl mbstring zip pdo_mysql pdo_pgsql gd pcntl; \
     rm -rf /var/lib/apt/lists/*
 
 # A coverage driver for Infection, built from its source since the newer images have no PECL: pcov, or Xdebug in
