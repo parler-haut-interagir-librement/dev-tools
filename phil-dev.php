@@ -18,8 +18,6 @@ return [
         // the autoloader of the workspace it lints, whose Symfony kernel and console this package does not require.
         'excludePaths' => ['config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php', 'tests/Fuzz/*', 'resources/lint/app.php'],
         'ignoreErrors' => [
-            // The port of the processes stays next to its two adapters, the local runner and the recording one.
-            ['identifier' => 'symplify.requiredInterfaceContractNamespace', 'path' => 'src/Process/ProcessRunner.php'],
             // The commands read PHIL_DEV_ROOT, PHIL_DEV_PACKAGES, PHIL_DEV_BASE_REF and the service variables from the
             // environment: their tests set each one, and restore it in a `finally`.
             ['identifier' => 'disallowed.function', 'message' => '#^Calling putenv\(\) is forbidden#', 'path' => 'tests/Unit/*'],
@@ -28,8 +26,9 @@ return [
     'deptrac' => [
         // The recorder of HttpRecording is the PHPUnit bridge's: the helper only exists for the tests of packages.
         // The member autoloader adds its prefixes to Composer's ClassLoader, which every Composer project holds.
-        // The PHPStan rules of this package run inside PHPStan, on the classes of its parser.
-        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*'],
+        // The PHPStan rules of this package run inside PHPStan, on the classes of its parser. The rule on logger calls
+        // names the PSR-3 interface by its `::class`, a string that loads nothing.
+        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*', '^Psr\\\\Log\\\\LoggerInterface$'],
     ],
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],

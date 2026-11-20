@@ -45,6 +45,13 @@ final readonly class Tooling
      */
     public const array SCRIPT_DIRECTORIES = ['assets'];
 
+    /**
+     * The identifiers of the rules the shared configuration no longer loads. An exception a manifest still declares for
+     * one of them matches nothing; it is kept with `reportUnmatched: false`, so that it fails no analysis until the
+     * package drops it.
+     */
+    private const array RETIRED_IDENTIFIERS = ['symplify.requiredInterfaceContractNamespace' => true];
+
     public function __construct(public Workspace $workspace)
     {
     }
@@ -445,6 +452,10 @@ final readonly class Tooling
 
         if (\is_array($ignore) && \is_array($ignore['paths'] ?? null)) {
             $ignore['paths'] = array_map(fn (mixed $path): mixed => \is_string($path) ? $this->absolute($package, $path) : $path, $ignore['paths']);
+        }
+
+        if (\is_array($ignore) && \is_string($ignore['identifier'] ?? null) && isset(self::RETIRED_IDENTIFIERS[$ignore['identifier']])) {
+            $ignore['reportUnmatched'] = false;
         }
 
         return $ignore;

@@ -106,9 +106,14 @@ Three extensions add to it:
 
 `config/phpstan-symplify.php` adds a selection of the rules of `symplify/phpstan-rules`, one by one: a class is
 final or abstract, no global constant, exceptions in an `Exception` namespace, attributes in an `Attribute`
-namespace, interfaces in a `Contract` namespace — a marker interface of exceptions stays with them —, unique enum
-values, no narrowed visibility of a parent method, one class per file, no `static::CONSTANT`, no method call on an
-array, no misnamed doc tag. `phpstan/extension-installer` ignores the package, which would load every set.
+namespace, unique enum values, no narrowed visibility of a parent method, one class per file, no `static::CONSTANT`,
+no method call on an array, no misnamed doc tag. `phpstan/extension-installer` ignores the package, which would load
+every set. An interface stays where its code reads it best, beside its adapters or in a `Contract` namespace: no rule
+picks one. An exception a `phil-dev.php` still declares for `symplify.requiredInterfaceContractNamespace` matches
+nothing and fails nothing: the generated configuration gives it `reportUnmatched: false`, until the package drops it.
+
+`config/phpstan.neon` loads the rule of this package on the calls to a PSR-3 logger, described
+[below](#a-log-message-is-a-constant-with-placeholders).
 
 `config/phpstan-symfony-ux.php` adds the rule of this package on the names of components, then the rules of
 `kocal/phpstan-symfony-ux`, one by one, so that a new rule of that package is a decision. They look at a class only
@@ -149,6 +154,60 @@ An attribute of the same short name from another namespace, and an anonymous cla
 `ClassNameMustNotEndWithComponentRule` of `kocal/phpstan-symfony-ux`, which asks the opposite and is left out of
 `config/phpstan-symfony-ux.php`. The rule is loaded even when `vendor-bin/phpstan` does not have that package, and its
 witness, `tests/Witnesses/PhpStan/Alert.php`, proves that the shared configuration still loads it.
+
+### A log message is a constant with placeholders
+
+`PsrLogContextRule` looks at each call to a PSR-3 logger, an object whose type is `Psr\Log\LoggerInterface` or a
+class that implements it, through `emergency()` to `debug()` and `log()`, positional or named arguments. It reports
+two things, each under its own identifier:
+
+| Identifier | Reported |
+|---|---|
+| `phil.psrLogMessage` | A message built by interpolation (`"Order {$id}"`), concatenation (`'Order '.$id`) or `sprintf()` and `vsprintf()`, unless PHPStan knows every value it may take to be a literal. |
+| `phil.psrLogContext` | An object other than a `Throwable` in the context, at any key, in nested arrays down to four levels, named by the keys that lead to it. |
+
+A message built from its values is a new message for every value: a handler can no longer group the records of one
+event, and the value sits where a processor that masks or drops a context key never sees it. An object in the context
+is serialised however each handler sees fit, with whatever it holds, personal data included; PSR-3 names the
+`Throwable` under `exception` as the one object a context carries. The fix is a constant message with placeholders,
+and scalars, such as identifiers, in the context.
+
+Refused, with the messages `The message of LoggerInterface::info() is built by interpolation: write a constant message
+with placeholders, such as "Order {order} shipped.", and pass the values in the context.` and `The context of
+LoggerInterface::warning() holds an object of class App\Entity\Order under "order": only a Throwable, under
+"exception", may be an object.`:
+
+```php
+$logger->info("Order {$order->getId()} shipped.");
+$logger->warning('Order {order} late.', ['order' => $order]);
+```
+
+Accepted:
+
+```php
+$logger->info('Order {order} shipped.', ['order' => $order->getId()]);
+$logger->error('Order {order} failed.', ['order' => $order->getId(), 'exception' => $exception]);
+$logger->debug('A message long enough to be split '.'over two literals.');
+```
+
+A nullsafe call, `$logger?->info()`, is checked as any other. A call through an unpacked argument list, a first-class
+callable or a dynamic method name is left alone, as is a method of the same name on an object that is not a logger. A
+message held in a variable is not followed: the rule reads the expression written at the call.
+
+When a call must stay as it is, the exception names its identifier and its file in the package's `phil-dev.php`, with
+the reason on the line above, and never as a `@phpstan-ignore` comment:
+
+```php
+'phpstan' => [
+    'ignoreErrors' => [
+        // The audit trail logs the subject as received; its normaliser masks the personal fields.
+        ['identifier' => 'phil.psrLogContext', 'path' => 'src/Audit/AuditLogger.php'],
+    ],
+],
+```
+
+The witnesses `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php` prove that the shared configuration still
+loads the rule.
 
 ### The rules of `kocal/phpstan-symfony-ux`
 

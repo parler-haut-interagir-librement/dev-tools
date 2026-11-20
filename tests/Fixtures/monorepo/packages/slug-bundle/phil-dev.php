@@ -11,6 +11,7 @@ return [
             ['identifier' => 'argument.type', 'path' => 'src/Legacy.php'],
             ['identifier' => 'return.type', 'paths' => ['src/A.php', '*/B.php']],
             '#^A message$#',
+            ['identifier' => 'symplify.requiredInterfaceContractNamespace', 'path' => 'src/Port.php'],
         ],
     ],
     'rector' => ['skip' => ['Some\\Rule', 'src/Skipped', 'Other\\Rule' => ['src/One.php']]],
