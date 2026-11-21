@@ -47,18 +47,11 @@ final readonly class InfectionConfig
     public function build(): array
     {
         $root = $this->workspace->root;
-        $directories = [];
         $excludes = [];
         $mutators = ['@default' => true];
         $timeout = null;
 
         foreach ($this->workspace->analysed() as $package) {
-            $declared = $package->manifest->strings('infection', 'directories');
-
-            foreach ([] === $declared ? $package->sourceDirectories() : array_map($package->path(...), $declared) as $directory) {
-                $directories[] = $directory;
-            }
-
             array_push($excludes, ...$package->manifest->strings('infection', 'excludes'));
             $mutators = self::merge($mutators, $package->manifest->map('infection', 'mutators'));
             $timeout = max($timeout, $this->timeout($package));
@@ -70,7 +63,7 @@ final readonly class InfectionConfig
         return array_filter([
             '$schema' => is_file($schema) ? $schema : null,
             'source' => array_filter([
-                'directories' => array_values(array_unique($directories)),
+                'directories' => $this->directories(),
                 'excludes' => array_values(array_unique($excludes)),
             ], static fn (array $value): bool => [] !== $value),
             'phpUnit' => ['configDir' => $this->phpUnitDirectory ?? $root->dir],
@@ -87,6 +80,24 @@ final readonly class InfectionConfig
             'tmpDir' => $root->path('var/infection/tmp'),
             'mutators' => $mutators,
         ], static fn (mixed $value): bool => null !== $value);
+    }
+
+    /**
+     * The source directories Infection mutates, absolute: those of every package analysed, or its manifest's
+     * `infection.directories`.
+     *
+     * @return list<string>
+     */
+    public function directories(): array
+    {
+        $directories = [];
+
+        foreach ($this->workspace->analysed() as $package) {
+            $declared = $package->manifest->strings('infection', 'directories');
+            array_push($directories, ...([] === $declared ? $package->sourceDirectories() : array_map($package->path(...), $declared)));
+        }
+
+        return array_values(array_unique($directories));
     }
 
     /**

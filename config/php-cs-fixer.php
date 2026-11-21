@@ -32,6 +32,10 @@ return static function (string $root, array $rules = []): Config {
 
     return new Config()
         ->setRiskyAllowed(true)
+        // The next PHP version is tested from its first release candidate, before PHP CS Fixer declares support for its
+        // syntax. The code keeps to the syntax of the lowest supported version, which PHP CS Fixer parses, so running
+        // it on the next version stays safe.
+        ->setUnsupportedPhpVersionAllowed(true)
         ->setParallelConfig(ParallelConfigFactory::detect())
         ->setCacheFile($root.'/var/php-cs-fixer.cache')
         ->setRules([

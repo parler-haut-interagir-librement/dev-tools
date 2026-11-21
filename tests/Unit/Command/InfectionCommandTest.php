@@ -7,6 +7,7 @@ namespace Phil\DevTools\Tests\Unit\Command;
 use Phil\DevTools\Command\InfectionCommand;
 use Phil\DevTools\Process\ProcessResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(InfectionCommand::class)]
 final class InfectionCommandTest extends CommandTestCase
@@ -123,7 +124,7 @@ final class InfectionCommandTest extends CommandTestCase
             'git merge-base release/1.0 HEAD',
             'git diff --name-only --diff-filter=AMR abc123 -- '.$directories,
             'git ls-files --others --exclude-standard -- '.$directories,
-            \PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations packages/slug/src/B.php packages/slug/src/C.php src/A.php',
+            \PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations '.$root.'/packages/slug/src/B.php '.$root.'/packages/slug/src/C.php '.$root.'/src/A.php',
         ], $this->runner->commands());
         self::assertSame([true, true, true, false], array_column($this->runner->runs, 'capture'));
         self::assertSame([$root, $root, $root, $root], array_column($this->runner->runs, 'directory'));
@@ -135,7 +136,7 @@ final class InfectionCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0), new ProcessResult(0, "src/New.php\n")]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'main', 'arguments' => ['--mutators=Plus']]));
-        self::assertStringEndsWith(' --threads=max --ignore-msi-with-no-mutations --mutators=Plus src/New.php', $this->runner->commands()[3]);
+        self::assertStringEndsWith(' --threads=max --ignore-msi-with-no-mutations --mutators=Plus '.$root.'/src/New.php', $this->runner->commands()[3]);
     }
 
     public function testTheChangedAndTheNewFilesAreSplitOnTheirOwnLines(): void
@@ -249,7 +250,7 @@ final class InfectionCommandTest extends CommandTestCase
         $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, static fn (): int => $tester->execute(['--changed' => 'main']));
 
         self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug.\n", $tester->getDisplay());
-        self::assertSame(\PHP_BINARY.' -d memory_limit=6G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations packages/slug/src/C.php', $this->runner->commands()[3]);
+        self::assertSame(\PHP_BINARY.' -d memory_limit=6G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations '.$root.'/packages/slug/src/C.php', $this->runner->commands()[3]);
         $config = json_decode((string) file_get_contents($root.'/var/phil-dev/infection.json'), true);
         self::assertIsArray($config);
         self::assertSame(['directories' => [$root.'/packages/slug/src']], $config['source']);
@@ -263,6 +264,15 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertStringNotContainsString('<exclude>'.$root.'/packages/slug</exclude>', $phpUnit);
     }
 
+    public function testAFileOfAMemberWhoseNameStartsLikeAnotherBelongsToItsOwnMember(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug-bundle/src/D.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug-bundle.\n", $tester->getDisplay());
+    }
+
     public function testAPackageOnItsOwnKeepsItsWholeSuite(): void
     {
         $root = $this->package();
@@ -271,5 +281,61 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertSame(0, $tester->execute(['--changed' => 'main']));
         self::assertSame("Mutating the 1 source files changed since main.\n", $tester->getDisplay());
         self::assertStringStartsWith(\PHP_BINARY.' -d memory_limit=4G ', $this->runner->commands()[3]);
+    }
+
+    public function testEachChangedFileIsAnAbsoluteArgumentOfItsOwn(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\npackages/slug/src/B.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame([$root.'/packages/slug/src/B.php', $root.'/packages/slug/src/C.php'], \array_slice($this->runner->runs[3]['command'], -2));
+        self::assertSame('--ignore-msi-with-no-mutations', $this->runner->runs[3]['command'][8]);
+    }
+
+    public function testAChangedFileOutsideTheDeclaredDirectoriesIsNotPassed(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/packages/slug/src/Kept/.gitkeep', '');
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['infection' => ['directories' => ['src/Kept/']]];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/Kept/A.php\npackages/slug/src/Left.php\npackages/slug/src/KeptToo.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug.\n", $tester->getDisplay());
+        self::assertSame($root.'/packages/slug/src/Kept/A.php', array_last($this->runner->runs[3]['command']));
+        self::assertSame('--ignore-msi-with-no-mutations', $this->runner->runs[3]['command'][8]);
+    }
+
+    public function testOnlyFilesOfASkippedPlannedPackageLeaveNothingToMutate(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['status' => 'planned'];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\n"), new ProcessResult(0)]);
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', '1', static fn (): int => $tester->execute(['--changed' => 'main']));
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertSame("Skipped 1 planned package: phil/slug.\nNo file changed since main is in a source directory Infection mutates: nothing to mutate.\n", $tester->getDisplay());
+        self::assertCount(3, $this->runner->runs);
+    }
+
+    /**
+     * @return iterable<string, array{ProcessResult, ProcessResult}>
+     */
+    public static function provideAGitFailureFailsInsteadOfPassingCases(): iterable
+    {
+        yield 'the diff' => [new ProcessResult(128), new ProcessResult(0, "src/A.php\n")];
+        yield 'the untracked files' => [new ProcessResult(0, "src/A.php\n"), new ProcessResult(128)];
+    }
+
+    #[DataProvider('provideAGitFailureFailsInsteadOfPassingCases')]
+    public function testAGitFailureFailsInsteadOfPassing(ProcessResult $diff, ProcessResult $untracked): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), $diff, $untracked]);
+
+        self::assertSame(1, $tester->execute(['--changed' => 'main']));
+        self::assertSame('git could not list the files changed since main in '.$root.": nothing was mutated.\n", $tester->getDisplay());
+        self::assertCount(3, $this->runner->runs);
     }
 }
