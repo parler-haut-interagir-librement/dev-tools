@@ -49,6 +49,10 @@ spaces, and fails on a difference, which it shows; `--fix` writes the normalized
 `declare(strict_types=1)` everywhere and strict comparisons. Dates are never compared with `==` nor `===`: the second
 compares the identity of two objects, not their instant.
 
+The configuration lets PHP-CS-Fixer run on a PHP newer than the syntax it declares: the next PHP of the matrix is
+tested from its first release candidate, often before PHP-CS-Fixer supports it, and the code keeps to the syntax of
+the floor, which PHP-CS-Fixer parses.
+
 ## Twig templates
 
 `phil-dev twig` runs Twig-CS-Fixer on the templates of every package analysed: the directories of each manifest's
@@ -356,6 +360,14 @@ code excluded from the source —, so neither the initial run nor a mutant runs 
 packages' code is covered. The root's own paths stay. A change to one member of a large monorepo runs that member's
 tests, not the whole monorepo's.
 
+Infection receives each changed file as an absolute path, one argument per file. It reads a path inside a source
+directory of its configuration as a file to mutate and any other existing path as a test path it hands to PHPUnit, and
+it resolves a relative path against the directory of the configuration, `var/phil-dev/`; so only the changed files
+inside the source directories of the packages analysed are passed. A file of a planned package that is skipped, or
+outside the `infection.directories` of its package, is left out, and when none is left nothing is mutated. A git
+command that fails — a ref git does not know, or a worktree whose repository a container does not mount — stops the
+command with an error rather than passing for a change with nothing to mutate.
+
 Infection reads the suites and the source of `var/phil-dev/phpunit/phpunit.xml` when the root's PHPUnit configuration
 holds a glob: each `packages/*/src` or `packages/*/tests/Unit` is written as the list of directories it matches when
 the configuration is generated. Infection rewrites the paths of the configuration it copies, so the list it reads does
@@ -375,6 +387,33 @@ the next, and a package whose tests are slow on purpose gives its `infection.tim
 | Once per batch, before its commit | the files changed since the base ref, on the floor PHP | `composer infection:changed` |
 | Weekly and before each release | the whole code, on the floor PHP | `composer infection` |
 | Weekly and before each release | the whole code, on the next PHP | `composer infection:next` |
+
+A pass that reports mutants which "required more time than configured" has not judged them: Infection leaves out a
+mutant whose covering tests took longer than the timeout in the initial run, and the covered MSI does not count it. A
+busy machine or a coverage driver slows the initial run; the package whose tests are slow gives its
+`infection.timeout`, and the pass runs again on a quieter machine.
+
+### Passes side by side
+
+Each checkout writes its configurations under its own `var/phil-dev/` and Infection's temporary files and logs under
+its own `var/infection/`, so passes of `--changed` run at once from different worktrees; two passes from one checkout
+overwrite each other's configuration. Infection starts one process per core with `--threads=max`: with two or three
+passes, each takes its share of the cores, given after `--`.
+
+```sh
+vendor/bin/phil-dev infection --changed -- --threads=4
+```
+
+A pass narrowed to the packages of its changes needs little memory: the initial run of three bundles, 710 tests,
+peaks under 300 MiB, far below `infection.memoryLimit`. The `4G` default stays for the full run, whose initial run
+covers the whole monorepo. Each mutant's run gets a limit drawn from what the initial run used, so the memory of a
+pass grows with its threads, not with the size of the monorepo.
+
+On a monorepo of 233 packages and 40,057 Unit tests, with Xdebug as the coverage driver on an eight-core machine, a
+change to three bundles runs the initial run of their 710 tests and its mutants in two to seven minutes, depending on
+the load of the machine. Mutated with all the monorepo's tests and code, the same change had not finished its initial
+run after 57 minutes. Two passes side by side, four threads each, took 2 minutes 14 seconds for the three bundles and
+1 minute 13 seconds for another bundle, each under 220 MiB.
 
 ## The French mirror of the documentation
 

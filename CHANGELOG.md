@@ -16,12 +16,34 @@ The next version is 0.1.8-alpha.
   the message to be a literal; an object other than a `Throwable` in its context, down to four levels of nested arrays,
   as `phil.psrLogContext`. Its witnesses are `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php`.
 
+### Changed
+
+- The image of `phil-dev php` builds liblouis 3.39.0 from its released tag, checked against the commit the Dockerfile
+  pins, in a stage of its own, instead of installing the older Debian package: `lou_translate` and the tables are
+  under `/usr/local`, and the build fails when `lou_translate --version` reports a version older than 3.39.0 or the
+  tables are missing.
+
 ### Removed
 
 - `CheckRequiredInterfaceInContractNamespaceRule` of `symplify/phpstan-rules` is no longer loaded by
   `config/phpstan-symplify.php`: an interface stays beside its adapters or in a `Contract` namespace, as its code reads
   best. An exception a `phil-dev.php` still declares for `symplify.requiredInterfaceContractNamespace` is given
   `reportUnmatched: false`, so it fails no analysis until the package drops it.
+
+### Fixed
+
+- `infection --changed` passes each changed file to Infection as an absolute path of its own: Infection resolves a
+  relative path against the directory of the generated configuration, under `var/phil-dev/`, and stopped with
+  `multiple paths must be passed as separate arguments`.
+- `infection --changed` passes only the changed files inside the source directories Infection mutates: Infection
+  reads any other existing path as a test path for PHPUnit, so a file of a planned package that is skipped, or outside
+  the `infection.directories` of its package, reached PHPUnit. When no changed file is left, nothing is mutated and
+  the command passes.
+- `infection --changed` fails when git cannot list the changed files — a ref it does not know, or a worktree whose
+  repository is out of reach, as in a container that mounts the worktree alone — instead of passing with nothing to
+  mutate.
+- The shared PHP-CS-Fixer configuration runs on a PHP newer than the syntax PHP-CS-Fixer declares, so that the code
+  style and the commit hooks run on the next PHP of the matrix; the code keeps to the syntax of the floor.
 
 ## 0.1.7-alpha - 2026-11-20
 

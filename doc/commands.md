@@ -137,8 +137,10 @@ Unit suite with all threads, under the memory limit of the root's `infection.mem
 `--changed` mutates only the PHP files added, modified or renamed since the point where
 the branch left the base ref, committed or not, and the untracked files git does not ignore: the ref given, else
 `PHIL_DEV_BASE_REF`, else whichever of `origin/main` and `main` the branch left last, else `main`. Nothing changed
-passes. In a monorepo, `--changed` also runs only the tests of the packages that hold the changed files, and covers
-only their code; it names them on a line of its own. Arguments after `--` go to Infection.
+passes; a git command that fails stops it with an error instead. In a monorepo, `--changed` also runs only the tests
+of the packages that hold the changed files, and covers only their code; it names them on a line of its own.
+Infection receives each changed file as an absolute path of its own, and only those inside the source directories it
+mutates. Arguments after `--` go to Infection, before the paths.
 
 Run from the directory of a member of a monorepo, `php ../../vendor/bin/phil-dev infection`, it moves to the nearest
 parent whose workspace counts that directory among its members and mutates that member alone, as `PHIL_DEV_PACKAGES`
