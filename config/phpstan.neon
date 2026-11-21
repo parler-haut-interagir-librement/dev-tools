@@ -17,6 +17,11 @@ includes:
     - phpstan-symfony-ux.php
     - phpstan-workspace.php
 
+# The rule of this package on the calls to a PSR-3 logger: a constant message with placeholders, a context without an
+# object other than a Throwable. It looks at a call only when its object is a `Psr\Log\LoggerInterface`.
+rules:
+    - Phil\DevTools\PhpStan\Rules\PsrLogContextRule
+
 parameters:
     level: max
 
@@ -65,13 +70,6 @@ parameters:
         # properties stay forbidden.
         -
             identifier: symfonyUX.twigComponent.forbiddenReadonlyClass
-            reportUnmatched: false
-
-        # The marker interface of a package's exceptions lives with them, in its Exception namespace, as the rule on
-        # exception namespaces asks; the Contract namespace is for the interfaces of services.
-        -
-            identifier: symplify.requiredInterfaceContractNamespace
-            path: '*/Exception/*'
             reportUnmatched: false
 
         # A test may assert what static analysis already proves: that a compiled container returns a given object,

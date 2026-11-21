@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Symplify\PHPStanRules\Rules\CheckRequiredInterfaceInContractNamespaceRule;
 use Symplify\PHPStanRules\Rules\Complexity\ForbiddenArrayMethodCallRule;
 use Symplify\PHPStanRules\Rules\Domain\RequireAttributeNamespaceRule;
 use Symplify\PHPStanRules\Rules\Domain\RequireExceptionNamespaceRule;
@@ -34,11 +33,10 @@ return [
         // A class is final, or abstract: extending a concrete class couples to its internals.
         ForbiddenExtendOfNonAbstractClassRule::class,
         NoGlobalConstRule::class,
-        // An exception in an Exception namespace, an attribute in an Attribute namespace, an interface in a Contract
-        // namespace when its namespace has one.
+        // An exception in an Exception namespace, an attribute in an Attribute namespace. An interface stays where its
+        // code reads it best, next to its adapters or in a Contract namespace: no rule picks one.
         RequireExceptionNamespaceRule::class,
         RequireAttributeNamespaceRule::class,
-        CheckRequiredInterfaceInContractNamespaceRule::class,
         RequireUniqueEnumConstantRule::class,
         PreventParentMethodVisibilityOverrideRule::class,
         ForbiddenMultipleClassLikeInOneFileRule::class,

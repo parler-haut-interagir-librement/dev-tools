@@ -28,6 +28,7 @@
 | `Workspace\TestKernels` | The kernels of a package's functional test applications, found by reading the files. |
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
+| `PhpStan\Rules\PsrLogContextRule` | The PHPStan rule on the message and context of PSR-3 logger calls; see [below](#phpstan-rules). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, without a shell, with a timeout when one is given, their error output captured with the standard one on request. |
 | `Split\SecurityFiles` | The security files of a split repository and of a monorepo, the repository a package is split to, and its OpenSSF Scorecard badge. |
 | `Split\ArchiveRules` | What the Composer archive of a package leaves out, from its `.gitattributes` and its `archive.exclude`, and what it must keep. |
@@ -62,12 +63,15 @@
 
 ## PHPStan rules
 
-The rules of this package run inside PHPStan, which loads them from `config/phpstan-symfony-ux.php`, part of the shared
-`config/phpstan.neon` every project includes. They depend on nothing else at run time.
+The rules of this package run inside PHPStan, which loads them from the shared `config/phpstan.neon` every project
+includes: the rule on components through `config/phpstan-symfony-ux.php`, the rule on logger calls directly. They
+depend on nothing else at run time.
 
 | Rule | Identifier | Requires |
 |---|---|---|
 | `ClassNameMustEndWithComponentRule` | `phil.componentClassName` | A class carrying `#[AsTwigComponent]` or `#[AsLiveComponent]` has a name ending with `Component`, with that exact case. |
+| `PsrLogContextRule` | `phil.psrLogMessage` | The message of a PSR-3 logger call is not built by interpolation, concatenation, `sprintf()` or `vsprintf()`, unless its value is a literal. |
+| `PsrLogContextRule` | `phil.psrLogContext` | The context of a PSR-3 logger call holds no object other than a `Throwable`, down to four levels of nested arrays. |
 
 A suffix tells the role of a class at a glance, as `Interface`, `Trait` and `Abstract…` do, and keeps a name clear of
 the words PHP reserves: `ListComponent` is a valid class name, `List` is not. The rule replaces
@@ -90,3 +94,20 @@ final class AlertComponent
 ```
 
 See [Quality gates](quality-gates.md#a-components-name-ends-with-component) for the details.
+
+A log message built from its values is a new message for every value, which a handler cannot group and a processor
+cannot mask; an object in the context is serialised however each handler sees fit. The logger is recognised by its
+type, compared by name, so a project without `psr/log` runs the rule safely.
+
+```php
+// Refused: phil.psrLogMessage, then phil.psrLogContext.
+$logger->info("Order {$order->getId()} shipped.");
+$logger->warning('Order {order} late.', ['order' => $order]);
+
+// Accepted.
+$logger->info('Order {order} shipped.', ['order' => $order->getId()]);
+$logger->error('Order {order} failed.', ['order' => $order->getId(), 'exception' => $exception]);
+```
+
+See [Quality gates](quality-gates.md#a-log-message-is-a-constant-with-placeholders) for the details and the way to
+declare an exception.

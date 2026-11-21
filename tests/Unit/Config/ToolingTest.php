@@ -78,6 +78,9 @@ final class ToolingTest extends TestCase
             ['identifier' => 'argument.type', 'path' => $root.'/packages/slug-bundle/src/Legacy.php'],
             ['identifier' => 'return.type', 'paths' => [$root.'/packages/slug-bundle/src/A.php', '*/B.php']],
             '#^A message$#',
+            // The rule of this identifier is no longer loaded: the exception stays, and fails nothing.
+            ['identifier' => 'symplify.requiredInterfaceContractNamespace', 'path' => $root.'/packages/slug-bundle/src/Port.php', 'reportUnmatched' => false],
+            ['message' => '#^Another message$#'],
         ], $phpstan['parameters']['ignoreErrors']);
     }
 
