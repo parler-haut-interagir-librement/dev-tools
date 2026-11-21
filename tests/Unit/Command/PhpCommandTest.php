@@ -16,12 +16,17 @@ use PHPUnit\Framework\Attributes\DataProvider;
 #[CoversClass(MatrixCommand::class)]
 final class PhpCommandTest extends CommandTestCase
 {
+    private const string SAFE = '--env GIT_CONFIG_COUNT=1 --env GIT_CONFIG_KEY_0=safe.directory --env GIT_CONFIG_VALUE_0=/app';
+
     public function testItRunsInTheImageOfTheVersion(): void
     {
         $root = $this->project();
         $floor = Matrix::load()->floor('php');
 
-        self::assertSame(3, $this->tester($root, 'php', [$this->built(), new ProcessResult(3)])->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
+        $tester = $this->tester($root, 'php', [$this->built(), new ProcessResult(3)]);
+
+        self::assertSame(3, $tester->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
+        self::assertSame('', $tester->getDisplay());
         self::assertSame([
             $this->inspect($floor->version),
             'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor->version).'--workdir /app phil-dev/php:'.$floor->version.' php -v',
@@ -124,6 +129,137 @@ final class PhpCommandTest extends CommandTestCase
         self::assertStringContainsString(' '.$this->caches($root, $next).'--workdir ', $this->runner->commands()[1]);
     }
 
+    public function testAWorktreeMountsItsRepositoryAtThePathItsGitFileNames(): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, $base.'/repo/.git/worktrees/wt', "../..\n");
+        $floor = Matrix::load()->floor('php')->version;
+
+        $tester = $this->tester($root, 'php', [$this->built(), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['version' => 'floor', 'arguments' => ['git', '-C', '/app', 'rev-parse', 'HEAD']], ['capture_stderr_separately' => true]));
+        self::assertSame(
+            'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor).'--mount type=bind,source='.$base.'/repo/.git,target='.$base.'/repo/.git,readonly '.self::SAFE.' --workdir /app phil-dev/php:'.$floor.' git -C /app rev-parse HEAD',
+            $this->runner->commands()[1],
+        );
+        self::assertSame('', $tester->getErrorOutput());
+    }
+
+    public function testARelativeGitdirIsMountedWhereItReachesFromApp(): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, '../repo/.git/worktrees/wt', '../..');
+
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertStringContainsString(' --mount type=bind,source='.$base.'/repo/.git,target=/repo/.git,readonly '.self::SAFE.' --workdir /app ', $this->runner->commands()[1]);
+    }
+
+    public function testAnAbsoluteCommondirIsMountedAtItsOwnPath(): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, '../repo/.git/worktrees/wt', $base."/repo/./.git/\n");
+
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertStringContainsString(' --mount type=bind,source='.$base.'/repo/.git,target='.$base.'/repo/.git,readonly '.self::SAFE.' --workdir /app ', $this->runner->commands()[1]);
+    }
+
+    public function testAMountFieldWithACommaOrAQuoteIsQuoted(): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, $base.'/re,p"o/.git/worktrees/wt', '../..', 're,p"o');
+
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertStringContainsString(' --mount type=bind,"source='.$base.'/re,p""o/.git","target='.$base.'/re,p""o/.git",readonly '.self::SAFE.' --workdir ', $this->runner->commands()[1]);
+    }
+
+    public function testARepositoryThatAppAlreadyShowsIsOnlyDeclaredSafe(): void
+    {
+        $base = $this->outsideApp();
+        // The repository inside the worktree, the root of the container, then /app itself: none is mounted.
+        $root = $this->worktree($base, 'inner/.git/worktrees/wt', '../..', 'wt/inner');
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+        self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
+
+        $this->put($base.'/worktrees/top/commondir', '../..');
+        $this->put($base.'/wt/.git', 'gitdir: ../worktrees/top');
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+        self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
+
+        $this->put($root.'/worktrees/self/commondir', '../..');
+        $this->put($root.'/.git', 'gitdir: worktrees/self');
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+        self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
+    }
+
+    public function testAnOrdinaryCheckoutMountsNoRepository(): void
+    {
+        $root = $this->project();
+        mkdir($root.'/.git');
+
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+
+        self::assertStringEndsWith(':/app/var/infection/tmp --workdir /app phil-dev/php:'.Matrix::load()->floor('php')->version.' php vendor/bin/phpunit', $this->runner->commands()[1]);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function strangeGitFiles(): iterable
+    {
+        yield 'no gitdir' => ['ref: refs/heads/main', 'cannot be read as the gitdir of a worktree'];
+        yield 'a gitdir after something else' => ['x gitdir: %s/repo/.git/worktrees/wt', 'cannot be read as the gitdir of a worktree'];
+        yield 'a gitdir followed by another line' => ["gitdir: %s/repo/.git/worktrees/wt\nmore", 'cannot be read as the gitdir of a worktree'];
+        yield 'a missing gitdir' => ['gitdir: %s/missing', 'names %s/missing, which is not the directory of a worktree'];
+        yield 'a gitdir without commondir' => ['gitdir: %s/repo/.git/modules/sub', 'names %s/repo/.git/modules/sub, which is not the directory of a worktree'];
+        yield 'an empty commondir' => ['gitdir: %s/repo/.git/worktrees/empty', 'names %s/repo/.git/worktrees/empty, which is not'];
+        yield 'a commondir that is missing' => ['gitdir: %s/repo/.git/worktrees/lost', 'names %s/repo/.git/worktrees/lost, which is not'];
+        yield 'a commondir that holds no worktrees/' => ['gitdir: %s/repo/.git/worktrees/far', 'names %s/repo/.git/worktrees/far, which is not'];
+        yield 'a commondir whose worktrees/ is elsewhere' => ['gitdir: %s/repo/.git/other/wt', 'names %s/repo/.git/other/wt, which is not'];
+    }
+
+    #[DataProvider('strangeGitFiles')]
+    public function testAGitFileThatNamesNoWorktreeIsReportedAndNothingIsMounted(string $content, string $message): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, $base.'/repo/.git/worktrees/wt', '../..');
+        mkdir($base.'/repo/.git/modules/sub', recursive: true);
+        $this->put($base.'/repo/.git/worktrees/empty/commondir', "\n");
+        $this->put($base.'/repo/.git/worktrees/lost/commondir', '../../missing');
+        $this->put($base.'/repo/.git/worktrees/far/commondir', '../../..');
+        $this->put($base.'/repo/.git/other/wt/commondir', '../..');
+        $this->put($root.'/.git', \sprintf($content, $base));
+
+        $tester = $this->tester($root, 'php', [$this->built(), new ProcessResult(5)]);
+
+        self::assertSame(5, $tester->execute(['version' => 'floor'], ['capture_stderr_separately' => true]));
+        self::assertStringContainsString($root.'/.git '.\sprintf($message, $base), $tester->getErrorOutput());
+        self::assertStringContainsString(': the repository is not mounted, and git cannot reach it in the container.', $tester->getErrorOutput());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringEndsWith(':/app/var/infection/tmp --workdir /app phil-dev/php:'.Matrix::load()->floor('php')->version.' php vendor/bin/phpunit', $this->runner->commands()[1]);
+    }
+
+    public function testAGitFileThatCannotBeReadIsReported(): void
+    {
+        $base = $this->outsideApp();
+        $root = $this->worktree($base, $base.'/repo/.git/worktrees/wt', '../..');
+        chmod($root.'/.git', 0o000);
+
+        if (is_readable($root.'/.git')) {
+            chmod($root.'/.git', 0o644);
+            self::markTestSkipped('Every file is readable to this user.');
+        }
+
+        $tester = $this->tester($root, 'php', [$this->built(), new ProcessResult(0)]);
+        $tester->execute(['version' => 'floor']);
+        chmod($root.'/.git', 0o644);
+
+        self::assertStringContainsString($root.'/.git cannot be read as the gitdir of a worktree: the repository is not mounted', $tester->getDisplay());
+        self::assertStringNotContainsString('--mount', $this->runner->commands()[1]);
+    }
+
     /**
      * @return iterable<string, array{string, string, string}>
      */
@@ -198,6 +334,35 @@ final class PhpCommandTest extends CommandTestCase
         }
 
         return $volumes;
+    }
+
+    /**
+     * A directory under /tmp, not the temporary directory: in the container of a PHP of the matrix, that one is under
+     * var/tmp of the project mounted at /app, where an absolute path is what /app already shows and is never mounted.
+     */
+    private function outsideApp(): string
+    {
+        $base = (string) realpath((string) tempnam('/tmp', 'phil-dev-test-'));
+        unlink($base);
+        mkdir($base);
+        $this->adopt($base);
+
+        return $base;
+    }
+
+    /**
+     * A worktree as git lays it out: the project `<base>/wt`, whose `.git` file names `$gitdir`, and the directory of
+     * the worktree, `<base>/<repository>/.git/worktrees/wt`, with its `commondir`.
+     */
+    private function worktree(string $base, string $gitdir, string $commondir, string $repository = 'repo'): string
+    {
+        $root = $base.'/wt';
+        $this->put($root.'/composer.json', '{"name": "phil/x"}');
+        $this->put($root.'/.git', 'gitdir: '.$gitdir."\n");
+        $this->put($base.'/'.$repository.'/.git/worktrees/wt/commondir', $commondir);
+        $this->put($base.'/'.$repository.'/.git/HEAD', "ref: refs/heads/main\n");
+
+        return $root;
     }
 
     private function project(): string
