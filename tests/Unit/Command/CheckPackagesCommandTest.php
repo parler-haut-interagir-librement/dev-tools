@@ -11,6 +11,7 @@ use Phil\DevTools\Process\ProcessResult;
 use Phil\DevTools\Split\SecurityFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 
 #[CoversClass(CheckPackagesCommand::class)]
 final class CheckPackagesCommandTest extends CommandTestCase
@@ -42,6 +43,43 @@ final class CheckPackagesCommandTest extends CommandTestCase
         self::assertSame(['TMPDIR' => $work.'/var/tmp'], $this->runner->runs[3]['environment']);
         self::assertSame($this->runner->runs[0]['environment'], $this->runner->runs[3]['environment']);
         self::assertDirectoryDoesNotExist($work);
+    }
+
+    public function testThePolyfillsOfTheRunningPhpAreExpectedUnused(): void
+    {
+        $root = $this->fixture('monorepo');
+        $current = 'symfony/polyfill-php'.\PHP_MAJOR_VERSION.\PHP_MINOR_VERSION;
+        $this->put($root.'/packages/slug/composer.json', json_encode(['name' => 'phil/slug', 'require' => [
+            'php' => '>=8.5',
+            'symfony/polyfill-php99' => '^1.33',
+            $current => '^1.33',
+            'symfony/polyfill-php80' => '^1.33',
+            'symfony/polyfill-mbstring' => '^1.33',
+        ]], \JSON_THROW_ON_ERROR));
+        $this->put($root.'/packages/slug/composer-dependency-analyser.php', "<?php\n\nreturn new ShipMonk\\ComposerDependencyAnalyser\\Config\\Configuration();\n");
+
+        self::assertSame(0, $this->tester($root, 'check-packages')->execute(['packages' => ['slug'], '--keep' => true]));
+
+        $work = $this->runner->runs[0]['directory'];
+        $configuration = $work.'/var/phil-dev/composer-dependency-analyser.php';
+        self::assertSame(\PHP_BINARY.' '.$root.'/vendor/bin/composer-dependency-analyser --config='.$configuration, $this->runner->commands()[2]);
+        $written = (string) file_get_contents($configuration);
+        self::assertStringContainsString("ignoreErrorsOnPackages(['symfony/polyfill-php80', '".$current."'], [ErrorType::UNUSED_DEPENDENCY])", $written);
+        self::assertStringContainsString('polyfill nothing on PHP '.\PHP_MAJOR_VERSION.'.'.\PHP_MINOR_VERSION.',', $written);
+        self::assertStringContainsString("__DIR__.'/../../composer-dependency-analyser.php'", $written);
+        self::assertFileExists($work.'/composer-dependency-analyser.php');
+        self::assertInstanceOf(Configuration::class, require $configuration);
+
+        $this->adopt($work);
+    }
+
+    public function testWithoutAnIdlePolyfillTheAnalyserReadsThePackagesOwnConfiguration(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug/composer.json', '{"name": "phil/slug", "require": {"symfony/polyfill-php99": "^1.33", "symfony/polyfill-php8": "^1.0"}}');
+
+        self::assertSame(0, $this->tester($root, 'check-packages')->execute(['packages' => ['slug']]));
+        self::assertSame(\PHP_BINARY.' '.$root.'/vendor/bin/composer-dependency-analyser', $this->runner->commands()[2]);
     }
 
     public function testWhatASplitRepositoryWouldMissIsAWarning(): void

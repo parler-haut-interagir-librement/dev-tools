@@ -15,6 +15,10 @@ The next version is 0.1.8-alpha.
   interpolation, concatenation, `sprintf()` or `vsprintf()` is reported as `phil.psrLogMessage`, unless PHPStan knows
   the message to be a literal; an object other than a `Throwable` in its context, down to four levels of nested arrays,
   as `phil.psrLogContext`. Its witnesses are `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php`.
+- `check-packages` expects unused the polyfills of the running PHP version and of the earlier ones, such as
+  `symfony/polyfill-php86` on PHP 8.6, which polyfill nothing there: a configuration written in the copy loads the
+  package's own and ignores their unused-dependency error, so a package that requires one for PHP 8.5 passes the
+  analysis on PHP 8.6.
 
 ### Removed
 

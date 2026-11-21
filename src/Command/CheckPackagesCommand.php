@@ -38,6 +38,11 @@ use Symfony\Component\Console\Output\OutputInterface;
     everything else. The tests of each copy run with TMPDIR
     inside the copy.
 
+    The polyfills of the running PHP version and of the earlier ones, symfony/polyfill-php86 on PHP 8.6,
+    polyfill nothing there, so composer-dependency-analyser would find them unused, though the package requires
+    them for the versions before: a configuration written in the copy wraps the package's own and ignores that
+    error for them.
+
     The archive Composer would make of each package must keep what it needs: the paths its autoload and
     autoload-dev name — the tests autoload-dev points to ship with the code — and its LICENSE and README.md. A
     path its .gitattributes marks export-ignore, or its archive.exclude names, fails the package.
@@ -102,7 +107,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
 
             $steps = $repositories;
             $steps[] = ['composer', 'install', '--no-interaction', '--no-progress', '--quiet'];
-            $steps[] = [\PHP_BINARY, $analyser];
+            $steps[] = [\PHP_BINARY, $analyser, ...$this->analyserOptions($composer, $work)];
             // A package's own PHPUnit configuration when it has one, else every test under tests/.
             $steps[] = [] === array_filter(['phpunit.xml', 'phpunit.dist.xml', 'phpunit.xml.dist'], static fn (string $file): bool => is_file($work.'/'.$file))
                 ? ['vendor/bin/phpunit', '--no-configuration', 'tests']
@@ -220,6 +225,69 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $composer['minimum-stability'] = 'dev';
         $composer['prefer-stable'] = true;
         file_put_contents($file, json_encode($composer, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * The `require` of a package that names a polyfill of PHP `$versionId` or earlier: on that version, its functions
+     * and classes are PHP's own, and composer-dependency-analyser finds it unused.
+     *
+     * @return list<string>
+     */
+    private static function idlePolyfills(mixed $requires, int $versionId): array
+    {
+        $idle = [];
+
+        foreach (\is_array($requires) ? array_keys($requires) : [] as $name) {
+            if (\is_string($name) && 1 === preg_match('{^symfony/polyfill-php([1-9])(\d)$}', $name, $match) && (int) $match[1] * 10000 + (int) $match[2] * 100 <= $versionId) {
+                $idle[] = $name;
+            }
+        }
+
+        sort($idle);
+
+        return $idle;
+    }
+
+    /**
+     * The options of composer-dependency-analyser for a copy: none, or a configuration that loads the package's own
+     * (or the default one) and ignores the polyfills that polyfill nothing on the running PHP.
+     *
+     * @param array<mixed> $composer
+     *
+     * @return list<string>
+     */
+    private function analyserOptions(array $composer, string $work): array
+    {
+        $polyfills = self::idlePolyfills($composer['require'] ?? null, \PHP_VERSION_ID);
+
+        if ([] === $polyfills) {
+            return [];
+        }
+
+        $directory = $work.'/var/phil-dev';
+
+        if (!is_dir($directory) && !mkdir($directory, recursive: true) && !is_dir($directory)) {
+            throw new RuntimeException('Cannot make '.$directory.'.');
+        }
+
+        $file = $directory.'/composer-dependency-analyser.php';
+        file_put_contents($file, \sprintf(<<<'PHP'
+            <?php
+
+            declare(strict_types=1);
+
+            use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
+            use ShipMonk\ComposerDependencyAnalyser\Config\ErrorType;
+
+            // Written by phil-dev check-packages: these polyfills polyfill nothing on PHP %s, which runs the analysis.
+            $own = __DIR__.'/../../composer-dependency-analyser.php';
+            $configuration = is_file($own) ? require $own : new Configuration();
+
+            return $configuration->ignoreErrorsOnPackages(%s, [ErrorType::UNUSED_DEPENDENCY]);
+
+            PHP, \PHP_MAJOR_VERSION.'.'.\PHP_MINOR_VERSION, "['".implode("', '", $polyfills)."']"));
+
+        return ['--config='.$file];
     }
 
     /**

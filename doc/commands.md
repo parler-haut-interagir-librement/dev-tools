@@ -103,6 +103,11 @@ absolute, all copied, not linked; installs it, runs `composer-dependency-analyse
 then PHPUnit with the package's own configuration when it has one, else `phpunit --no-configuration tests`. A failure is
 reported and the next package is checked. `--keep` keeps the copies.
 
+The polyfills of the running PHP version and of the earlier ones — `symfony/polyfill-php86` on PHP 8.6 — polyfill
+nothing there, so the analysis would find them unused, though the package requires them for the versions before. When
+the package's `require` names one, the copy gets `var/phil-dev/composer-dependency-analyser.php`, which loads the
+package's own configuration, or the default one, and ignores that error for those polyfills; the analysis runs with it.
+
 Before installing a package, it checks what the Composer archive of the package — the archive of its split repository
 — keeps: the paths its `autoload` and `autoload-dev` name, so the tests `autoload-dev` points to ship with the code, and
 its `LICENSE` and `README.md`. A path its `.gitattributes` marks `export-ignore`, or its `archive.exclude` names, fails
