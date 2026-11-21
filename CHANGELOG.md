@@ -7,7 +7,23 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
 
 ## Unreleased
 
-The next version is 0.1.7-alpha.
+The next version is 0.1.8-alpha.
+
+### Added
+
+- `PsrLogContextRule`, loaded by the shared `config/phpstan.neon`: a PSR-3 logger call whose message is built by
+  interpolation, concatenation, `sprintf()` or `vsprintf()` is reported as `phil.psrLogMessage`, unless PHPStan knows
+  the message to be a literal; an object other than a `Throwable` in its context, down to four levels of nested arrays,
+  as `phil.psrLogContext`. Its witnesses are `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php`.
+
+### Removed
+
+- `CheckRequiredInterfaceInContractNamespaceRule` of `symplify/phpstan-rules` is no longer loaded by
+  `config/phpstan-symplify.php`: an interface stays beside its adapters or in a `Contract` namespace, as its code reads
+  best. An exception a `phil-dev.php` still declares for `symplify.requiredInterfaceContractNamespace` is given
+  `reportUnmatched: false`, so it fails no analysis until the package drops it.
+
+## 0.1.7-alpha - 2026-11-20
 
 ### Added
 
@@ -28,10 +44,6 @@ The next version is 0.1.7-alpha.
 - `twigstan --strict`, which returns TwigStan's own exit code.
 - `pcntl` in the image of `phil-dev php`, for the tests that send a worker a signal.
 - The installation note for Symfony 8.2 while it is in BETA: `minimum-stability: beta` with `prefer-stable: true`.
-- `PsrLogContextRule`, loaded by the shared `config/phpstan.neon`: a PSR-3 logger call whose message is built by
-  interpolation, concatenation, `sprintf()` or `vsprintf()` is reported as `phil.psrLogMessage`, unless PHPStan knows
-  the message to be a literal; an object other than a `Throwable` in its context, down to four levels of nested arrays,
-  as `phil.psrLogContext`. Its witnesses are `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php`.
 
 ### Changed
 
@@ -44,13 +56,6 @@ The next version is 0.1.7-alpha.
   carries the SHA-256 of its Dockerfile in its label `phil-dev.recipe`.
 - The next PHP of the matrix, 8.6, is built from its release image, `php:8.6-cli`, instead of `php:8.6-rc-cli`; it
   stays `next`, the floor being raised at PHP 8.6.3.
-
-### Removed
-
-- `CheckRequiredInterfaceInContractNamespaceRule` of `symplify/phpstan-rules` is no longer loaded by
-  `config/phpstan-symplify.php`: an interface stays beside its adapters or in a `Contract` namespace, as its code reads
-  best. An exception a `phil-dev.php` still declares for `symplify.requiredInterfaceContractNamespace` is given
-  `reportUnmatched: false`, so it fails no analysis until the package drops it.
 
 ### Security
 
