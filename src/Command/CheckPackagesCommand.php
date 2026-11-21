@@ -233,7 +233,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
      *
      * @return list<string>
      */
-    private static function idlePolyfills(mixed $requires, int $versionId): array
+    private function idlePolyfills(mixed $requires, int $versionId): array
     {
         $idle = [];
 
@@ -258,7 +258,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
      */
     private function analyserOptions(array $composer, string $work): array
     {
-        $polyfills = self::idlePolyfills($composer['require'] ?? null, \PHP_VERSION_ID);
+        $polyfills = $this->idlePolyfills($composer['require'] ?? null, \PHP_VERSION_ID);
 
         if ([] === $polyfills) {
             return [];
@@ -271,7 +271,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
         }
 
         $file = $directory.'/composer-dependency-analyser.php';
-        file_put_contents($file, \sprintf(<<<'PHP'
+        file_put_contents($file, \sprintf(<<<'PHP_WRAP'
             <?php
 
             declare(strict_types=1);
@@ -285,7 +285,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
 
             return $configuration->ignoreErrorsOnPackages(%s, [ErrorType::UNUSED_DEPENDENCY]);
 
-            PHP, \PHP_MAJOR_VERSION.'.'.\PHP_MINOR_VERSION, "['".implode("', '", $polyfills)."']"));
+            PHP_WRAP, \PHP_MAJOR_VERSION.'.'.\PHP_MINOR_VERSION, "['".implode("', '", $polyfills)."']"));
 
         return ['--config='.$file];
     }
