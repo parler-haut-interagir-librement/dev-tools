@@ -52,10 +52,13 @@ vendor/bin/phil-dev check-packages --symfony=next
 ```
 
 `phil-dev php` builds `resources/php/Dockerfile` from the image of the version — with intl, sodium, openssl, zip,
-pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring, gd with JPEG, PNG, WebP and AVIF, and pcntl, the `sqlite3` command, the
-`lou_translate` command and the tables of liblouis for the integration tests of a braille translator, Composer, and
-pcov, or Xdebug in coverage mode where pcov does not build yet, each built from a released tag checked against the
-commit the Dockerfile pins — and runs the command with the project mounted at `/app`. Every deprecation is reported
+pdo_mysql, pdo_pgsql, pdo_sqlite, mbstring, gd with JPEG, PNG, WebP and AVIF, and pcntl, the `sqlite3` command,
+liblouis 3.39.0 — its `lou_translate` command and its tables, for the integration tests of a braille translator —,
+Composer, and pcov, or Xdebug in coverage mode where pcov does not build yet; liblouis and the coverage driver are
+each built from a released tag checked against the commit the Dockerfile pins — and runs the command with the project
+mounted at `/app`. liblouis is built in a stage of its own, since the Debian package of the base image is older than
+3.39.0, the oldest release a braille translator accepts; the build fails when the installed `lou_translate` reports
+an older version or its tables are missing. Every deprecation is reported
 and fails the tests, which run with `failOnDeprecation`. The project's `vendor/` is shared with the host.
 
 The image carries, in its label `phil-dev.recipe`, the SHA-256 of the Dockerfile it was built from. When the Dockerfile

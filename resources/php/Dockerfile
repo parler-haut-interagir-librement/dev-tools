@@ -2,16 +2,37 @@
 # builds it from the image the matrix names, and runs a command in it with the project mounted at /app and the
 # neighbouring directories its path repositories name mounted read-only beside it.
 ARG PHP_IMAGE=php:8.5-cli
+
+# liblouis, built from its source: the integration tests of a braille translator need 3.39.0 or later, the oldest
+# release the translator accepts, and the Debian package of the base image is older. The source is a released tag,
+# fetched alone and checked against the commit pinned here, like the coverage driver below; the build tools stay in
+# this stage, and only what `make install` writes under /usr/local reaches the image.
+FROM ${PHP_IMAGE} AS liblouis
+ARG LIBLOUIS_TAG=v3.39.0
+ARG LIBLOUIS_COMMIT=2e775aca674cd2910e272eed7736acceb4c2e4a2
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends git ca-certificates automake libtool pkg-config texinfo; \
+    git init -q /tmp/liblouis; \
+    git -C /tmp/liblouis fetch -q --depth 1 https://github.com/liblouis/liblouis.git "refs/tags/$LIBLOUIS_TAG:refs/tags/$LIBLOUIS_TAG"; \
+    test "$(git -C /tmp/liblouis rev-parse "$LIBLOUIS_TAG^{commit}")" = "$LIBLOUIS_COMMIT"; \
+    git -C /tmp/liblouis -c advice.detachedHead=false checkout -q "$LIBLOUIS_COMMIT"; \
+    cd /tmp/liblouis; \
+    ./autogen.sh; \
+    ./configure --prefix=/usr/local --disable-static; \
+    make -j"$(nproc)"; \
+    make install DESTDIR=/opt/liblouis
+
 FROM ${PHP_IMAGE}
 
 # The extensions the packages need, besides those the image builds in (openssl, sodium, pdo_sqlite): GD reads and
 # writes JPEG, PNG, WebP and AVIF; pcntl for the tests that send a worker a signal. git and unzip for Composer; the
-# sqlite3 command for the tests that inspect a database file; lou_translate and the tables of liblouis for the
-# integration tests of a braille translator. `phil-dev php` builds the image again when this file changes.
+# sqlite3 command for the tests that inspect a database file. `phil-dev php` builds the image again when this file
+# changes.
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends git unzip sqlite3 libicu-dev libonig-dev libzip-dev libpq-dev \
-        libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev liblouis-bin liblouis-data; \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev libwebp-dev libavif-dev; \
     docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp --with-avif; \
     docker-php-ext-install -j"$(nproc)" intl mbstring zip pdo_mysql pdo_pgsql gd pcntl; \
     rm -rf /var/lib/apt/lists/*
@@ -50,6 +71,15 @@ RUN { \
         echo 'memory_limit = -1'; \
         echo 'zend.assertions = 1'; \
     } > "$PHP_INI_DIR/conf.d/phil-dev.ini"
+
+# lou_translate, the other programs and the tables of liblouis, from the stage above. The build fails when the
+# installed lou_translate reports a version older than 3.39.0 or the tables are missing.
+COPY --from=liblouis /opt/liblouis/usr/local/ /usr/local/
+RUN set -eux; \
+    ldconfig; \
+    version="$(lou_translate --version | sed -n '1s/^.* \([0-9][0-9.]*\)$/\1/p')"; \
+    dpkg --compare-versions "$version" ge 3.39.0; \
+    test -f /usr/local/share/liblouis/tables/en-ueb-g2.ctb
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
