@@ -45,6 +45,14 @@ final class InfectionConfigTest extends TestCase
         ], new InfectionConfig(Workspace::load($root))->build());
     }
 
+    public function testTheDirectoriesMutatedOfThePackagesAnalysed(): void
+    {
+        $root = $this->fixture('monorepo');
+
+        self::assertSame([$root.'/packages/slug/src'], new InfectionConfig(Workspace::load($root, ['phil/slug']))->directories());
+        self::assertSame([$root.'/src', $root.'/packages/slug/src', $root.'/packages/slug-bundle/src', $root.'/packages/tilttek-dice/src'], new InfectionConfig(Workspace::load($root))->directories());
+    }
+
     public function testThePhpUnitConfigurationOfTheSkippedPlannedPackages(): void
     {
         $root = $this->fixture('monorepo');

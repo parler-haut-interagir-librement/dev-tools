@@ -297,7 +297,7 @@ final class InfectionCommandTest extends CommandTestCase
     {
         $root = (string) realpath($this->fixture('monorepo'));
         $this->put($root.'/packages/slug/src/Kept/.gitkeep', '');
-        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['infection' => ['directories' => ['src/Kept']]];");
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['infection' => ['directories' => ['src/Kept/']]];");
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/Kept/A.php\npackages/slug/src/Left.php\npackages/slug/src/KeptToo.php\n"), new ProcessResult(0)]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'main']));
