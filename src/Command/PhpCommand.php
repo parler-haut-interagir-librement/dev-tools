@@ -12,6 +12,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'php', description: 'Runs a command on a PHP version of the matrix, in its Docker image', help: <<<'TXT'
@@ -23,6 +24,11 @@ use Symfony\Component\Console\Output\OutputInterface;
     The directories outside the project that its path repositories name — a neighbouring monorepo whose packages it
     installs, phil/dev-tools beside it — are mounted read-only where the same relative path reaches them from /app,
     so that Composer and the autoloader find them in the container as on the host.
+
+    When the project is a git worktree, its .git file names a directory under .git/worktrees/ of its repository: that
+    repository is mounted read-only at the path the .git file names, and git is told that /app is safe, so that git
+    reaches the repository in the container — infection --changed lists the changed files from a worktree as from the
+    main checkout. A .git file that cannot be read, or that names anything else, is reported and nothing is mounted.
 
     The temporary directories — PHPStan's, the tmpDir of the root's phpstan.neon (var/phpstan by default) and
     var/phpstan-witnesses, the TMPDIR of the tests (var/tmp) and Infection's (var/infection/tmp) — are replaced in the
@@ -69,9 +75,15 @@ final class PhpCommand extends WorkspaceCommand
 
         /** @var list<string> $arguments */
         $arguments = $input->getArgument('arguments');
+        $repository = $this->repository($root);
+
+        if (\is_string($repository)) {
+            ($output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output)->writeln(\sprintf('<comment>%s: the repository is not mounted, and git cannot reach it in the container.</comment>', $repository));
+            $repository = [];
+        }
 
         return $this->runner->run(
-            ['docker', 'run', '--rm', '--volume', $root.':/app', ...$this->caches($root, $version->version), ...$this->neighbours($root), '--workdir', '/app', $tag, ...([] === $arguments ? ['php', 'vendor/bin/phpunit'] : $arguments)],
+            ['docker', 'run', '--rm', '--volume', $root.':/app', ...$this->caches($root, $version->version), ...$this->neighbours($root), ...$repository, '--workdir', '/app', $tag, ...([] === $arguments ? ['php', 'vendor/bin/phpunit'] : $arguments)],
             $root,
         )->exitCode;
     }
@@ -172,6 +184,62 @@ final class PhpCommand extends WorkspaceCommand
         }
 
         return array_merge(...array_values($volumes));
+    }
+
+    /**
+     * The arguments that let git reach, in the container, the repository of a worktree mounted at /app: its directory
+     * mounted read-only at the path the `.git` file of the worktree names — or, for a relative one, where that path
+     * reaches from /app — and /app declared safe through the environment of the container, which leaves the host's
+     * git configuration alone. Nothing for an ordinary checkout, whose `.git` is a directory /app already shows. The
+     * reason, as a string, when the `.git` file cannot be read or names anything but a directory under the
+     * `worktrees/` of a repository, which is then not mounted.
+     *
+     * The mount is a `--mount`, not a `--volume`: some engines misread a `--volume` whose source and target are the same
+     * path.
+     *
+     * @return list<string>|string
+     */
+    private function repository(string $root): array|string
+    {
+        $file = $root.'/.git';
+
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $content = is_readable($file) ? file_get_contents($file) : false;
+
+        if (false === $content || 1 !== preg_match('~\Agitdir: (\V+?)\s*\z~', $content, $match)) {
+            return $file.' cannot be read as the gitdir of a worktree';
+        }
+
+        $written = $match[1];
+        $absolute = str_starts_with($written, '/');
+        $gitdir = realpath($absolute ? $written : $root.'/'.$written);
+        $commondir = false !== $gitdir && is_file($gitdir.'/commondir') ? trim(Files::read($gitdir.'/commondir')) : '';
+        $common = '' === $commondir ? false : realpath(str_starts_with($commondir, '/') ? $commondir : $gitdir.'/'.$commondir);
+
+        if (false === $common || \dirname($gitdir) !== $common.'/worktrees') {
+            return \sprintf('%s names %s, which is not the directory of a worktree under the worktrees/ of a repository', $file, $written);
+        }
+
+        $container = str_starts_with($commondir, '/') ? $this->normalise($commondir) : $this->normalise(($absolute ? $written : '/app/'.$written).'/'.$commondir);
+        $safe = ['--env', 'GIT_CONFIG_COUNT=1', '--env', 'GIT_CONFIG_KEY_0=safe.directory', '--env', 'GIT_CONFIG_VALUE_0=/app'];
+
+        // What /app already shows is not mounted again.
+        if ('/' === $container || str_starts_with($container.'/', '/app/')) {
+            return $safe;
+        }
+
+        return ['--mount', 'type=bind,'.$this->field('source='.$common).','.$this->field('target='.$container).',readonly', ...$safe];
+    }
+
+    /**
+     * A field of a `--mount`, which Docker reads as CSV: quoted, its quotes doubled, when it holds a comma or a quote.
+     */
+    private function field(string $field): string
+    {
+        return false === strpbrk($field, ',"') ? $field : '"'.str_replace('"', '""', $field).'"';
     }
 
     /**

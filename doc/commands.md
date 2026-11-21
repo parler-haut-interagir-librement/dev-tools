@@ -218,3 +218,7 @@ See [Quality gates](quality-gates.md#the-functional-test-applications) and
 ## services, php, matrix
 
 See [Real servers](services.md), [HTTP recordings](http-recordings.md) and [The version matrix](version-matrix.md).
+`php` runs a command in the Docker image of a PHP version of the matrix, with the project at `/app`, the neighbours its
+path repositories name mounted read-only, and, from a git worktree, the worktree's repository mounted read-only at the
+path its `.git` file names and `/app` declared safe to git: `phil-dev php floor -- php vendor/bin/phil-dev infection
+--changed` runs from a worktree as from the main checkout.

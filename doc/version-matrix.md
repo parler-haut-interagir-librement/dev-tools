@@ -71,6 +71,18 @@ relative URL reaches from `/app` — `../../Phil/phil-prerelease/packages/*` at 
 `..` stops at the container's root — or at its own absolute path: a monorepo that installs the packages of a
 neighbouring one, and `phil/dev-tools` beside it, install and run in the container as on the host.
 
+When the project is a git worktree, its `.git` is a file whose `gitdir:` names the directory of the worktree under
+`.git/worktrees/` of its repository, outside the project. That repository — the directory the worktree's `commondir`
+names — is mounted read-only at the path the `.git` file names, or, for a relative one, where it reaches from `/app`,
+so that git resolves the `.git` file in the container as on the host. The container's environment declares `/app` a
+safe directory to git (`GIT_CONFIG_COUNT=1`, `GIT_CONFIG_KEY_0=safe.directory`, `GIT_CONFIG_VALUE_0=/app`), which leaves
+the host's git configuration alone. `git -C /app rev-parse HEAD` and `phil-dev infection --changed` run in the
+container from a worktree as from the main checkout. An ordinary checkout, whose `.git` is a directory `/app` already
+shows, mounts nothing more. A `.git` file that cannot be read, or whose `gitdir:` names anything but a directory under
+the `worktrees/` of the repository its `commondir` names — a submodule's, a missing one —, is reported on the error
+output, and the command runs without that mount. The repository is mounted through `--mount`, not `--volume`: some
+engines misread a `--volume` whose source and target are the same path.
+
 PHPStan's temporary directories — the `tmpDir` of the root's `phpstan.neon`, or of its `phpstan.dist.neon`, when it is
 a path inside the project, `var/phpstan` otherwise, and `var/phpstan-witnesses` — are replaced in the container by
 directories of its own, `var/phil-dev/php/<version>/var-phpstan` and the like. PHPStan keys its reflection cache by

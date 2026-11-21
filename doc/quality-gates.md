@@ -365,8 +365,8 @@ directory of its configuration as a file to mutate and any other existing path a
 it resolves a relative path against the directory of the configuration, `var/phil-dev/`; so only the changed files
 inside the source directories of the packages analysed are passed. A file of a planned package that is skipped, or
 outside the `infection.directories` of its package, is left out, and when none is left nothing is mutated. A git
-command that fails — a ref git does not know, or a worktree whose repository a container does not mount — stops the
-command with an error rather than passing for a change with nothing to mutate.
+command that fails — a ref git does not know, or a worktree whose repository git cannot reach — stops the command with
+an error rather than passing for a change with nothing to mutate.
 
 Infection reads the suites and the source of `var/phil-dev/phpunit/phpunit.xml` when the root's PHPUnit configuration
 holds a glob: each `packages/*/src` or `packages/*/tests/Unit` is written as the list of directories it matches when
@@ -397,8 +397,16 @@ busy machine or a coverage driver slows the initial run; the package whose tests
 
 Each checkout writes its configurations under its own `var/phil-dev/` and Infection's temporary files and logs under
 its own `var/infection/`, so passes of `--changed` run at once from different worktrees; two passes from one checkout
-overwrite each other's configuration. Infection starts one process per core with `--threads=max`: with two or three
-passes, each takes its share of the cores, given after `--`.
+overwrite each other's configuration. In the container of `phil-dev php`, a worktree's repository is mounted read-only
+beside the project — see [The version matrix](version-matrix.md) —, so `--changed` lists the changed files of a
+worktree there as on the host:
+
+```sh
+vendor/bin/phil-dev php floor -- php vendor/bin/phil-dev infection --changed
+```
+
+Infection starts one process per core with `--threads=max`: with two or three passes, each takes its share of the
+cores, given after `--`.
 
 ```sh
 vendor/bin/phil-dev infection --changed -- --threads=4

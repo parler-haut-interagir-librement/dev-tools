@@ -19,6 +19,12 @@ The next version is 0.1.8-alpha.
   `symfony/polyfill-php86` on PHP 8.6, which polyfill nothing there: a configuration written in the copy loads the
   package's own and ignores their unused-dependency error, so a package that requires one for PHP 8.5 passes the
   analysis on PHP 8.6.
+- `phil-dev php` mounts, from a git worktree, the worktree's repository: the directory its `commondir` names, read-only
+  through `--mount`, at the path the `.git` file names — or where a relative one reaches from `/app` —, with `/app`
+  declared safe to git by `GIT_CONFIG_COUNT`, `GIT_CONFIG_KEY_0=safe.directory` and `GIT_CONFIG_VALUE_0=/app` in the
+  container's environment. `infection --changed` lists the changed files in the container from a worktree as from the
+  main checkout. A `.git` file that cannot be read, or that names anything but a directory under the `worktrees/` of a
+  repository, is reported on the error output and mounts nothing; an ordinary checkout mounts nothing more.
 
 ### Changed
 
