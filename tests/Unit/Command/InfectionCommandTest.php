@@ -7,6 +7,7 @@ namespace Phil\DevTools\Tests\Unit\Command;
 use Phil\DevTools\Command\InfectionCommand;
 use Phil\DevTools\Process\ProcessResult;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 #[CoversClass(InfectionCommand::class)]
 final class InfectionCommandTest extends CommandTestCase
@@ -280,5 +281,61 @@ final class InfectionCommandTest extends CommandTestCase
         self::assertSame(0, $tester->execute(['--changed' => 'main']));
         self::assertSame("Mutating the 1 source files changed since main.\n", $tester->getDisplay());
         self::assertStringStartsWith(\PHP_BINARY.' -d memory_limit=4G ', $this->runner->commands()[3]);
+    }
+
+    public function testEachChangedFileIsAnAbsoluteArgumentOfItsOwn(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\npackages/slug/src/B.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame([$root.'/packages/slug/src/B.php', $root.'/packages/slug/src/C.php'], \array_slice($this->runner->runs[3]['command'], -2));
+        self::assertSame('--ignore-msi-with-no-mutations', $this->runner->runs[3]['command'][8]);
+    }
+
+    public function testAChangedFileOutsideTheDeclaredDirectoriesIsNotPassed(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/packages/slug/src/Kept/.gitkeep', '');
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['infection' => ['directories' => ['src/Kept']]];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/Kept/A.php\npackages/slug/src/Left.php\npackages/slug/src/KeptToo.php\n"), new ProcessResult(0)]);
+
+        self::assertSame(0, $tester->execute(['--changed' => 'main']));
+        self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug.\n", $tester->getDisplay());
+        self::assertSame($root.'/packages/slug/src/Kept/A.php', array_last($this->runner->runs[3]['command']));
+        self::assertSame('--ignore-msi-with-no-mutations', $this->runner->runs[3]['command'][8]);
+    }
+
+    public function testOnlyFilesOfASkippedPlannedPackageLeaveNothingToMutate(): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $this->put($root.'/packages/slug/phil-dev.php', "<?php return ['status' => 'planned'];");
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\n"), new ProcessResult(0)]);
+
+        $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', '1', static fn (): int => $tester->execute(['--changed' => 'main']));
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertSame("Skipped 1 planned package: phil/slug.\nNo file changed since main is in a source directory Infection mutates: nothing to mutate.\n", $tester->getDisplay());
+        self::assertCount(3, $this->runner->runs);
+    }
+
+    /**
+     * @return iterable<string, array{ProcessResult, ProcessResult}>
+     */
+    public static function provideAGitFailureFailsInsteadOfPassingCases(): iterable
+    {
+        yield 'the diff' => [new ProcessResult(128), new ProcessResult(0, "src/A.php\n")];
+        yield 'the untracked files' => [new ProcessResult(0, "src/A.php\n"), new ProcessResult(128)];
+    }
+
+    #[DataProvider('provideAGitFailureFailsInsteadOfPassingCases')]
+    public function testAGitFailureFailsInsteadOfPassing(ProcessResult $diff, ProcessResult $untracked): void
+    {
+        $root = (string) realpath($this->fixture('monorepo'));
+        $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), $diff, $untracked]);
+
+        self::assertSame(1, $tester->execute(['--changed' => 'main']));
+        self::assertSame('git could not list the files changed since main in '.$root.": nothing was mutated.\n", $tester->getDisplay());
+        self::assertCount(3, $this->runner->runs);
     }
 }

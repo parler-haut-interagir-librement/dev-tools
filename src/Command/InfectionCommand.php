@@ -24,8 +24,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     Full: every source directory, once a week and before each release.
     --changed: the PHP files added, modified or renamed since the base ref, committed or not, and the untracked
     ones git does not ignore, once per batch before its commit; nothing to mutate passes, and so do changed files
-    without a mutant. Infection receives the files as paths after the other arguments. Without a ref, the base is
-    PHIL_DEV_BASE_REF, else whichever of origin/main and main the branch left last, else main.
+    without a mutant. Infection receives each file as an absolute path of its own, after the other arguments, and
+    only the files inside the source directories it mutates. Without a ref, the base is PHIL_DEV_BASE_REF, else
+    whichever of origin/main and main the branch left last, else main.
 
     The changed files narrow the run to the packages that hold them, as PHIL_DEV_PACKAGES would: only their tests
     run, to collect the coverage and against each mutant, and only their code is covered. Infection and its initial
@@ -66,6 +67,12 @@ final class InfectionCommand extends WorkspaceCommand
             [$base, $since] = \is_string($changed) && '' !== $changed ? [$changed, $this->mergeBase($changed)] : $this->defaultBase();
             $files = $this->changedFiles($workspace, $since);
 
+            if (null === $files) {
+                $output->writeln(\sprintf('<error>git could not list the files changed since %s in %s: nothing was mutated.</error>', $base, $workspace->root->dir));
+
+                return self::FAILURE;
+            }
+
             if ([] === $files) {
                 $output->writeln(\sprintf('No source file changed since %s: nothing to mutate.', $base));
 
@@ -73,15 +80,22 @@ final class InfectionCommand extends WorkspaceCommand
             }
 
             $workspace = $this->owners($workspace, $files);
-            $output->writeln(\sprintf('Mutating the %d source files changed since %s.', \count($files), $base));
+            $paths = $this->mutable($files, $workspace);
+
+            if ([] === $paths) {
+                $output->writeln(\sprintf('No file changed since %s is in a source directory Infection mutates: nothing to mutate.', $base));
+
+                return self::SUCCESS;
+            }
+
+            $output->writeln(\sprintf('Mutating the %d source files changed since %s.', \count($paths), $base));
 
             if ($workspace->isMonorepo()) {
                 $output->writeln('With the tests of '.implode(', ', array_map(static fn (Package $package): string => $package->name, $workspace->analysed())).'.');
             }
 
-            // The paths to mutate, as arguments of their own and absolute, since Infection resolves a relative one against its configuration's directory; a change without a mutant passes.
+            // A change without a mutant passes.
             $changedOnly[] = '--ignore-msi-with-no-mutations';
-            $paths = $files;
         }
 
         $phpUnit = new PhpUnitConfig($workspace, narrowed: true)->generated();
@@ -103,7 +117,7 @@ final class InfectionCommand extends WorkspaceCommand
             '--threads=max',
             ...$changedOnly,
             ...$arguments,
-            ...array_map(static fn (string $file): string => $workspace->root->path($file), $paths),
+            ...$paths,
         ], $workspace->root->dir, $this->testEnvironment())->exitCode;
     }
 
@@ -138,14 +152,43 @@ final class InfectionCommand extends WorkspaceCommand
     }
 
     /**
-     * The source files added, modified or renamed since `$since`, committed or not, and the untracked ones that git
-     * does not ignore, relative to the root and sorted: the same files whatever was staged, committed or pushed in the
-     * meantime. Infection's own `--git-diff-filter` is not used: it resolves the files against the directory of the
-     * configuration, which is generated under `var/phil-dev/`.
+     * The changed files Infection mutates, absolute, each one an argument of its own: Infection reads a positional
+     * argument inside a source directory of its configuration as a file to mutate, any other existing path as a test
+     * path for PHPUnit, and refuses one that does not exist; it resolves a relative one against the directory of the
+     * configuration, under `var/phil-dev/`. A file outside the source directories of the narrowed workspace — a package
+     * whose `infection.directories` leaves it out, or a planned package that is skipped — is not passed.
+     *
+     * @param non-empty-list<string> $files relative to the root
      *
      * @return list<string>
      */
-    private function changedFiles(Workspace $workspace, string $since): array
+    private function mutable(array $files, Workspace $workspace): array
+    {
+        $directories = new InfectionConfig($workspace)->directories();
+        $paths = [];
+
+        foreach ($files as $file) {
+            $path = $workspace->root->path($file);
+
+            if (array_any($directories, static fn (string $directory): bool => str_starts_with($path, rtrim($directory, '/').'/'))) {
+                $paths[] = $path;
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * The source files added, modified or renamed since `$since`, committed or not, and the untracked ones that git
+     * does not ignore, relative to the root and sorted: the same files whatever was staged, committed or pushed in the
+     * meantime. Infection's own `--git-diff-filter` is not used: it resolves the files against the directory of the
+     * configuration, which is generated under `var/phil-dev/`. Null when git fails — a ref it does not know, or a
+     * worktree whose repository it cannot reach, as in a container that mounts the worktree alone —, so that a failure
+     * never passes for a change with nothing to mutate.
+     *
+     * @return list<string>|null
+     */
+    private function changedFiles(Workspace $workspace, string $since): ?array
     {
         $root = $workspace->root->dir;
         $directories = [];
@@ -156,6 +199,10 @@ final class InfectionCommand extends WorkspaceCommand
 
         $diff = $this->runner->capture(['git', 'diff', '--name-only', '--diff-filter=AMR', $since, '--', ...$directories], $root);
         $untracked = $this->runner->capture(['git', 'ls-files', '--others', '--exclude-standard', '--', ...$directories], $root);
+
+        if (!$diff->successful() || !$untracked->successful()) {
+            return null;
+        }
 
         $files = [];
 
