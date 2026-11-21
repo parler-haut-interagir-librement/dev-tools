@@ -23,7 +23,10 @@ final class PhpCommandTest extends CommandTestCase
         $root = $this->project();
         $floor = Matrix::load()->floor('php');
 
-        self::assertSame(3, $this->tester($root, 'php', [$this->built(), new ProcessResult(3)])->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
+        $tester = $this->tester($root, 'php', [$this->built(), new ProcessResult(3)]);
+
+        self::assertSame(3, $tester->execute(['version' => 'floor', 'arguments' => ['php', '-v']]));
+        self::assertSame('', $tester->getDisplay());
         self::assertSame([
             $this->inspect($floor->version),
             'docker run --rm --volume '.$root.':/app '.$this->caches($root, $floor->version).'--workdir /app phil-dev/php:'.$floor->version.' php -v',
@@ -175,13 +178,18 @@ final class PhpCommandTest extends CommandTestCase
     public function testARepositoryThatAppAlreadyShowsIsOnlyDeclaredSafe(): void
     {
         $base = $this->outsideApp();
-        // The repository inside the worktree, then the root of the container: neither is mounted.
+        // The repository inside the worktree, the root of the container, then /app itself: none is mounted.
         $root = $this->worktree($base, 'inner/.git/worktrees/wt', '../..', 'wt/inner');
         $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
         self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
 
         $this->put($base.'/worktrees/top/commondir', '../..');
         $this->put($base.'/wt/.git', 'gitdir: ../worktrees/top');
+        $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
+        self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
+
+        $this->put($root.'/worktrees/self/commondir', '../..');
+        $this->put($root.'/.git', 'gitdir: worktrees/self');
         $this->tester($root, 'php', [$this->built(), new ProcessResult(0)])->execute(['version' => 'floor']);
         self::assertStringContainsString($this->caches($root, Matrix::load()->floor('php')->version).self::SAFE.' --workdir ', $this->runner->commands()[1]);
     }

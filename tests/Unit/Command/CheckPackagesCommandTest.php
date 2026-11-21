@@ -11,6 +11,7 @@ use Phil\DevTools\Process\ProcessResult;
 use Phil\DevTools\Split\SecurityFiles;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use ReflectionMethod;
 use ShipMonk\ComposerDependencyAnalyser\Config\Configuration;
 
 #[CoversClass(CheckPackagesCommand::class)]
@@ -71,6 +72,31 @@ final class CheckPackagesCommandTest extends CommandTestCase
         self::assertInstanceOf(Configuration::class, require $configuration);
 
         $this->adopt($work);
+    }
+
+    /**
+     * @return iterable<string, array{array<mixed>, int, list<string>}>
+     */
+    public static function idlePolyfills(): iterable
+    {
+        $all = ['symfony/polyfill-php86' => '^1.33', 'symfony/polyfill-php85' => '^1.33', 'symfony/polyfill-php90' => '^1.33', 'symfony/polyfill-mbstring' => '^1.33', 3 => 'x'];
+
+        yield 'the last release before a version' => [$all, 80599, ['symfony/polyfill-php85']];
+        yield 'the first release of a version' => [$all, 80600, ['symfony/polyfill-php85', 'symfony/polyfill-php86']];
+        yield 'an earlier major version' => [$all, 79999, []];
+        yield 'nothing required' => [[], 80600, []];
+    }
+
+    /**
+     * @param array<mixed> $requires
+     * @param list<string> $expected
+     */
+    #[DataProvider('idlePolyfills')]
+    public function testAPolyfillIsIdleFromTheFirstReleaseOfItsVersion(array $requires, int $versionId, array $expected): void
+    {
+        $idle = new ReflectionMethod(CheckPackagesCommand::class, 'idlePolyfills')->invoke(new CheckPackagesCommand($this->temporaryDirectory()), $requires, $versionId);
+
+        self::assertSame($expected, $idle);
     }
 
     public function testWithoutAnIdlePolyfillTheAnalyserReadsThePackagesOwnConfiguration(): void

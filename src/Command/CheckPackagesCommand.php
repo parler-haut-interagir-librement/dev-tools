@@ -238,7 +238,7 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $idle = [];
 
         foreach (\is_array($requires) ? array_keys($requires) : [] as $name) {
-            if (\is_string($name) && 1 === preg_match('{^symfony/polyfill-php([1-9])(\d)$}', $name, $match) && (int) $match[1] * 10000 + (int) $match[2] * 100 <= $versionId) {
+            if (\is_string($name) && 1 === preg_match('{^symfony/polyfill-php([1-9])(\d)$}', $name, $match) && $match[1] * 10000 + $match[2] * 100 <= $versionId) {
                 $idle[] = $name;
             }
         }
@@ -266,8 +266,8 @@ final class CheckPackagesCommand extends WorkspaceCommand
 
         $directory = $work.'/var/phil-dev';
 
-        if (!is_dir($directory) && !mkdir($directory, recursive: true) && !is_dir($directory)) {
-            throw new RuntimeException('Cannot make '.$directory.'.');
+        if (!is_dir($directory)) {
+            mkdir($directory, recursive: true);
         }
 
         $file = $directory.'/composer-dependency-analyser.php';
