@@ -66,7 +66,8 @@ The security commit adds three files to the tree of the split, from the template
 
 The version updates of Dependabot open no pull request (`open-pull-requests-limit: 0`): a split repository is a
 read-only copy, and a change made there would be lost at the next split. Its alerts, and the security updates when
-the repository turns them on, still tell when a dependency has an advisory; the fix is made in the monorepo. The
+the repository turns them on, still tell when a dependency has an advisory; the fix is made in the monorepo. Each
+update waits seven days after a release (`cooldown`), as in the monorepo, which zizmor requires. The
 Scorecard workflow pins each action to the commit of a version, named in a comment, and publishes its results with the
 OIDC token of the workflow: it needs no secret and no account.
 

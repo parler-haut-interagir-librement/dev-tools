@@ -23,8 +23,8 @@ final class SecurityFilesTest extends TestCase
         self::assertSame([SecurityFiles::DEPENDABOT, SecurityFiles::SCORECARD, SecurityFiles::ZIZMOR], array_keys($files));
         self::assertStringEndsWith(
             "version: 2\nupdates:\n"
-            ."  - package-ecosystem: composer\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 0\n"
-            ."  - package-ecosystem: github-actions\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 0\n",
+            ."  - package-ecosystem: composer\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 0\n    cooldown:\n      default-days: 7\n"
+            ."  - package-ecosystem: github-actions\n    directory: /\n    schedule:\n      interval: weekly\n    open-pull-requests-limit: 0\n    cooldown:\n      default-days: 7\n",
             $files[SecurityFiles::DEPENDABOT],
         );
         self::assertStringStartsWith('# The dependencies of this read-only split repository', $files[SecurityFiles::DEPENDABOT]);

@@ -42,6 +42,8 @@ The next version is 0.1.8-alpha.
 
 ### Fixed
 
+- The `.github/dependabot.yml` that `phil-dev split --security-files` writes in a split repository gives each update
+  a seven-day `cooldown`, as the monorepo's does: zizmor 1.32 fails the job of a Dependabot configuration without one.
 - `infection --changed` passes each changed file to Infection as an absolute path of its own: Infection resolves a
   relative path against the directory of the generated configuration, under `var/phil-dev/`, and stopped with
   `multiple paths must be passed as separate arguments`.

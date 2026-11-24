@@ -134,6 +134,8 @@ final class SecurityFiles
             .'    directory: '.$directory."\n"
             ."    schedule:\n"
             ."      interval: weekly\n"
-            .'    open-pull-requests-limit: 0';
+            ."    open-pull-requests-limit: 0\n"
+            ."    cooldown:\n"
+            .'      default-days: 7';
     }
 }
