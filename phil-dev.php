@@ -54,7 +54,9 @@ return [
             // found, so keeping it or not changes nothing.
             'ArrayItemRemoval' => ['ignoreSourceCodeByRegex' => ['.*\$found = \[\.\.\.\$found, \.\.\.\$this->objectsIn\(\$array->getIterableValueType\(\).*']],
             // Closing a finished process frees its resource, and the pause between two looks spares the processor: a
-            // test sees neither.
+            // test sees neither. The status cache of PHP is cleared before the lock's time is read, against a lock another
+            // merge moved since the last look; PHPUnit's process keeps no such cache across a file changed from outside,
+            // so no test can tell it from its absence.
             // A package on its own is reloaded as itself, its own name for the only package analysed, which is all it holds either way;
             // and the names reach a test that only asks whether one is among them, as a list or as a map.
             'ReturnRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
@@ -62,7 +64,7 @@ return [
             // The members are sorted by directory, so a member whose directory is the start of another's comes first and the
             // longer one, tested later, takes the file back: the slash only keeps the first from being the last match.
             'ConcatOperandRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
-            'FunctionCallRemoval' => ['ignoreSourceCodeByRegex' => ['proc_close\(\$process\);', 'usleep\(self::POLL_MICROSECONDS\);']],
+            'FunctionCallRemoval' => ['ignoreSourceCodeByRegex' => ['proc_close\(\$process\);', 'usleep\(self::POLL_MICROSECONDS\);', 'clearstatcache\(true, \$this->path\);']],
         ],
     ],
 ];

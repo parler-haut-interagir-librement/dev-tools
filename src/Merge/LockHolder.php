@@ -28,10 +28,7 @@ final readonly class LockHolder
             $data = null;
         }
 
-        if (!\is_array($data)) {
-            return new self(null, '?', '?', '?');
-        }
-
+        $data = \is_array($data) ? $data : [];
         $pid = $data['pid'] ?? null;
 
         return new self(
@@ -49,7 +46,7 @@ final readonly class LockHolder
 
     public function describe(): string
     {
-        return \sprintf('lot %s (branch %s, PID %s, started %s)', $this->lot, $this->branch, null === $this->pid ? '?' : (string) $this->pid, $this->started);
+        return \sprintf('lot %s (branch %s, PID %s, started %s)', $this->lot, $this->branch, $this->pid ?? '?', $this->started);
     }
 
     private static function text(mixed $value): string

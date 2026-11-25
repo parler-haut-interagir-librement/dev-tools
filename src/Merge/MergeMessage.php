@@ -30,7 +30,7 @@ final class MergeMessage
      */
     public static function build(string $lot, array $subjects): string
     {
-        $bullets = array_map(static fn (string $subject): string => '- '.$subject, array_values(array_filter(array_map(trim(...), $subjects), static fn (string $subject): bool => '' !== $subject)));
+        $bullets = array_map(static fn (string $subject): string => '- '.$subject, array_filter(array_map(trim(...), $subjects), static fn (string $subject): bool => '' !== $subject));
 
         return self::subject($lot).([] === $bullets ? '' : "\n\n".implode("\n", $bullets))."\n";
     }

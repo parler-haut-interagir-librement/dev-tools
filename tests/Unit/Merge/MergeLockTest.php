@@ -67,6 +67,7 @@ final class MergeLockTest extends TestCase
         self::assertSame($previous->toJson(), file_get_contents($path));
         self::assertSame(null === $pid ? [] : [self::PS.' -p '.$pid.' -o pid='], $runner->commands());
         self::assertSame(null === $pid ? [] : ['/'], array_column($runner->runs, 'directory'));
+        self::assertSame(null === $pid ? [] : [[self::PS, '-p', (string) $pid, '-o', 'pid=']], array_column($runner->runs, 'command'));
     }
 
     /**

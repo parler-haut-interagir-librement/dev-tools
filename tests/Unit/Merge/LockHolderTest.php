@@ -26,7 +26,7 @@ final class LockHolderTest extends TestCase
     #[DataProvider('unreadable')]
     public function testAnUnreadableLockHasNoProcess(string $json, LockHolder $expected): void
     {
-        self::assertEquals($expected, LockHolder::fromJson($json));
+        self::assertSame($expected->toJson(), LockHolder::fromJson($json)->toJson());
     }
 
     /**
@@ -38,6 +38,7 @@ final class LockHolderTest extends TestCase
         yield 'not an object' => ['"text"', new LockHolder(null, '?', '?', '?')];
         yield 'too deep' => ['{"pid":1,"lot":{"a":{"b":{"c":1}}}}', new LockHolder(null, '?', '?', '?')];
         yield 'wrong types' => ['{"pid":"12","lot":3,"branch":"","started":null}', new LockHolder(null, '?', '?', '?')];
+        yield 'a nesting the parser still reads' => ['{"pid":7,"lot":"r1","x":{"a":{"b":1}}}', new LockHolder(7, 'r1', '?', '?')];
         yield 'a PID of zero' => ['{"pid":0,"lot":"r1"}', new LockHolder(null, 'r1', '?', '?')];
         yield 'a PID of one' => ['{"pid":1,"branch":"b/r1","started":"now"}', new LockHolder(1, '?', 'b/r1', 'now')];
     }
