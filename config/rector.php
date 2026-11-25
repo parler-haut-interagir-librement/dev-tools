@@ -6,11 +6,9 @@ use Phil\DevTools\Config\Tooling;
 use Rector\CodeQuality\Rector\Concat\DirnameDirConcatStringToDirectStringPathRector;
 use Rector\Config\RectorConfig;
 use Rector\Configuration\RectorConfigBuilder;
-use Rector\Doctrine\TypedCollections\Rector\Class_\InitializeCollectionInConstructorRector;
 use Rector\Php82\Rector\Class_\ReadOnlyClassRector;
 use Rector\PHPUnit\CodeQuality\Rector\Class_\PreferPHPUnitThisCallRector;
 use Rector\PHPUnit\CodeQuality\Rector\MethodCall\FlipAssertRector;
-use Rector\Transform\Rector\Attribute\AttributeKeyToClassConstFetchRector;
 
 require_once __DIR__.'/bootstrap.php';
 
@@ -25,21 +23,12 @@ require_once __DIR__.'/bootstrap.php';
  */
 return static function (string $root): RectorConfigBuilder {
     $tooling = Tooling::fromEnvironment($root);
-    $domain = $tooling->layerPatterns('Domain');
     $models = $tooling->layerPatterns('Domain/Model');
 
     // A rule skipped on no path at all would be skipped everywhere; a rule a Rector release renamed or dropped is left
-    // out rather than refused.
+    // out rather than refused. From Rector 2.9 on, no set registers the rules that would bring Doctrine collections or
+    // DBAL constants into a `Domain` layer: only the rule below needs a layer.
     $layered = array_filter([
-        // Initialising Doctrine collections in the constructor would bring `Doctrine\Common\Collections` into a
-        // `Domain` layer, where only the mapping attributes are admitted. The rule changed its name across releases.
-        'Rector\\Doctrine\\CodeQuality\\Rector\\Class_\\InitializeDefaultEntityCollectionRector' => $domain,
-        InitializeCollectionInConstructorRector::class => $domain,
-
-        // Replacing a column type's name by a constant of `Doctrine\DBAL\Types\Types` would bring DBAL into
-        // `Domain` for the same reason.
-        AttributeKeyToClassConstFetchRector::class => $domain,
-
         // An entity of `Domain\Model` is never `readonly`, even when all its fields are: the unit of work of
         // Doctrine follows it in place.
         ReadOnlyClassRector::class => $models,
@@ -55,8 +44,6 @@ return static function (string $root): RectorConfigBuilder {
             codingStyle: true,
             typeDeclarations: true,
             privatization: true,
-            instanceOf: true,
-            earlyReturn: true,
             phpunitCodeQuality: true,
             doctrineCodeQuality: true,
             symfonyCodeQuality: true,
@@ -66,7 +53,7 @@ return static function (string $root): RectorConfigBuilder {
         ->withCache($root.'/var/rector')
         ->withParallel()
         // A skip that no longer matches anything is reported at the end of the run, so that each package's
-        // `rector.skip` sheds the exceptions it no longer needs (Rector 2.8.6).
+        // `rector.skip` sheds the exceptions it no longer needs (Rector 2.9.2).
         ->reportUnusedSkips()
         ->withSkip([
             ...$layered,
