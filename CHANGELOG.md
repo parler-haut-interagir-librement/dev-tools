@@ -5,9 +5,9 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## 0.2.0-alpha - 2026-11-25
 
-The next version is 0.2.0-alpha: its new rules fail the packages that break them.
+Its new rules fail the packages that break them.
 
 ### Added
 
