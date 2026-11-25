@@ -35,7 +35,7 @@ final class JsCommandTest extends CommandTestCase
         ], $this->runner->commands());
         self::assertSame([$root, $root], array_column($this->runner->runs, 'directory'));
         self::assertDirectoryExists($root.'/var/phil-dev/bin');
-        self::assertStringContainsString('"recommended": true', (string) file_get_contents($root.'/var/phil-dev/biome.json'));
+        self::assertStringContainsString('"preset": "recommended"', (string) file_get_contents($root.'/var/phil-dev/biome.json'));
     }
 
     public function testAFailedDownloadStops(): void

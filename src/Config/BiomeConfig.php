@@ -44,7 +44,7 @@ final readonly class BiomeConfig
      */
     public function build(): array
     {
-        $rules = ['recommended' => true];
+        $rules = ['preset' => 'recommended'];
 
         foreach ($this->workspace->analysed() as $package) {
             $rules = InfectionConfig::merge($rules, $package->manifest->map('js', 'rules'));
