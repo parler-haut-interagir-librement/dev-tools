@@ -62,6 +62,8 @@ The next version is 0.2.0-alpha: its new rules fail the packages that break them
 - `vendor-bin/rector` and the one `init` writes require `rector/rector` `^2.8.6`; `config/rector.php` calls
   `reportUnusedSkips()`, which lists, at the end of a run, the skips that matched nothing, without failing it.
 - The `phpunit.dist.xml` that `init` writes, and this package's, set `failOnRisky="true"`: a risky test fails the run.
+- `ext-ctype` is required: the regex generator reads character classes with `ctype_alnum()`, `ctype_alpha()` and
+  `ctype_xdigit()`.
 
 ### Fixed
 

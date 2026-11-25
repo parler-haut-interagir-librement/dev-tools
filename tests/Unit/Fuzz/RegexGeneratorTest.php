@@ -372,7 +372,8 @@ final class RegexGeneratorTest extends TestCase
         yield 'a class not closed' => ['/[abc/', 'A character class is not closed.'];
         yield 'a class ending on a range dash' => ['/[a-/', 'A character class is not closed.'];
         yield 'a class ending on a backslash' => ['/[a\\/', 'A character class ends with a backslash.'];
-        yield 'a range that ends on a class' => ['/[a-\d]/', 'A range of a character class that ends on a class.'];
+        // Built, so that RegexDashEscapeRector does not escape the dash of the range this case must refuse.
+        yield 'a range that ends on a class' => [\sprintf('/[a-%s]/', '\d'), 'A range of a character class that ends on a class.'];
         yield 'a range backwards' => ['/[z-a]/', 'A range of a character class that ends on a class.'];
         yield 'a POSIX class not closed' => ['/[[:abcdefghijklmnop/', 'The POSIX class "[:abcdefghijk]" is not supported.'];
     }

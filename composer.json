@@ -21,6 +21,7 @@
     "homepage": "https://ph-il.ca",
     "require": {
         "php": ">=8.5",
+        "ext-ctype": "*",
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-mbstring": "*",
