@@ -323,10 +323,11 @@ half a second; a test slow on purpose says so with `#[MaximumDuration]`.
 
 ## Infection
 
-The configuration is generated under `var/phil-dev/infection.json`: the source directories of every package analysed,
-their excludes and the named exceptions of each manifest. The bar is 100 % of mutants killed and of covered mutants
-killed. A surviving mutant is a missing test, or code nothing can reach; a mutant that no test can tell apart is named
-in the package's manifest with its reason, never excused by lowering the bar.
+Infection 0.35 runs from `vendor-bin/infection/`. The configuration is generated under `var/phil-dev/infection.json`:
+the source directories of every package analysed, their excludes and the named exceptions of each manifest. The bar is
+100 % of mutants killed and of covered mutants killed. A surviving mutant is a missing test, or code nothing can reach;
+a mutant that no test can tell apart is named in the package's manifest with its reason, never excused by lowering the
+bar.
 
 A mutant whose tests run longer than the timeout counts as timed out. Infection's timeout, 10 seconds, stays the
 default; a package whose tests are slow on purpose, such as a search index built for each test, gives its own in its
@@ -360,13 +361,14 @@ code excluded from the source —, so neither the initial run nor a mutant runs 
 packages' code is covered. The root's own paths stay. A change to one member of a large monorepo runs that member's
 tests, not the whole monorepo's.
 
-Infection receives each changed file as an absolute path, one argument per file. It reads a path inside a source
-directory of its configuration as a file to mutate and any other existing path as a test path it hands to PHPUnit, and
-it resolves a relative path against the directory of the configuration, `var/phil-dev/`; so only the changed files
-inside the source directories of the packages analysed are passed. A file of a planned package that is skipped, or
-outside the `infection.directories` of its package, is left out, and when none is left nothing is mutated. A git
-command that fails — a ref git does not know, or a worktree whose repository git cannot reach — stops the command with
-an error rather than passing for a change with nothing to mutate.
+Infection receives each changed file as an absolute path, one argument per file, after a `--` that keeps an option whose
+value is optional, such as `--ignore-msi-with-no-mutations`, from taking the first file as its value. It reads a path
+inside a source directory of its configuration as a file to mutate and any other existing path as a test path it hands
+to PHPUnit, and it resolves a relative path against the directory of the configuration, `var/phil-dev/`; so only the
+changed files inside the source directories of the packages analysed are passed. A file of a planned package that is
+skipped, or outside the `infection.directories` of its package, is left out, and when none is left nothing is mutated. A
+git command that fails — a ref git does not know, or a worktree whose repository git cannot reach — stops the command
+with an error rather than passing for a change with nothing to mutate.
 
 Infection reads the suites and the source of `var/phil-dev/phpunit/phpunit.xml` when the root's PHPUnit configuration
 holds a glob: each `packages/*/src` or `packages/*/tests/Unit` is written as the list of directories it matches when
@@ -405,8 +407,8 @@ worktree there as on the host:
 vendor/bin/phil-dev php floor -- php vendor/bin/phil-dev infection --changed
 ```
 
-Infection starts one process per core with `--threads=max`: with two or three passes, each takes its share of the
-cores, given after `--`.
+Infection starts one process per core but one with `--threads=max`: with two or three passes, each takes its share
+of the cores, given after `--`.
 
 ```sh
 vendor/bin/phil-dev infection --changed -- --threads=4

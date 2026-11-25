@@ -117,7 +117,9 @@ final class InfectionCommand extends WorkspaceCommand
             '--threads=max',
             ...$changedOnly,
             ...$arguments,
-            ...$paths,
+            // After --: an option whose value is optional, such as --ignore-msi-with-no-mutations, takes the next
+            // argument that is not an option, so it would take the first path and Infection would mutate everything.
+            ...([] === $paths ? [] : ['--', ...$paths]),
         ], $workspace->root->dir, $this->testEnvironment())->exitCode;
     }
 

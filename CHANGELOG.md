@@ -5,6 +5,23 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+The next version is 0.1.9-alpha.
+
+### Changed
+
+- Infection is required as `^0.35` by `vendor-bin/infection/composer.json` and by the one `phil-dev init` writes, up
+  from `^0.34`. The generated `var/phil-dev/infection.json` is unchanged and valid against the 0.35 schema, and
+  `--threads=max` starts one process per core but one. An argument given after `--` that is not a readable path, such
+  as `Differ::diff`, reaches Infection as a source symbol selector.
+
+### Fixed
+
+- `infection --changed` passes the changed files after `--`. Placed right after `--ignore-msi-with-no-mutations`,
+  whose value is optional, the first file was taken as the option's value: with one changed file, Infection mutated
+  every source directory of the packages analysed, and with several, the first file was left out.
+
 ## 0.1.8-alpha - 2026-11-24
 
 ### Added

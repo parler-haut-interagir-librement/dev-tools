@@ -124,7 +124,7 @@ final class InfectionCommandTest extends CommandTestCase
             'git merge-base release/1.0 HEAD',
             'git diff --name-only --diff-filter=AMR abc123 -- '.$directories,
             'git ls-files --others --exclude-standard -- '.$directories,
-            \PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations '.$root.'/packages/slug/src/B.php '.$root.'/packages/slug/src/C.php '.$root.'/src/A.php',
+            \PHP_BINARY.' -d memory_limit=4G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations -- '.$root.'/packages/slug/src/B.php '.$root.'/packages/slug/src/C.php '.$root.'/src/A.php',
         ], $this->runner->commands());
         self::assertSame([true, true, true, false], array_column($this->runner->runs, 'capture'));
         self::assertSame([$root, $root, $root, $root], array_column($this->runner->runs, 'directory'));
@@ -136,7 +136,7 @@ final class InfectionCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0), new ProcessResult(0, "src/New.php\n")]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'main', 'arguments' => ['--mutators=Plus']]));
-        self::assertStringEndsWith(' --threads=max --ignore-msi-with-no-mutations --mutators=Plus '.$root.'/src/New.php', $this->runner->commands()[3]);
+        self::assertStringEndsWith(' --threads=max --ignore-msi-with-no-mutations --mutators=Plus -- '.$root.'/src/New.php', $this->runner->commands()[3]);
     }
 
     public function testTheChangedAndTheNewFilesAreSplitOnTheirOwnLines(): void
@@ -250,7 +250,7 @@ final class InfectionCommandTest extends CommandTestCase
         $this->withEnvironment('PHIL_DEV_SKIP_PLANNED', null, static fn (): int => $tester->execute(['--changed' => 'main']));
 
         self::assertSame("Mutating the 1 source files changed since main.\nWith the tests of phil/slug.\n", $tester->getDisplay());
-        self::assertSame(\PHP_BINARY.' -d memory_limit=6G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations '.$root.'/packages/slug/src/C.php', $this->runner->commands()[3]);
+        self::assertSame(\PHP_BINARY.' -d memory_limit=6G '.$root.'/vendor-bin/infection/vendor/bin/infection --configuration='.$root.'/var/phil-dev/infection.json --no-progress --show-mutations --threads=max --ignore-msi-with-no-mutations -- '.$root.'/packages/slug/src/C.php', $this->runner->commands()[3]);
         $config = json_decode((string) file_get_contents($root.'/var/phil-dev/infection.json'), true);
         self::assertIsArray($config);
         self::assertSame(['directories' => [$root.'/packages/slug/src']], $config['source']);
@@ -289,7 +289,8 @@ final class InfectionCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'infection', [new ProcessResult(0, "abc123\n"), new ProcessResult(0, "packages/slug/src/C.php\npackages/slug/src/B.php\n"), new ProcessResult(0)]);
 
         self::assertSame(0, $tester->execute(['--changed' => 'main']));
-        self::assertSame([$root.'/packages/slug/src/B.php', $root.'/packages/slug/src/C.php'], \array_slice($this->runner->runs[3]['command'], -2));
+        // The paths follow --, so that no option whose value is optional takes the first one.
+        self::assertSame(['--', $root.'/packages/slug/src/B.php', $root.'/packages/slug/src/C.php'], \array_slice($this->runner->runs[3]['command'], -3));
         self::assertSame('--ignore-msi-with-no-mutations', $this->runner->runs[3]['command'][8]);
     }
 
