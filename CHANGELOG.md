@@ -50,6 +50,21 @@ The next version is 0.2.0-alpha: its new rules fail the packages that break them
   `doctrine/persistence` or `doctrine/collections`, and sets `markAllNonInternalCodeAsApi` and `loadLibraryPlugins`. An
   integration test proves that a request concatenated into a query is reported as `TaintedSql`, and a stored value
   printed back unescaped as `TaintedHtml`.
+- `phil-dev merge-lot <branch> [--main=NAME] [--lot=NAME]`: the whole merge of a lot's branch into main, from the
+  checkout of main, stopping at the first step that fails with an exit code of its own (2 nothing to merge, 3 locked,
+  4 tracked files modified, 5 rebase, 6 `composer install`, 7 gate, 8 merge, 9 merge commit, 10 cleanup). It takes the
+  lock `.git/fusion-lot.lock`, holding the PID, the start time, the lot and the branch, and takes it over with a
+  message when `ps` finds its process gone or when it has not moved for 30 minutes; checks that no tracked file is
+  modified in the checkout of main or in the worktree; rebases the branch onto main in its worktree, then runs
+  `composer install` there when a `composer.lock` changed; runs each script of the worktree's `gates` script but
+  Infection, the full PHPStan among them; merges with `git merge --no-ff` and the message « Fusion du lot <lot> », one
+  bullet per commit; checks the merge commit's parents and subject; runs `composer install` in the checkout of main
+  when the merge changed a `composer.lock`; and only then removes the worktree and deletes the branch with
+  `git branch -d`. A failed rebase or merge is aborted, nothing is removed, and the lock is released. A merge of the
+  same lot whose lock is taken over is run again, its unfinished `git merge` aborted; a branch already merged by its
+  merge commit only has its worktree and branch removed. The classes are `Merge\MergeLock`, `LockHolder`,
+  `LockTakeover`, `MergeMessage`, `Worktrees` and `MergeFailure`, and the exception `MergeLockHeld`. The lock and the
+  worktrees git lists are fuzzed by the `merge-lock` target.
 
 ### Changed
 

@@ -1,11 +1,12 @@
 # The monorepo workflow
 
-Four tools serve the work around the code: the hooks before each commit, the split of the finished packages, the
-prose of the documentation and the hotspots of the code.
+Five tools serve the work around the code: the hooks before each commit, the merge of a lot into main, the split of
+the finished packages, the prose of the documentation and the hotspots of the code.
 
 | Script | What it runs | When |
 |---|---|---|
 | `composer hooks` | Installs the git hooks of `captainhook.json`. | Once per clone. |
+| `phil-dev merge-lot <branch>` | The branch of a lot rebased, gated and merged into main, then its worktree and branch removed. | When a lot is finished. |
 | `composer split` | The finished packages split to their public repositories. | When a package is released. |
 | `composer docs:lint` | cspell, markdownlint and Vale on the documentation. | Before a release of the documentation. |
 | `composer hotspots` | The files that change most and are the most complex. | Before planning a refactoring. |
@@ -24,6 +25,50 @@ their own, after `--`, so that a name with spaces, quotes, a semicolon or a lead
 that adds its own action keeps to fixed command lines, or to an action of CaptainHook's `php` type.
 The slow gates — Deptrac, the tests, Infection — stay in `composer gates`. `composer hooks` installs the hooks once
 per clone; a worktree shares them.
+
+## The merge of a lot
+
+A lot is a branch worked on in a worktree of its own, beside the checkout of main. `phil-dev merge-lot <branch>`,
+run from the checkout of main, merges it in one go and stops at the first step that fails:
+
+| Step | What it does | Exit code when it fails |
+|---|---|---|
+| Lock | Creates `.git/fusion-lot.lock` in the common git directory, with the PID, the start time, the lot and the branch. | 3 |
+| Clean | Checks that no tracked file is modified and no rebase is in progress, in the checkout of main and in the worktree, and that no merge is in progress in main. | 4 |
+| Rebase | `git rebase <main>` in the worktree, then `composer install` there when a `composer.lock` changed. | 5, 6 |
+| Gates | Each script of the worktree's `gates` script, in order, Infection left out; the full PHPStan is among them, or runs last when the gates do not name it. | 7 |
+| Merge | `git merge --no-ff` of the rebased tip, with the message below. | 8 |
+| Check | The merge commit: its parents are main before the merge and the tip of the branch, its subject is « Fusion du lot <lot> ». | 9 |
+| Install | `composer install` in the checkout of main when the merge changed `composer.lock` or a `vendor-bin/*/composer.lock`. | 6 |
+| Cleanup | `git worktree remove`, then `git branch -d`. | 10 |
+
+Exit code 2 means there is nothing to merge: not a git repository, the checkout not on main, no such branch, no
+worktree of its own for it, or a branch main already holds without its merge commit. A failed rebase or merge is
+aborted, so that the worktree and main stay as they were; whatever step fails, nothing is removed and the lock is
+released. The worktree is only removed once the merge commit is checked, and `git branch -d` refuses a branch that is
+not merged.
+
+The message of the merge commit names the lot, the branch without its `b/` prefix unless `--lot` names it, then one
+bullet per commit of the branch, oldest first:
+
+```text
+Fusion du lot r72-merge-lot
+
+- Commande merge-lot
+- Tests : reprise du verrou
+```
+
+One merge runs at a time per repository. The lock is touched at each step; another merge finds it held and stops with
+exit code 3, unless its process is gone (`ps` finds no such PID) or it has not moved for 30 minutes, in which case it
+takes it over and says whose lock it took and why. Without `ps` on the `PATH`, only the 30 minutes count. A takeover of
+the same lot runs its merge again from the start: an unfinished `git merge` of that branch left in the checkout of main
+is aborted first. A takeover of another lot says which branch to merge again afterwards. Running the command again on a
+branch already merged by its merge commit only removes its worktree and branch, after `composer install` when that merge
+changed a lock file.
+
+The gates run with `TMPDIR` under `var/tmp/` of the worktree, and Composer is the one running the script when the
+command runs from a Composer script, else the one on the `PATH`. `--main` names another branch to merge into.
+What the command reads of its lock and of `git worktree list` is fuzzed by the `merge-lock` target of this package.
 
 ## The split
 

@@ -36,6 +36,8 @@
 | `Split\SecurityFiles` | The security files of a split repository and of a monorepo, the repository a package is split to, and its OpenSSF Scorecard badge. |
 | `Split\ArchiveRules` | What the Composer archive of a package leaves out, from its `.gitattributes` and its `archive.exclude`, and what it must keep. |
 | `Split\SecurityCommit` | The commit of the security files on top of a split commit, and the tip of the published branch it merges. |
+| `Merge\MergeLock`, `LockHolder`, `LockTakeover` | The lock of the merges of a repository, what it says of the merge that holds it, and its takeover from a merge that stopped. |
+| `Merge\MergeMessage`, `Worktrees`, `MergeFailure` | The message of the merge commit of a lot, the worktree of each branch, and the exit code of each step of `merge-lot`. |
 | `Process\Executables` | The programs of the `PATH`: splitsh-lite, cspell, markdownlint-cli2, Vale, npx. |
 | `Bench\WorkerBench`, `WorkerBenchResult` | The requests of the worker-mode benchmark and their percentiles. |
 | `Services\TestServices` | The real servers and their variables. |
