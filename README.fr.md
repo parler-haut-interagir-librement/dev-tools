@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=8759616f7fe103bf1091f63f3e8eb5e867c622d140eba393222cec1acd3a23e9 -->
+<!-- phil-dev source-sha256=4347df63043e0d49b71ac26a5f1289ea5d3d0c95cef7a13af355349f64f9480b -->
 # phil/dev-tools
 
 **Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts,
@@ -24,7 +24,8 @@ dans son *worktree*.
 | Partie | État |
 |---|---|
 | Configurations partagées, lues par le `phil-dev.php` de chaque paquet | Implémentées et testées |
-| `init`, `new`, `check-docs`, `check-packages`, `infection`, `deptrac`, `witnesses`, `generate` | Implémentés et testés |
+| `init`, `new`, `check-docs`, `check-packages`, `check-config`, `infection`, `deptrac`, `witnesses`, `generate` | Implémentés et testés |
+| Le générateur d'expressions régulières des cibles de fuzzing | Implémenté et testé |
 | Dépendances permises par paquet, générées dans Deptrac | Implémentées et testées |
 | Vrais serveurs, enregistrements HTTP, chargement automatique des membres | Implémentés et testés |
 | La matrice des versions, `php` et `matrix`, `check-packages --symfony` | Implémentés et testés |
