@@ -22,6 +22,7 @@ use Phil\DevTools\Command\LintAppsCommand;
 use Phil\DevTools\Command\LintDocsCommand;
 use Phil\DevTools\Command\LspCommand;
 use Phil\DevTools\Command\MatrixCommand;
+use Phil\DevTools\Command\MergeLotCommand;
 use Phil\DevTools\Command\NewCommand;
 use Phil\DevTools\Command\NormalizeCommand;
 use Phil\DevTools\Command\PhpCommand;
@@ -82,6 +83,7 @@ final class Application extends Console
             new BenchCommand($root, $runner),
             new WorkerBenchCommand($root, $runner),
             new SplitCommand($root, $runner),
+            new MergeLotCommand($root, $runner),
             new LintDocsCommand($root, $runner),
             new LintAppsCommand($root, $runner),
             new HotspotsCommand($root, $runner),

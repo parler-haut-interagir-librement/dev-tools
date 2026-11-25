@@ -29,9 +29,9 @@ return [
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],
     'fuzz' => [
-        // The reader of the kernels of functional test applications, the rules of a Composer archive and the regex
-        // generator, from the seeds of tests/Fuzz/corpus/<target>.
-        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php', 'archive-rules' => 'tests/Fuzz/archive-rules.php', 'regex-generator' => 'tests/Fuzz/regex-generator.php'],
+        // The reader of the kernels of functional test applications, the rules of a Composer archive, the regex
+        // generator and what merge-lot reads of its lock and of git, from the seeds of tests/Fuzz/corpus/<target>.
+        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php', 'archive-rules' => 'tests/Fuzz/archive-rules.php', 'regex-generator' => 'tests/Fuzz/regex-generator.php', 'merge-lock' => 'tests/Fuzz/merge-lock.php'],
     ],
     'infection' => [
         'mutators' => [

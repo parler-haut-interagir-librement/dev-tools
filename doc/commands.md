@@ -32,6 +32,7 @@
 | `bench [--baseline\|--compare] [--threshold=PERCENT] [-- arguments]` | Runs the benchmarks, stores the baseline, or compares with it. |
 | `bench:worker [package] [--ext] [--build]` | Measures a page served by FrankenPHP in worker mode, or on the image with PHP extensions. |
 | `split [packages…] [--push] [--branch=NAME] [--tag=TAG] [--security-files]` | Splits the finished packages to their public repositories, with their security files; `--security-files` adds the missing `SECURITY.md` and badge to the members instead. |
+| `merge-lot <branch> [--main=NAME] [--lot=NAME]` | Merges the branch of a lot into main: lock, rebase, gates, merge, then the removal of its worktree and branch, stopping at the first failure. |
 | `lint-docs [packages…]` | Lints the prose of the documentation with cspell, markdownlint and Vale. |
 | `lint-apps [packages…]` | Lints the container, the expressions and the YAML of each functional test application. |
 | `lsp [-- arguments]` | Checks each Symfony application with the diagnostics of Symfony Language Tools, every code blocking. |
@@ -237,7 +238,7 @@ repositories of its members, where their tags are.
 
 See [Benchmarks](benchmarks.md).
 
-## split, lint-docs, hotspots
+## split, merge-lot, lint-docs, hotspots
 
 See [The monorepo workflow](workflow.md).
 
