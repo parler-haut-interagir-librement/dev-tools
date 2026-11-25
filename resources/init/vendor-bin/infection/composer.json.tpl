@@ -1,7 +1,7 @@
 {
     "require": {
         "php": ">={{php}}",
-        "infection/infection": "^0.34"
+        "infection/infection": "^0.35"
     },
     "config": {
         "allow-plugins": {
