@@ -74,7 +74,7 @@ The next version is 0.2.0-alpha: its new rules fail the packages that break them
   as `Differ::diff`, reaches Infection as a source symbol selector.
 - `vendor-bin/psalm` and the one `init` writes require `vimeo/psalm` `^7.15`, which follows SQL from what a query
   stores to what another reads back.
-- `vendor-bin/rector` and the one `init` writes require `rector/rector` `^2.8.6`; `config/rector.php` calls
+- `vendor-bin/rector` and the one `init` writes require `rector/rector` `^2.9.2`; `config/rector.php` calls
   `reportUnusedSkips()`, which lists, at the end of a run, the skips that matched nothing, without failing it.
 - The `phpunit.dist.xml` that `init` writes, and this package's, set `failOnRisky="true"`: a risky test fails the run.
 - `ext-ctype` is required: the regex generator reads character classes with `ctype_alnum()`, `ctype_alpha()` and
@@ -85,6 +85,13 @@ The next version is 0.2.0-alpha: its new rules fail the packages that break them
 - `infection --changed` passes the changed files after `--`. Placed right after `--ignore-msi-with-no-mutations`,
   whose value is optional, the first file was taken as the option's value: with one changed file, Infection mutated
   every source directory of the packages analysed, and with several, the first file was left out.
+- The generated `var/phil-dev/biome.json` enables the recommended rules with `linter.rules.preset: "recommended"`,
+  the form of Biome 2.6: `phil-dev js` no longer prints the deprecation of `linter.rules.recommended`.
+- `config/rector.php` no longer passes `instanceOf` and `earlyReturn` to `withPreparedSets()`: their rules belong to
+  the `codeQuality` and `codingStyle` sets it already enables, and Rector no longer warns at the end of each run.
+- `config/rector.php` no longer skips `InitializeCollectionInConstructorRector` and
+  `AttributeKeyToClassConstFetchRector` in `Domain` layers: no set of Rector 2.9 registers them, and
+  `reportUnusedSkips()` no longer lists them as unused.
 
 ## 0.1.8-alpha - 2026-11-24
 

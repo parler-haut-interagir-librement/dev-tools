@@ -39,7 +39,7 @@ final class BiomeConfigTest extends TestCase
                 "linter": {
                     "enabled": true,
                     "rules": {
-                        "recommended": true
+                        "preset": "recommended"
                     }
                 },
                 "javascript": {
@@ -57,7 +57,7 @@ final class BiomeConfigTest extends TestCase
         $config = new BiomeConfig(Workspace::load($this->root("<?php return ['js' => ['biome' => '2.5.0', 'rules' => ['style' => ['noNonNullAssertion' => 'off']]]];")));
 
         self::assertSame('2.5.0', $config->version());
-        self::assertSame(['enabled' => true, 'rules' => ['recommended' => true, 'style' => ['noNonNullAssertion' => 'off']]], $config->build()['linter']);
+        self::assertSame(['enabled' => true, 'rules' => ['preset' => 'recommended', 'style' => ['noNonNullAssertion' => 'off']]], $config->build()['linter']);
     }
 
     #[TestWith(["'latest'"])]

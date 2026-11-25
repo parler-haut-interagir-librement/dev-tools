@@ -314,9 +314,10 @@ they stay under every rule. The rules of this package have their accepted and re
 ## Rector
 
 The PHP sets read from `composer.json`, the Symfony, Doctrine and PHPUnit sets of the installed versions, and the
-prepared sets, without a version number written anywhere. It skips, in `Domain` layers, the rules that would bring
-Doctrine collections or DBAL constants in or make an entity `readonly`, and three rules whose choice the packages make
-the other way. Rector 2.8.6 or later reports, at the end of the run, each skip that matched nothing
+prepared sets, without a version number written anywhere. It skips, in `Domain\Model` layers, the rule that would make
+an entity `readonly`, and three rules whose choice the packages make the other way; from Rector 2.9 on, no set registers
+the rules that would bring Doctrine collections or DBAL constants into a `Domain` layer. Rector reports, at the end of
+the run, each skip that matched nothing
 (`reportUnusedSkips()`): a package's `rector.skip` sheds the exceptions it no longer needs. The report fails nothing.
 
 ## Deptrac and Arkitect
