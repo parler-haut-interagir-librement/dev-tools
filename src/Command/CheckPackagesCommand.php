@@ -6,6 +6,7 @@ namespace Phil\DevTools\Command;
 
 use FilesystemIterator;
 use Override;
+use Phil\DevTools\Conventions\ConfigurationConventions;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
 use Phil\DevTools\Split\ArchiveRules;
@@ -47,8 +48,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     autoload-dev name — the tests autoload-dev points to ship with the code — and its LICENSE and README.md. A
     path its .gitattributes marks export-ignore, or its archive.exclude names, fails the package.
 
-    It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge:
-    phil-dev split --security-files adds both.
+    It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge
+    (phil-dev split --security-files adds both), and about a bundle configuration that strays from the conventions
+    check-config reports.
     TXT)]
 final class CheckPackagesCommand extends WorkspaceCommand
 {
@@ -77,11 +79,12 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $target = \is_string($symfony) ? $matrix->find('symfony', $symfony)->version : null;
         $floor = $matrix->floor('symfony')->version;
         $repositories = $this->repositorySteps($workspace);
+        $conventions = new ConfigurationConventions();
 
         foreach ($workspace->targets($names) as $package) {
             $output->writeln('== '.$package->name);
 
-            foreach ($this->securityWarnings($package) as $warning) {
+            foreach ([...$this->securityWarnings($package), ...$conventions->check($package)] as $warning) {
                 $output->writeln('   warning: '.$warning);
             }
 

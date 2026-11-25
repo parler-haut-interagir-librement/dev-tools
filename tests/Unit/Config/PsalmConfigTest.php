@@ -37,6 +37,8 @@ final class PsalmConfigTest extends TestCase
                    cacheDirectory="{$root}/var/phil-dev/psalm"
                    findUnusedCode="false"
                    findUnusedBaselineEntry="false"
+                   markAllNonInternalCodeAsApi="true"
+                   loadLibraryPlugins="true"
             >
                 <projectFiles>
                     <directory name="{$root}/src" />
@@ -58,6 +60,28 @@ final class PsalmConfigTest extends TestCase
             XML;
 
         self::assertSame($expected, new PsalmConfig(Workspace::load($root))->xml());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function doctrinePackages(): iterable
+    {
+        yield 'DBAL' => ['doctrine/dbal'];
+        yield 'the ORM' => ['doctrine/orm'];
+        yield 'Persistence' => ['doctrine/persistence'];
+        yield 'Collections' => ['doctrine/collections'];
+    }
+
+    #[DataProvider('doctrinePackages')]
+    public function testTheDoctrinePluginIsLoadedWhenDoctrineIsInstalled(string $package): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/x", "autoload": {"psr-4": {"Phil\\\\X\\\\": "src/"}}}');
+        mkdir($root.'/vendor/'.$package, recursive: true);
+
+        self::assertStringEndsWith("    </stubs>\n    <plugins>\n        <pluginClass class=\"Weirdan\\DoctrinePsalmPlugin\\Plugin\" />\n    </plugins>\n</psalm>\n", new PsalmConfig(Workspace::load($root))->xml());
+        self::assertSame('Weirdan\\DoctrinePsalmPlugin\\Plugin', PsalmConfig::DOCTRINE_PLUGIN);
     }
 
     public function testTheExcludesAndSuppressionsOfEveryMember(): void

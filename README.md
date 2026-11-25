@@ -21,7 +21,8 @@ several batches can work at once in their own worktrees.
 | Part | State |
 |---|---|
 | Shared configurations, read through each package's `phil-dev.php` | Implemented and tested |
-| `init`, `new`, `check-docs`, `check-packages`, `infection`, `deptrac`, `witnesses`, `generate` | Implemented and tested |
+| `init`, `new`, `check-docs`, `check-packages`, `check-config`, `infection`, `deptrac`, `witnesses`, `generate` | Implemented and tested |
+| The regex generator of the fuzz targets | Implemented and tested |
 | Per-package allowed dependencies, generated into Deptrac | Implemented and tested |
 | Real servers, HTTP recordings, member autoloading | Implemented and tested |
 | The version matrix, `php` and `matrix`, `check-packages --symfony` | Implemented and tested |

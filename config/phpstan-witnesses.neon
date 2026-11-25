@@ -1,6 +1,7 @@
-# The witnesses of the forbidden calls, of the rule on component names and of the rule on PSR-3 logger calls: files
-# under `tests/Witnesses/PhpStan` that MUST fail. `phil-dev witnesses` runs this analysis and passes only when PHPStan reports, in each witness, the
-# identifier its docblock announces.
+# The witnesses of the forbidden calls and of the rules of this package: files under `tests/Witnesses/PhpStan` that
+# MUST fail, or, when their docblock announces `none`, that MUST pass. `phil-dev witnesses` runs this analysis and
+# passes only when PHPStan reports, in each witness, the identifier its docblock announces, and nothing in a witness
+# that announces `none`.
 # The level is the lowest: what is measured here is the rule, not the rest of the file.
 includes:
     - phpstan-disallowed.php
@@ -9,6 +10,11 @@ includes:
 
 rules:
     - Phil\DevTools\PhpStan\Rules\PsrLogContextRule
+    - Phil\DevTools\PhpStan\Rules\DoctrineMappingTypeRule
+    - Phil\DevTools\PhpStan\Rules\HmacSecretKeyRule
+    - Phil\DevTools\PhpStan\Rules\ChainedAssignmentRule
+    - Phil\DevTools\PhpStan\Rules\InheritedPropertyRedeclarationRule
+    - Phil\DevTools\PhpStan\Rules\ArrayMergeInLoopRule
 
 parameters:
     level: 0

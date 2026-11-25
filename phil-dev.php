@@ -18,11 +18,6 @@ return [
         // The fuzz targets run inside nikic/php-fuzzer, which gives them `$config`. The script of lint-apps runs with
         // the autoloader of the workspace it lints, whose Symfony kernel and console this package does not require.
         'excludePaths' => ['config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php', 'tests/Fuzz/*', 'resources/lint/app.php'],
-        'ignoreErrors' => [
-            // The commands read PHIL_DEV_ROOT, PHIL_DEV_PACKAGES, PHIL_DEV_BASE_REF and the service variables from the
-            // environment: their tests set each one, and restore it in a `finally`.
-            ['identifier' => 'disallowed.function', 'message' => '#^Calling putenv\(\) is forbidden#', 'path' => 'tests/Unit/*'],
-        ],
     ],
     'deptrac' => [
         // The recorder of HttpRecording is the PHPUnit bridge's: the helper only exists for the tests of packages.
@@ -34,9 +29,9 @@ return [
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],
     'fuzz' => [
-        // The reader of the kernels of functional test applications and the rules of a Composer archive, from the
-        // seeds of tests/Fuzz/corpus/<target>.
-        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php', 'archive-rules' => 'tests/Fuzz/archive-rules.php'],
+        // The reader of the kernels of functional test applications, the rules of a Composer archive and the regex
+        // generator, from the seeds of tests/Fuzz/corpus/<target>.
+        'targets' => ['test-kernels' => 'tests/Fuzz/test-kernels.php', 'archive-rules' => 'tests/Fuzz/archive-rules.php', 'regex-generator' => 'tests/Fuzz/regex-generator.php'],
     ],
     'infection' => [
         'mutators' => [

@@ -17,10 +17,17 @@ includes:
     - phpstan-symfony-ux.php
     - phpstan-workspace.php
 
-# The rule of this package on the calls to a PSR-3 logger: a constant message with placeholders, a context without an
-# object other than a Throwable. It looks at a call only when its object is a `Psr\Log\LoggerInterface`.
+# The rules of this package: the calls to a PSR-3 logger (a constant message with placeholders, a context without an
+# object other than a Throwable), the phantom types of a Doctrine mapping (mutable dates, decimal), the application
+# secret as an HMAC key, the chained assignments that share an object or skip a set hook, the private or static
+# properties declared again, and an array merged into itself in a loop. See doc/quality-gates.md.
 rules:
     - Phil\DevTools\PhpStan\Rules\PsrLogContextRule
+    - Phil\DevTools\PhpStan\Rules\DoctrineMappingTypeRule
+    - Phil\DevTools\PhpStan\Rules\HmacSecretKeyRule
+    - Phil\DevTools\PhpStan\Rules\ChainedAssignmentRule
+    - Phil\DevTools\PhpStan\Rules\InheritedPropertyRedeclarationRule
+    - Phil\DevTools\PhpStan\Rules\ArrayMergeInLoopRule
 
 parameters:
     level: max

@@ -43,6 +43,19 @@ PHPStan stays the analyser of the gates. Psalm, in its own `vendor-bin/psalm/`, 
 follows what comes from a request, a file or the environment to an HTML page, an SQL query, a shell, a file path or
 `unserialize()`, through every call.
 
+Psalm 7.15 or later follows SQL both ways: from a request to the query it reaches (`TaintedSql`), and from what a
+query stores in a column to what another query reads back from it and prints (`TaintedHtml`, a stored XSS), through
+`PDO`, `mysqli`, `pgsql` and `SQLite3`. Its Doctrine plugin, which Psalm ships with, models DBAL and the ORM: the
+generated configuration loads it whenever the workspace installs `doctrine/dbal`, `doctrine/orm`,
+`doctrine/persistence` or `doctrine/collections`, whatever the root's `composer.json` requires. The packages are
+libraries: `markAllNonInternalCodeAsApi` treats every class not marked `@internal` as an API.
+
+```php
+$pdo->query("SELECT body FROM notes WHERE title = '".$_GET['title']."'"); // TaintedSql
+$pdo->prepare('INSERT INTO notes (body) VALUES (?)')->execute([$_POST['body']]);
+echo $pdo->query('SELECT body FROM notes')->fetch()['body'];             // TaintedHtml
+```
+
 `phil-dev taint` writes `var/phil-dev/psalm.xml` from the workspace: the source directories of every package analysed,
 without the tests, at the lowest error level, since only the taint issues matter here. A manifest adds paths left out,
 and the known, reviewed exceptions by issue type:
@@ -116,6 +129,42 @@ $config->setMaxLen(4096);
 manifest's `fuzz.budget`, else 60 seconds. The corpus of a target is `<corpus>/<name>`: its seeds, committed, and the
 inputs the fuzzer adds when they reach new code, committed when they are worth keeping. A crash fails the run and
 leaves its input in `var/phil-dev/fuzz/<name>/`; it becomes a unit test once the parser handles it.
+
+### Strings drawn from a regular expression
+
+A parser that validates by a regular expression — a slug, a phone number, an address, a dice notation — is tested on
+its valid paths by strings drawn from that expression. `Phil\DevTools\Fuzz\RegexGenerator` reads the expression and
+draws strings it must accept, with a fixed seed: the same seed draws the same strings on every PHP version, and a
+failure found once is found again.
+
+```php
+$strings = new RegexGenerator(seed: 1)->generate(
+    '/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+    ['', '-slug', 'slug-', 'Slug', 'two--dashes'], // written by hand: the pattern must refuse each
+    count: 64,
+);
+
+foreach ($strings as $slug) {
+    self::assertSame($slug, Slug::fromString($slug)->toString());
+}
+```
+
+The rejected cases are required: the drawn strings prove what the expression accepts, the cases written by hand what it
+refuses, and `generate()` throws `RejectedCaseAccepted` when none is given or one is accepted. Each string drawn is
+checked against the expression before it is returned.
+
+| Read | Refused, with `UnsupportedPattern` |
+|---|---|
+| Character classes, ranges and negations; `\d`, `\w`, `\s` and `\D`, `\W`, `\S`; POSIX classes; `\p{L}`, `\p{Lu}`, `\p{Ll}`, `\p{N}`, `\p{Nd}` | Lookaheads and lookbehinds, atomic groups, conditions, recursion |
+| `.`; escapes such as `\t`, `\n`, `\xhh`, `\x{hhhh}`, `\/` | Back-references, `\b` and `\B`, octal escapes, other letter escapes |
+| Capturing, non-capturing and named groups; alternatives | Inline flags such as `(?i)` |
+| `*`, `+`, `?`, `{n}`, `{n,}`, `{,m}`, `{n,m}`, greedy or lazy | Possessive quantifiers; a bound above 1000 |
+| `^`, `$`, `\A`, `\z`, `\Z`; the modifiers `i`, `m`, `s`, `u`, `D`, `U`, `A`, `n` | The `x` modifier; a pattern above 4096 bytes or groups nested deeper than 64 |
+
+`.` and the negated classes draw from printable ASCII, without both cases of a letter when the pattern ignores case;
+the Unicode properties draw beyond ASCII under `u` only. An unbounded quantifier repeats at most eight times more than
+its minimum, or what the second argument of the constructor sets. The generator is itself a fuzz target of this
+package, `regex-generator`.
 
 ## The bill of materials
 

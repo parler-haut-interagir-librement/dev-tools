@@ -29,6 +29,9 @@
 | `Witness\WitnessChecker` | The witnesses of the PHPStan rules. |
 | `PhpStan\Rules\ClassNameMustEndWithComponentRule` | The PHPStan rule on the names of Twig and Live Components; see [below](#phpstan-rules). |
 | `PhpStan\Rules\PsrLogContextRule` | The PHPStan rule on the message and context of PSR-3 logger calls; see [below](#phpstan-rules). |
+| `PhpStan\Rules\DoctrineMappingTypeRule`, `HmacSecretKeyRule`, `ChainedAssignmentRule`, `InheritedPropertyRedeclarationRule`, `ArrayMergeInLoopRule`, `LoopAssignmentFinder` | The PHPStan rules on Doctrine mappings, HMAC keys, chained assignments, properties declared again and merges in loops; see [below](#phpstan-rules). |
+| `Conventions\ConfigurationConventions`, `ConfigurationTreeReader`, `RecipeReader`, `ConfigurationOption`, `TreeFrame`, `TreeFrameKind` | The conventions of a bundle configuration that `check-config` reports. |
+| `Fuzz\RegexGenerator`, `Fuzz\Regex\*` | The strings a regular expression accepts, drawn with a fixed seed, for the fuzz targets and the tests; see [Security checks](security.md#strings-drawn-from-a-regular-expression). |
 | `Process\ProcessRunner`, `LocalProcessRunner`, `ProcessResult` | The processes the commands run, without a shell, with a timeout when one is given, their error output captured with the standard one on request. |
 | `Split\SecurityFiles` | The security files of a split repository and of a monorepo, the repository a package is split to, and its OpenSSF Scorecard badge. |
 | `Split\ArchiveRules` | What the Composer archive of a package leaves out, from its `.gitattributes` and its `archive.exclude`, and what it must keep. |
@@ -39,6 +42,7 @@
 | `Testing\ServiceUrl`, `HttpRecording` | The helpers of integration tests. |
 | `DevTools`, `Files` | Where this package is, reading its files and removing the directories it generates. |
 | `Exception\DevToolsException` | Implemented by every exception of the package. |
+| `Exception\UnsupportedPattern`, `RejectedCaseAccepted` | A pattern the regex generator cannot draw from; a rejected case its pattern accepts, or none given. |
 
 | File | Role |
 |---|---|
@@ -64,14 +68,20 @@
 ## PHPStan rules
 
 The rules of this package run inside PHPStan, which loads them from the shared `config/phpstan.neon` every project
-includes: the rule on components through `config/phpstan-symfony-ux.php`, the rule on logger calls directly. They
-depend on nothing else at run time.
+includes: the rule on components through `config/phpstan-symfony-ux.php`, the others directly. They depend on nothing
+else at run time, and read attributes and names as written, without loading their classes.
 
 | Rule | Identifier | Requires |
 |---|---|---|
 | `ClassNameMustEndWithComponentRule` | `phil.componentClassName` | A class carrying `#[AsTwigComponent]` or `#[AsLiveComponent]` has a name ending with `Component`, with that exact case. |
 | `PsrLogContextRule` | `phil.psrLogMessage` | The message of a PSR-3 logger call is not built by interpolation, concatenation, `sprintf()` or `vsprintf()`, unless its value is a literal. |
 | `PsrLogContextRule` | `phil.psrLogContext` | The context of a PSR-3 logger call holds no object other than a `Throwable`, down to four levels of nested arrays. |
+| `DoctrineMappingTypeRule` | `phil.doctrineMutableDate` | A Doctrine mapping has no mutable date type (`Types::DATE_MUTABLE`, `DATETIME_MUTABLE`, `DATETIMETZ_MUTABLE`, `TIME_MUTABLE` or their names) and no mapped `\DateTime` property. |
+| `DoctrineMappingTypeRule` | `phil.doctrineDecimal` | A Doctrine mapping has no `decimal` column. |
+| `HmacSecretKeyRule` | `phil.hmacSecretKey` | The application secret is not the key of an HMAC as it is: `hash_hkdf()` derives one per use. |
+| `ChainedAssignmentRule` | `phil.chainedAssignment` | A chained assignment neither gives one new object to several targets nor passes on the value written to a property with a `set` hook. |
+| `InheritedPropertyRedeclarationRule` | `phil.propertyRedeclaration` | A class does not declare again a property a parent declares `private` or `static`. |
+| `ArrayMergeInLoopRule` | `phil.arrayMergeInLoop` | A loop does not merge an array into itself with `array_merge()` or `array_merge_recursive()`. |
 
 A suffix tells the role of a class at a glance, as `Interface`, `Trait` and `Abstract…` do, and keeps a name clear of
 the words PHP reserves: `ListComponent` is a valid class name, `List` is not. The rule replaces

@@ -12,6 +12,7 @@
 | `check-translations [packages…]` | Compares the English documentation of each package with its French mirror. |
 | `stamp-translations <packages>… [--file=PATH…]` | Records, in each French mirror, the English document it now follows. |
 | `check-packages [packages…] [--symfony=VERSION] [--keep]` | Installs each package on its own, then runs its dependency analysis and its tests. |
+| `check-config [packages…] [--strict]` | Warns about a bundle configuration that strays from the conventions. |
 | `infection [--changed[=REF]] [-- arguments]` | Mutation testing, of the whole code or of the files changed since a ref, with the tests of their packages. |
 | `deptrac` | Generates the Deptrac configuration and checks the layers. |
 | `witnesses` | Checks that PHPStan still reports each forbidden call in its witness. |
@@ -135,6 +136,32 @@ kernels never share a cache with another checkout's.
 written at the floor (`^8.2`) to `VERSION.*` and lets release candidates in: the package is tested on that Symfony
 without touching its `composer.json`. See [The version matrix](version-matrix.md).
 
+## check-config
+
+Reads the configuration tree of each bundle from its source, without loading it, and warns when:
+
+- its root key is not `<vendor>_<name>`: `phil_rate_limit` for `phil/rate-limit-bundle`, `tilttek_dice` for
+  `tilttek/dice-bundle`. The key is read from the bundle's `$extensionAlias`, from the `getAlias()` of its extension,
+  or derived from the bundle's class name as Symfony does;
+- an option — a scalar, boolean, integer, float, enum or string node outside a prototype — has no default and is not
+  declared `isRequired()`;
+- an option is not named in the English documentation, `doc/*.md` or `README.md`, in backticks or as a YAML key;
+- the latest recipe, `recipe/<version>/config/packages/<root key>.yaml`, sets an option to the value of its default: a
+  recipe writes only what differs from the defaults, so that an application sees what it chose, and a default that
+  changes reaches it.
+
+The tree is read from the chains of `->xxxNode('name')`, `->children()`, the prototypes, `->validate()` and
+`->beforeNormalization()` up to their `->end()`, in every file under the source directories that names
+`DefinitionConfigurator` or `TreeBuilder`. A node built in a helper that receives a builder is read at the level of
+that builder. The warnings fail nothing; `--strict` makes them fail the command. `check-packages` prints them too.
+
+```text
+== phil/example-bundle
+   warning: option "timeout" has no default: give it one, or declare it isRequired().
+   warning: the recipe recipe/0.1/config/packages/phil_example.yaml sets "connection" to its default, default: leave it out.
+2 warnings on the configuration conventions.
+```
+
 ## infection
 
 Generates `var/phil-dev/infection.json` — see [Quality gates](quality-gates.md#infection) — and runs Infection on the
@@ -163,7 +190,8 @@ even an absolute one, and stopped on `Invalid schema path found` before mutating
 
 `deptrac` writes `var/phil-dev/deptrac.yaml` (see [Dependencies](dependencies.md)), runs Deptrac on it with
 `--fail-on-uncovered --report-uncovered`, then on each file of the root's `deptrac.configs`. `witnesses` runs PHPStan
-on every `tests/Witnesses/PhpStan` directory with the forbidden calls only; see [Quality gates](quality-gates.md#phpstan).
+on every `tests/Witnesses/PhpStan` directory with the forbidden calls and the rules of this package only; see
+[Quality gates](quality-gates.md#the-forbidden-calls-and-their-witnesses).
 `generate` only writes the generated configurations, to read them.
 
 ## test

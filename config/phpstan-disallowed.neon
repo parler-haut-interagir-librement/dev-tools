@@ -47,6 +47,67 @@ parameters:
             message: 'use random_int(), random_bytes() or a Randomizer, or symfony/uid for an identifier'
             errorIdentifier: 'phil.weakRandom'
 
+        # An address is parsed and validated by phil/url, on the WHATWG URL standard that browsers follow:
+        # `parse_url()` reads some addresses otherwise than a browser does, and `FILTER_VALIDATE_URL` accepts what a
+        # browser refuses and refuses what it accepts, so that a check passed on one side is crossed on the other.
+        -
+            function: 'parse_url()'
+            message: 'parse an address with phil/url (Phil\Url\Url), on the WHATWG URL standard browsers follow'
+            errorIdentifier: 'phil.parseUrl'
+            allowIn:
+                - '*/tests/Unit/*'
+                - '*/tests/Integration/*'
+                - '*/tests/Functional/*'
+                - '*/tests/Support/*'
+                - '*/tests/Fixtures/*'
+
+        # The locale, the environment and the default time zone belong to the process: what a request sets there is
+        # still set for the next one a worker serves (FrankenPHP, a Messenger consumer), and LC_ALL changes how PHP
+        # reads and writes numbers. The value is passed where it is used instead.
+        -
+            function: 'setlocale()'
+            message: 'pass the locale to the intl formatters (NumberFormatter, IntlDateFormatter, Collator): setlocale() changes the whole process, and what it sets outlives the request in a worker'
+            errorIdentifier: 'phil.processState'
+            allowIn:
+                - '*/tests/Unit/*'
+                - '*/tests/Integration/*'
+                - '*/tests/Functional/*'
+                - '*/tests/Support/*'
+                - '*/tests/Fixtures/*'
+        -
+            function: 'putenv()'
+            message: 'read the configuration from the container or pass the value to the process it is for: putenv() changes the whole process, and what it sets outlives the request in a worker'
+            errorIdentifier: 'phil.processState'
+            allowIn:
+                - '*/tests/Unit/*'
+                - '*/tests/Integration/*'
+                - '*/tests/Functional/*'
+                - '*/tests/Support/*'
+                - '*/tests/Fixtures/*'
+        -
+            function: 'date_default_timezone_set()'
+            message: 'pass the time zone to the date (new DateTimeImmutable(..., $zone), a ClockInterface with its zone): date_default_timezone_set() changes the whole process, and what it sets outlives the request in a worker'
+            errorIdentifier: 'phil.processState'
+            allowIn:
+                - '*/tests/Unit/*'
+                - '*/tests/Integration/*'
+                - '*/tests/Functional/*'
+                - '*/tests/Support/*'
+                - '*/tests/Fixtures/*'
+
+    # `FILTER_VALIDATE_URL` follows no standard a browser follows; see the note on `parse_url()`.
+    disallowedConstants:
+        -
+            constant: 'FILTER_VALIDATE_URL'
+            message: 'validate an address with phil/url (Phil\Url\Url), on the WHATWG URL standard browsers follow'
+            errorIdentifier: 'phil.parseUrl'
+            allowIn:
+                - '*/tests/Unit/*'
+                - '*/tests/Integration/*'
+                - '*/tests/Functional/*'
+                - '*/tests/Support/*'
+                - '*/tests/Fixtures/*'
+
     # Symfony compiles the event dispatcher: `addListener()` on the shared dispatcher and autowiring by the component's
     # interface are deprecated. The type is that of the contracts, everywhere.
     disallowedClasses:

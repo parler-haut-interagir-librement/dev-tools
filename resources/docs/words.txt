@@ -29,6 +29,7 @@ geolocation
 Gnome
 Gotenberg
 Haut
+HMAC
 hotspots
 Infection
 Interagir
@@ -36,6 +37,13 @@ journaliseur
 liblouis
 Librement
 lockfile
+lookahead
+lookaheads
+Lookaheads
+lookaround
+lookarounds
+lookbehind
+lookbehinds
 markdownlint
 markdownlint-cli2
 mbstring
@@ -83,6 +91,7 @@ Symplify
 Tilttek
 tilttek
 tmpfs
+TOTP
 Twig
 TwigStan
 twigstan

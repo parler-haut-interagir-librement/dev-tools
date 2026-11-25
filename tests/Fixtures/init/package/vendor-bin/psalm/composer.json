@@ -1,7 +1,7 @@
 {
     "require": {
         "php": ">=8.5",
-        "vimeo/psalm": "^7.1"
+        "vimeo/psalm": "^7.15"
     },
     "config": {
         "sort-packages": true

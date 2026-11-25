@@ -18,6 +18,10 @@ use Phil\DevTools\Workspace\Workspace;
  * `psalm.excludes`, paths left out, and its `psalm.suppress`, an issue type with the paths where it is a known and
  * reviewed exception.
  *
+ * Psalm follows SQL from the request to the query, and from what a query stores to what another reads back (a stored
+ * XSS); its Doctrine plugin, loaded when the workspace installs Doctrine, models DBAL and the ORM. The packages are
+ * libraries: `markAllNonInternalCodeAsApi` treats every class not marked internal as an API.
+ *
  * Besides the taints Psalm knows, it follows `request_host`: the host a request names — `Request::getHost()` and the
  * addresses built on it, the `Host` header, an absolute address of the router — to the body, the template context or
  * the action of an email, where a link on it would send its reader and its token to the client's host. The model is
@@ -29,6 +33,16 @@ final readonly class PsalmConfig
      * The custom taint of the host a request names.
      */
     public const string REQUEST_HOST = 'request_host';
+
+    /**
+     * The Doctrine plugin Psalm ships with, which models the queries of DBAL and the ORM for the SQL taint.
+     */
+    public const string DOCTRINE_PLUGIN = 'Weirdan\\DoctrinePsalmPlugin\\Plugin';
+
+    /**
+     * The packages whose presence in the workspace's vendor directory turns the Doctrine plugin on.
+     */
+    private const array DOCTRINE_PACKAGES = ['doctrine/dbal', 'doctrine/orm', 'doctrine/persistence', 'doctrine/collections'];
 
     public function __construct(private Workspace $workspace)
     {
@@ -78,6 +92,8 @@ final readonly class PsalmConfig
             '       cacheDirectory="'.self::escape($root->path('var/phil-dev/psalm')).'"',
             '       findUnusedCode="false"',
             '       findUnusedBaselineEntry="false"',
+            '       markAllNonInternalCodeAsApi="true"',
+            '       loadLibraryPlugins="true"',
             '>',
             '    <projectFiles>',
             ...$directories,
@@ -94,6 +110,12 @@ final readonly class PsalmConfig
             '        <file name="'.self::escape(DevTools::resource('psalm/request-host.phpstub')).'" />',
             '    </stubs>',
         ];
+
+        if ($this->hasDoctrine()) {
+            $xml[] = '    <plugins>';
+            $xml[] = '        <pluginClass class="'.self::DOCTRINE_PLUGIN.'" />';
+            $xml[] = '    </plugins>';
+        }
 
         if ([] !== $suppressions) {
             $xml[] = '    <issueHandlers>';
@@ -116,6 +138,15 @@ final readonly class PsalmConfig
         $xml[] = '</psalm>';
 
         return implode("\n", $xml)."\n";
+    }
+
+    /**
+     * Whether the workspace installs Doctrine: the plugin is then loaded whatever the root's composer.json requires, so
+     * that a package that requires DBAL alone is followed as one that requires the ORM.
+     */
+    private function hasDoctrine(): bool
+    {
+        return array_any(self::DOCTRINE_PACKAGES, fn (string $package): bool => is_dir($this->workspace->root->path('vendor/'.$package)));
     }
 
     /**

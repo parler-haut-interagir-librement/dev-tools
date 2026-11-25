@@ -1,0 +1,9 @@
+{
+    "name": "phil/example-bundle",
+    "type": "symfony-bundle",
+    "autoload": {
+        "psr-4": {
+            "Phil\\ExampleBundle\\": "src/"
+        }
+    }
+}

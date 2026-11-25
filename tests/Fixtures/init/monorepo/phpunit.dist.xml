@@ -3,6 +3,7 @@
 <!--
     In a monorepo, the suites of every package are found by their glob: adding a package adds no line here.
     Unit runs without a kernel and touches nothing: it is the suite Infection replays once per mutant.
+    A risky test fails: one that asserts nothing, or prints, or leaves a handler behind.
     Every test names what it covers, with #[CoversClass] or #[CoversNothing]: coverage counts only what a test
     sets out to test, and Infection replays only the tests that cover a mutant.
     Integration boots a kernel or talks to a real server; a test that needs a server reads its URL from the
@@ -13,6 +14,7 @@
          colors="true"
          failOnDeprecation="true"
          failOnNotice="true"
+         failOnRisky="true"
          failOnWarning="true"
          requireCoverageMetadata="true"
          bootstrap="vendor/autoload.php"
