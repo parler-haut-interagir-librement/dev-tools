@@ -37,3 +37,18 @@ final class RefusedChild extends RefusedMiddle
         return $this->own.$this->label === '' ? 0 : 1;
     }
 }
+
+abstract class ShadowBase
+{
+    private int $x = 0;
+}
+
+abstract class ShadowMiddle extends ShadowBase
+{
+    protected int $x = 1;
+}
+
+final class ShadowChild extends ShadowMiddle
+{
+    protected int $x = 2;
+}

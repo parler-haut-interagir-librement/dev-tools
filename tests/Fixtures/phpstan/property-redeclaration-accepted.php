@@ -22,15 +22,17 @@ final class AcceptedChild extends AcceptedBase
 {
     protected string $name = 'child';
 
+    private const string TAG = 'child';
+
     private int $mine = 0;
 
-    public function __construct(private readonly string $label = '')
+    public function __construct(private readonly string $label = '', int $own = 0)
     {
     }
 
     public function mine(): int
     {
-        return $this->mine.$this->label === '' ? 0 : 1;
+        return $this->mine.$this->label.self::TAG === '' ? 0 : 1;
     }
 }
 

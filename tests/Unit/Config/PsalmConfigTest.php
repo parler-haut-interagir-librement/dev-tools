@@ -84,6 +84,15 @@ final class PsalmConfigTest extends TestCase
         self::assertSame('Weirdan\\DoctrinePsalmPlugin\\Plugin', PsalmConfig::DOCTRINE_PLUGIN);
     }
 
+    public function testTheDoctrinePluginIsLeftOutWhenVendorHoldsNoDoctrine(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/x", "autoload": {"psr-4": {"Phil\\\\X\\\\": "src/"}}}');
+        mkdir($root.'/vendor/acme/other', recursive: true);
+
+        self::assertStringNotContainsString('<plugins>', new PsalmConfig(Workspace::load($root))->xml());
+    }
+
     public function testTheExcludesAndSuppressionsOfEveryMember(): void
     {
         $root = $this->fixture('monorepo');

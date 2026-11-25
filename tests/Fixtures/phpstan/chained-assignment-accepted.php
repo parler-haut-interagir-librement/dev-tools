@@ -8,6 +8,8 @@ final class PlainOrder
 {
     public int $total = 0;
 
+    public static int $count = 0;
+
     public int $paid {
         get => $this->paid;
     }
@@ -27,5 +29,6 @@ function acceptedChains(PlainOrder $order, int $amount): void
     $e = $order->total = $amount;
     $f = $g = $amount;
     $h = new \ArrayObject();
-    unset($a, $b, $c, $d, $second, $e, $f, $g, $h);
+    $i = PlainOrder::$count = $amount;
+    unset($a, $b, $c, $d, $second, $e, $f, $g, $h, $i);
 }

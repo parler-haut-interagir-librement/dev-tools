@@ -34,4 +34,9 @@ final class RefusedSigner
             .hash_hmac('sha256', $data, (string) $this->other?->secret)
             .hash_hmac('sha256', $data, $config['kernel.secret']);
     }
+
+    public function shout(string $data): string
+    {
+        return HASH_HMAC('sha256', $data, $this->secret);
+    }
 }

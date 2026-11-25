@@ -63,7 +63,7 @@ final class WitnessChecker
     /**
      * What is wrong with a witness, given the messages PHPStan reports in it, or null.
      *
-     * @param list<mixed> $messages
+     * @param array<mixed> $messages
      */
     private function failure(string $witness, string $announced, array $messages): ?string
     {
@@ -87,13 +87,13 @@ final class WitnessChecker
      *
      * @param array<mixed> $files
      *
-     * @return list<mixed>
+     * @return array<mixed>
      */
     private function messages(array $files, string $witness): array
     {
         $real = realpath($witness);
         $errors = $files[$witness] ?? (false === $real ? null : ($files[$real] ?? null));
 
-        return \is_array($errors) && \is_array($errors['messages'] ?? null) ? array_values($errors['messages']) : [];
+        return \is_array($errors) && \is_array($errors['messages'] ?? null) ? $errors['messages'] : [];
     }
 }

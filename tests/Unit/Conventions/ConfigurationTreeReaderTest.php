@@ -53,4 +53,48 @@ final class ConfigurationTreeReaderTest extends TestCase
         self::assertSame('h', $options[6]->name());
         self::assertSame('o', $options[9]->name());
     }
+
+    public function testWhitespaceAndCommentsBetweenTheTokensAreIgnored(): void
+    {
+        $code = <<<'PHP_WRAP'
+            <?php
+            $root->children()
+                ->scalarNode( /* the name */ 'p' )->defaultValue( 'v' )->end()
+                ->booleanNode ( 'q' )->defaultTrue()->end()
+            ;
+            PHP_WRAP;
+
+        self::assertEquals([
+            new ConfigurationOption('p', true, 'v', false),
+            new ConfigurationOption('q', true, 'true', false),
+        ], new ConfigurationTreeReader()->options($code));
+    }
+
+    public function testAStatementInsideParenthesesDoesNotEndTheChain(): void
+    {
+        $code = <<<'PHP_WRAP'
+            <?php
+            $root->children()->scalarNode('x')->defaultValue(static function (): int { $a = 1; return $a; })->isRequired()->end()->end();
+            $root->children()->scalarNode('y')->defaultValue(1)->end()->end();
+            PHP_WRAP;
+
+        self::assertEquals([
+            new ConfigurationOption('x', true, null, true),
+            new ConfigurationOption('y', true, '1', false),
+        ], new ConfigurationTreeReader()->options($code));
+    }
+
+    public function testOnlyAMethodCallBuildsANode(): void
+    {
+        $code = "<?php\n\$a = new ScalarNode('x');\n\$b = Tree::scalarNode('y');\n\$c->defaultValue('z');\n\$c->isRequired();\n\$c->end();\n";
+
+        self::assertSame([], new ConfigurationTreeReader()->options($code));
+    }
+
+    public function testAChainThatEndsTheFileIsClosedByIt(): void
+    {
+        self::assertEquals([new ConfigurationOption('z', false, null, false)], new ConfigurationTreeReader()->options("<?php\n\$t->scalarNode('z')"));
+        self::assertSame([], new ConfigurationTreeReader()->options("<?php\n\$t->scalarNode("));
+        self::assertSame([], new ConfigurationTreeReader()->options("<?php\n\$t->arrayNode("));
+    }
 }

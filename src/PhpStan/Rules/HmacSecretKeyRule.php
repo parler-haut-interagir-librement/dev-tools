@@ -158,14 +158,22 @@ final class HmacSecretKeyRule implements Rule
      */
     private function fetched(Expr $key): ?string
     {
-        [$prefix, $name] = match (true) {
-            $key instanceof Variable => ['$', $key->name],
-            $key instanceof PropertyFetch, $key instanceof NullsafePropertyFetch => ['->', $key->name instanceof Identifier ? $key->name->toString() : null],
-            $key instanceof StaticPropertyFetch => ['::$', $key->name instanceof VarLikeIdentifier ? $key->name->toString() : null],
-            default => ['', null],
+        $name = match (true) {
+            $key instanceof Variable => $key->name,
+            $key instanceof PropertyFetch, $key instanceof NullsafePropertyFetch => $key->name instanceof Identifier ? $key->name->toString() : null,
+            $key instanceof StaticPropertyFetch => $key->name instanceof VarLikeIdentifier ? $key->name->toString() : null,
+            default => null,
         };
 
-        return \is_string($name) && $this->isSecretName($name) ? $prefix.$name : null;
+        if (!\is_string($name) || !$this->isSecretName($name)) {
+            return null;
+        }
+
+        return match (true) {
+            $key instanceof Variable => '$',
+            $key instanceof StaticPropertyFetch => '::$',
+            default => '->',
+        }.$name;
     }
 
     private function isSecretName(string $name): bool

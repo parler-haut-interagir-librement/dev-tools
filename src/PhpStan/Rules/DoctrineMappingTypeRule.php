@@ -243,7 +243,7 @@ final class DoctrineMappingTypeRule implements Rule
         };
 
         foreach ($names as $name) {
-            if ($name instanceof Name && 'datetime' === strtolower(ltrim($name->toString(), '\\'))) {
+            if ($name instanceof Name && 'datetime' === strtolower($name->toString())) {
                 return '\DateTime';
             }
 

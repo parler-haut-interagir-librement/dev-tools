@@ -44,7 +44,11 @@ return [
             'FalseValue' => ['ignore' => [PhpUnitConfig::class.'::expand']],
             // A timeout a nanosecond longer or shorter, reached at its instant or the one after, cannot be told apart.
             'IncrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
-            'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;']],
+            // A Unicode property is kept without `u` when its range ends in printable ASCII: each range of the table lies
+            // wholly inside it or wholly beyond it, and none ends on the last printable character, so its start tells the
+            // same as its end, and `<` the same as `<=`.
+            'DecrementInteger' => ['ignoreSourceCodeByRegex' => ['.*\$timeout \* 1_000_000_000;', '.*\(hrtime\(true\) - \$start\) / 1_000_000;', '.*\$range\[1\] <= self::LAST\).*']],
+            'LessThanOrEqualTo' => ['ignoreSourceCodeByRegex' => ['.*\$range\[1\] <= self::LAST\).*']],
             'GreaterThanOrEqualTo' => ['ignore' => [LocalProcessRunner::class.'::run']],
             // A type that is all objects is never an array too: before the arrays of a context are read, nothing has been
             // found, so keeping it or not changes nothing.

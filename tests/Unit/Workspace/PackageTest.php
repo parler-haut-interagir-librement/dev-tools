@@ -32,6 +32,16 @@ final class PackageTest extends TestCase
         self::assertSame([], $package->filesUnder('missing'));
     }
 
+    public function testAPathIsGivenRelativeToThePackage(): void
+    {
+        $dir = $this->temporaryDirectory();
+        $this->put($dir.'/composer.json', '{"name": "phil/x"}');
+        $package = Package::fromDirectory($dir, '', PackageRole::Root);
+
+        self::assertSame('src', $package->relativePath($dir.'/src'));
+        self::assertSame('doc/a.md', $package->relativePath($package->path('doc/a.md')));
+    }
+
     public function testItReadsItsComposerJson(): void
     {
         $dir = $this->temporaryDirectory();

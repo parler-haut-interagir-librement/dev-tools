@@ -40,6 +40,9 @@ final class ChainedAssignmentRuleTest extends RuleTestCase
             [\sprintf(self::HOOK, self::FIXTURES), 18, self::HOOK_TIP],
             [\sprintf(self::HOOK, self::FIXTURES), 19, self::HOOK_TIP],
             [\sprintf(self::HOOK, self::FIXTURES), 20, self::HOOK_TIP],
+            [self::NEW, 21, self::NEW_TIP],
+            [\sprintf(self::HOOK, self::FIXTURES), 22, self::HOOK_TIP],
+            [\sprintf(self::HOOK, self::FIXTURES), 23, self::HOOK_TIP],
         ]);
     }
 

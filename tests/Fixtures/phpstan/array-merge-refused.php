@@ -49,4 +49,21 @@ final class RefusedMerges
 
         return $all;
     }
+
+    /**
+     * @param list<list<int>> $parts
+     *
+     * @return list<int>
+     */
+    public function more(array $parts): array
+    {
+        $all = [];
+
+        foreach ($parts as $part) {
+            $count = 5;
+            $all = array_merge($all, $all);
+        }
+
+        return $all;
+    }
 }

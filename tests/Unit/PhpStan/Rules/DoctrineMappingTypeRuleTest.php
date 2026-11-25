@@ -28,6 +28,41 @@ final class DoctrineMappingTypeRuleTest extends RuleTestCase
         $this->analyse([$this->fixture('accepted')], []);
     }
 
+    public function testTypesThatAreNoConstantsAreLeftAlone(): void
+    {
+        $file = sys_get_temp_dir().'/phil-doctrine-'.random_int(1, \PHP_INT_MAX).'.php';
+        file_put_contents($file, <<<'PHP_WRAP'
+            <?php
+
+            namespace Phil\DevTools\Tests\Fixtures\PhpStan;
+
+            use Doctrine\DBAL\Types\Types;
+            use Doctrine\ORM\Mapping as ORM;
+
+            #[ORM\Entity]
+            final class Expressions
+            {
+                #[ORM\Column(type: Types::DECIMAL())]
+                private string $call = '';
+
+                #[ORM\Column(type: Types::{$name})]
+                private string $dynamic = '';
+
+                #[ORM\Column(type: $class::DECIMAL)]
+                private string $viaVariable = '';
+
+                #[ORM\Column(type: 5)]
+                private int $number = 0;
+            }
+            PHP_WRAP);
+
+        try {
+            $this->analyse([$file], []);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testRefused(): void
     {
         $this->analyse([$this->fixture('refused')], [
@@ -42,6 +77,8 @@ final class DoctrineMappingTypeRuleTest extends RuleTestCase
             [$this->property('RefusedEvent', 'createdAt'), 39, self::DATE_TIP],
             [$this->property('RefusedPeriod', 'from'), 48, self::DATE_TIP],
             [$this->property('RefusedMappedProperty', 'seen'), 54, self::DATE_TIP],
+            [$this->property('RefusedIntersections', 'both'), 60, self::DATE_TIP],
+            [$this->property('RefusedIntersections', 'dnf'), 62, self::DATE_TIP],
         ]);
     }
 

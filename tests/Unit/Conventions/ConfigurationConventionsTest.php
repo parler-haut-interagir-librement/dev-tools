@@ -58,7 +58,7 @@ final class ConfigurationConventionsTest extends TestCase
         $this->put($library.'/src/Tree.php', "<?php\n// TreeBuilder\n\$t->scalarNode('x')->end();\n");
         $bundle = $this->temporaryDirectory();
         $this->put($bundle.'/composer.json', '{"name": "phil/bare-bundle", "type": "symfony-bundle", "autoload": {"psr-4": {"Phil\\\\BareBundle\\\\": "src/"}}}');
-        $this->put($bundle.'/src/PhilBareBundle.php', "<?php\nfinal class PhilBareBundle {}\n");
+        $this->put($bundle.'/src/OtherBundle.php', "<?php\nfinal class OtherBundle {}\n");
 
         self::assertSame([], new ConfigurationConventions()->check(Package::fromDirectory($library, '', PackageRole::Root)));
         self::assertSame([], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
@@ -86,6 +86,41 @@ final class ConfigurationConventionsTest extends TestCase
         self::assertSame([], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
     }
 
+    public function testTheRootKeyDerivedFromTheClassNameSeparatesTheWords(): void
+    {
+        $bundle = $this->temporaryDirectory();
+        $this->put($bundle.'/composer.json', '{"name": "phil/routes-bundle", "type": "symfony-bundle", "autoload": {"psr-4": {"Phil\\\\RoutesBundle\\\\": "src/"}}}');
+        $this->put($bundle.'/src/HTTPClientBundle.php', "<?php\n// DefinitionConfigurator\n\$d->rootNode()->children()->scalarNode('prefix')->defaultValue('/r')->end();\n");
+        $this->put($bundle.'/doc/routes.md', "```yaml\nprefix: /r\n```\n");
+
+        self::assertSame(['the configuration\'s root key is "http_client": name it "phil_routes", after the package.'], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
+    }
+
+    public function testTheReadmeAndTheDocumentsDocumentTogether(): void
+    {
+        $bundle = $this->temporaryDirectory();
+        $this->put($bundle.'/composer.json', '{"name": "phil/docs-bundle", "type": "symfony-bundle", "autoload": {"psr-4": {"Phil\\\\DocsBundle\\\\": "src/"}}}');
+        $this->put($bundle.'/src/PhilDocsBundle.php', "<?php\n// DefinitionConfigurator\n\$d->rootNode()->children()->scalarNode('a')->defaultValue('b')->end()->scalarNode('z')->defaultValue('y')->end();\n");
+        $this->put($bundle.'/README.md', 'Set `a`.');
+        $this->put($bundle.'/doc/other.md', 'Set `z`.');
+
+        self::assertSame([], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
+    }
+
+    public function testAnOptionNameIsMatchedAsWritten(): void
+    {
+        $bundle = $this->temporaryDirectory();
+        $this->put($bundle.'/composer.json', '{"name": "phil/quote-bundle", "type": "symfony-bundle", "autoload": {"psr-4": {"Phil\\\\QuoteBundle\\\\": "src/"}}}');
+        $this->put($bundle.'/src/PhilQuoteBundle.php', "<?php\n// DefinitionConfigurator\n\$d->rootNode()->children()->scalarNode('a+b')->defaultValue('x')->end();\n");
+        $this->put($bundle.'/README.md', 'Set `a+b`.');
+
+        self::assertSame([], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
+
+        $this->put($bundle.'/README.md', 'Set `aab`.');
+
+        self::assertSame(['option "a+b" is not named in doc/ nor in README.md: document it with its default.'], new ConfigurationConventions()->check(Package::fromDirectory($bundle, '', PackageRole::Root)));
+    }
+
     /**
      * @return iterable<string, array{string, string}>
      */
@@ -96,6 +131,7 @@ final class ConfigurationConventionsTest extends TestCase
         yield 'no suffix' => ['phil/slides', 'phil_slides'];
         yield 'the suffix only at the end' => ['phil/bundle-flex', 'phil_bundle_flex'];
         yield 'no vendor' => ['Example', 'example_'];
+        yield 'a second slash' => ['phil/a/b', 'phil_a/b'];
     }
 
     #[DataProvider('packageNames')]

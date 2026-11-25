@@ -41,6 +41,7 @@ final class HmacSecretKeyRuleTest extends RuleTestCase
             [$this->message('hash_hmac', '->secret'), 33, self::TIP],
             [$this->message('hash_hmac', '->secret'), 34, self::TIP],
             [$this->message('hash_hmac', "['kernel.secret']"), 35, self::TIP],
+            [$this->message('hash_hmac', '->secret'), 40, self::TIP],
         ]);
     }
 

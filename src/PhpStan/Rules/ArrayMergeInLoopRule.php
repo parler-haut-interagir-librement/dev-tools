@@ -96,10 +96,19 @@ final class ArrayMergeInLoopRule implements Rule
     private function name(Expr $expr): ?string
     {
         return match (true) {
-            $expr instanceof Variable => \is_string($expr->name) ? '$'.$expr->name : null,
-            $expr instanceof PropertyFetch => $expr->var instanceof Variable && \is_string($expr->var->name) && $expr->name instanceof Identifier ? '$'.$expr->var->name.'->'.$expr->name->toString() : null,
+            $expr instanceof Variable => $this->variable($expr),
+            $expr instanceof PropertyFetch => null !== ($base = $this->variable($expr->var)) && $expr->name instanceof Identifier ? $base.'->'.$expr->name->toString() : null,
             $expr instanceof StaticPropertyFetch => $expr->class instanceof Name && $expr->name instanceof VarLikeIdentifier ? $expr->class->toString().'::$'.$expr->name->toString() : null,
             default => null,
         };
+    }
+
+    private function variable(Expr $expr): ?string
+    {
+        if (!$expr instanceof Variable || !\is_string($expr->name)) {
+            return null;
+        }
+
+        return '$'.$expr->name;
     }
 }

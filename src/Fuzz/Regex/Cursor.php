@@ -18,6 +18,16 @@ final class Cursor
     {
     }
 
+    /**
+     * The characters of a body read under the modifiers of its pattern: bytes, or code points under `u`.
+     */
+    public static function of(string $body, string $modifiers): self
+    {
+        $unicode = str_contains($modifiers, 'u');
+
+        return new self($unicode ? mb_str_split($body, 1, 'UTF-8') : str_split($body), $unicode, str_contains($modifiers, 'i'));
+    }
+
     public function peek(int $ahead = 0): ?string
     {
         return $this->chars[$this->position + $ahead] ?? null;

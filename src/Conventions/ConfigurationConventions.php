@@ -79,7 +79,7 @@ final class ConfigurationConventions
      */
     public function expectedRootKey(string $package): string
     {
-        [$vendor, $name] = array_pad(explode('/', $package, 2), 2, '');
+        [$vendor, $name] = explode('/', $package, 2) + [1 => ''];
         $name = preg_replace('/-bundle$/', '', $name) ?? $name;
 
         return str_replace('-', '_', strtolower($vendor.'_'.$name));
@@ -95,7 +95,7 @@ final class ConfigurationConventions
         $sources = [];
 
         foreach ($package->sourceDirectories() as $directory) {
-            foreach ($package->filesUnder(substr($directory, \strlen($package->dir) + 1)) as $relative) {
+            foreach ($package->filesUnder($package->relativePath($directory)) as $relative) {
                 if (!str_ends_with($relative, '.php')) {
                     continue;
                 }
@@ -130,7 +130,7 @@ final class ConfigurationConventions
                 return strtolower((string) preg_replace(['/([A-Z]+)([A-Z][a-z])/', '/([a-z\d])([A-Z])/'], '\1_\2', substr($class, 0, -\strlen('Bundle'))));
             }
 
-            foreach ($package->filesUnder(substr($directory, \strlen($package->dir) + 1)) as $relative) {
+            foreach ($package->filesUnder($package->relativePath($directory)) as $relative) {
                 if (str_ends_with($relative, 'Extension.php') && 1 === preg_match('/function\s+getAlias\s*\(\s*\)\s*:\s*string\s*\{\s*return\s*[\'"]([A-Za-z0-9_]+)[\'"]/', Files::read($package->path($relative)), $match)) {
                     return $match[1];
                 }
@@ -145,15 +145,9 @@ final class ConfigurationConventions
      */
     private function documentation(Package $package): string
     {
-        $text = '';
+        $files = array_filter([$package->path('README.md'), ...$this->glob($package->path('doc').'/*.md')], is_file(...));
 
-        foreach ([$package->path('README.md'), ...$this->glob($package->path('doc').'/*.md')] as $file) {
-            if (is_file($file)) {
-                $text .= Files::read($file)."\n";
-            }
-        }
-
-        return $text;
+        return implode("\n", array_map(Files::read(...), $files));
     }
 
     private function isDocumented(string $name, string $documentation): bool
@@ -173,13 +167,9 @@ final class ConfigurationConventions
     private function recipeCopies(Package $package, string $root, array $options): array
     {
         $versions = $this->glob($package->path('recipe').'/*', \GLOB_ONLYDIR);
-
-        if ([] === $versions) {
-            return [];
-        }
-
         usort($versions, static fn (string $a, string $b): int => version_compare(basename($a), basename($b)));
-        $file = end($versions).'/config/packages/'.$root.'.yaml';
+        $latest = array_last($versions);
+        $file = null === $latest ? '' : $latest.'/config/packages/'.$root.'.yaml';
 
         if (!is_file($file)) {
             return [];
@@ -197,7 +187,7 @@ final class ConfigurationConventions
 
         foreach (new RecipeReader()->values(Files::read($file), $root) as $path => $value) {
             if (($defaults[$path] ?? null) === $value) {
-                $warnings[] = \sprintf('the recipe %s sets "%s" to its default, %s: leave it out.', substr($file, \strlen($package->dir) + 1), $path, $value);
+                $warnings[] = \sprintf('the recipe %s sets "%s" to its default, %s: leave it out.', $package->relativePath($file), $path, $value);
             }
         }
 

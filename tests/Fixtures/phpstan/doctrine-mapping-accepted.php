@@ -12,6 +12,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 final class AcceptedEvent
 {
+    private const string TAG = 'event';
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private DateTimeImmutable $startsAt;
 
@@ -31,6 +33,7 @@ final class AcceptedEvent
         #[ORM\Column(type: Types::TIME_IMMUTABLE)]
         private DateTimeImmutable $at,
         private readonly string $plain = '',
+        ?DateTime $when = null,
     ) {
         $this->startsAt = $at;
     }
@@ -44,4 +47,12 @@ final class NotMapped
     public function __construct(public DateTime $when, private string $type = 'decimal')
     {
     }
+}
+
+#[ORM\Entity]
+final class AcceptedIntersections
+{
+    private (\Countable&\Stringable)|null $both = null;
+
+    private \Countable&\Stringable $all;
 }

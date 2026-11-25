@@ -43,11 +43,6 @@ final class InheritedPropertyRedeclarationRule implements Rule
     {
         $class = $node->getClassReflection();
         $parents = $class->getParents();
-
-        if ([] === $parents) {
-            return [];
-        }
-
         $errors = [];
 
         foreach ($this->declared($node->getOriginalNode()->stmts) as $name => $line) {

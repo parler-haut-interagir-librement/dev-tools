@@ -32,7 +32,7 @@ final class RegexParser
      */
     public function __construct(private readonly int $maxRepeat)
     {
-        $this->cursor = new Cursor([], false, false);
+        $this->cursor = Cursor::of('', '');
         $this->classes = new ClassParser($this->cursor);
     }
 
@@ -53,8 +53,7 @@ final class RegexParser
             }
         }
 
-        $unicode = str_contains($modifiers, 'u');
-        $this->cursor = new Cursor($unicode ? mb_str_split($body, 1, 'UTF-8') : str_split($body), $unicode, str_contains($modifiers, 'i'));
+        $this->cursor = Cursor::of($body, $modifiers);
         $this->classes = new ClassParser($this->cursor);
         $tree = $this->alternatives(0);
 
@@ -112,7 +111,7 @@ final class RegexParser
 
     private function atom(int $depth): Node
     {
-        $char = (string) $this->cursor->next();
+        $char = $this->cursor->next() ?? '';
 
         return match ($char) {
             '(' => $this->group($depth),
@@ -154,7 +153,7 @@ final class RegexParser
 
         if ('P' === $kind && '<' === $this->cursor->peek()) {
             $named = true;
-            $kind = (string) $this->cursor->next();
+            $kind = '<';
         }
 
         if (!$named) {
@@ -176,6 +175,8 @@ final class RegexParser
             return $atom;
         }
 
+        $this->cursor->skip($bounds[2]);
+
         if ('+' === $this->cursor->peek()) {
             throw new UnsupportedPattern('A possessive quantifier is not supported.');
         }
@@ -184,7 +185,7 @@ final class RegexParser
             $this->cursor->skip();
         }
 
-        if (null !== $this->bounds(false)) {
+        if (null !== $this->bounds()) {
             throw new UnsupportedPattern('Two quantifiers in a row.');
         }
 
@@ -192,30 +193,20 @@ final class RegexParser
     }
 
     /**
-     * The bounds of the quantifier at the cursor, read when asked; null when none is there, a `{` that quantifies
-     * nothing being a literal.
+     * The bounds of the quantifier at the cursor, with their length, without reading them; null when none is there,
+     * a `{` that quantifies nothing being a literal.
      *
-     * @return array{int, int|null}|null
+     * @return array{int, int|null, int}|null
      */
-    private function bounds(bool $consume = true): ?array
+    private function bounds(): ?array
     {
-        $bounds = match ($this->cursor->peek()) {
+        return match ($this->cursor->peek()) {
             '*' => [0, null, 1],
             '+' => [1, null, 1],
             '?' => [0, 1, 1],
             '{' => $this->braces(),
             default => null,
         };
-
-        if (null === $bounds) {
-            return null;
-        }
-
-        if ($consume) {
-            $this->cursor->skip($bounds[2]);
-        }
-
-        return [$bounds[0], $bounds[1]];
     }
 
     /**
@@ -236,7 +227,7 @@ final class RegexParser
             default => (int) $match[3],
         };
 
-        if (max($min, $max ?? 0) > self::MAX_BOUND) {
+        if (max($min, $max ?? $min) > self::MAX_BOUND) {
             throw new UnsupportedPattern(\sprintf('A quantifier above %d.', self::MAX_BOUND));
         }
 

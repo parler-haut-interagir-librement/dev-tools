@@ -53,3 +53,11 @@ final class RefusedMappedProperty
     #[ORM\Column]
     private ?\DateTime $seen = null;
 }
+
+#[ORM\Entity]
+final class RefusedIntersections
+{
+    private DateTime&\Countable $both;
+
+    private (DateTime&\Countable)|null $dnf = null;
+}

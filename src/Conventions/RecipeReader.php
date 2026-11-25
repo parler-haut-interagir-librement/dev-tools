@@ -23,7 +23,7 @@ final class RecipeReader
         $lines = preg_split('/\R/', $yaml);
 
         foreach (false === $lines ? [] : $lines as $line) {
-            if (str_starts_with(ltrim($line), '#') || 1 !== preg_match('/^( *)([A-Za-z0-9_.-]+):(?:[ \t]+(.*?))?[ \t]*$/', $line, $match)) {
+            if (1 !== preg_match('/^( *)([A-Za-z0-9_.-]+):(?:[ \t]+(.*?))?[ \t]*$/', $line, $match)) {
                 continue;
             }
 
@@ -78,10 +78,10 @@ final class RecipeReader
 
     private function withoutComment(string $value): string
     {
-        if (1 === preg_match('/^(\'(?:[^\']|\'\')*\'|"(?:[^"\\\\]|\\\\.)*")/', $value, $quoted)) {
-            return $quoted[1];
+        if (1 === preg_match('/^(?:\'(?:[^\']|\'\')*\'|"(?:[^"\\\\]|\\\\.)*")/', $value, $quoted)) {
+            return $quoted[0];
         }
 
-        return trim((string) preg_replace('/\s+#.*$/', '', $value));
+        return preg_replace('/\s+#.*$/', '', $value) ?? $value;
     }
 }

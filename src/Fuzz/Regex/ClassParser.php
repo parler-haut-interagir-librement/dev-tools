@@ -28,6 +28,11 @@ final readonly class ClassParser
         'Nd' => [[0x30, 0x39], [0x660, 0x669]],
     ];
 
+    /**
+     * How far a POSIX class reaches: `:^xdigit:]`, the longest, and a margin that names what is refused.
+     */
+    private const int POSIX_LENGTH = 12;
+
     private const array POSIX = [
         'alpha' => [[0x41, 0x5A], [0x61, 0x7A]],
         'digit' => [[0x30, 0x39]],
@@ -119,12 +124,12 @@ final readonly class ClassParser
             return $low;
         }
 
-        if ('-' !== $this->cursor->peek() || null === $this->cursor->peek(1) || ']' === $this->cursor->peek(1)) {
+        if ('-' !== $this->cursor->peek() || ']' === $this->cursor->peek(1)) {
             return [[$low, $low]];
         }
 
         $this->cursor->skip();
-        $high = $this->single($this->cursor->next() ?? '');
+        $high = $this->single($this->cursor->next() ?? throw new UnsupportedPattern('A character class is not closed.'));
 
         if (\is_array($high) || $high < $low) {
             throw new UnsupportedPattern('A range of a character class that ends on a class.');
@@ -161,7 +166,7 @@ final readonly class ClassParser
         }
 
         if (isset(self::CLASS_ESCAPES[strtolower($char)])) {
-            return $this->complement(self::CLASS_ESCAPES[strtolower($char)], false);
+            return $this->complement(self::CLASS_ESCAPES[strtolower($char)], $this->cursor->caseless);
         }
 
         return 'p' === $char ? $this->property() : null;
@@ -177,7 +182,7 @@ final readonly class ClassParser
             return $this->hexadecimal();
         }
 
-        if (1 === preg_match('/^[A-Za-z0-9]$/', $char)) {
+        if (ctype_alnum($char)) {
             throw new UnsupportedPattern(\sprintf('The escape "\\%s" (back-reference, word boundary, octal or other) is not supported.', $char));
         }
 
@@ -197,11 +202,14 @@ final readonly class ClassParser
             return (int) hexdec($digits);
         }
 
-        $length = 1 === preg_match('/^[0-9A-Fa-f]{2}/', $this->cursor->ahead(2)) ? 2 : (1 === preg_match('/^[0-9A-Fa-f]/', $this->cursor->ahead(1)) ? 1 : 0);
-        $digits = $this->cursor->ahead($length);
-        $this->cursor->skip($length);
+        $digits = '';
 
-        return '' === $digits ? 0 : (int) hexdec($digits);
+        while (\strlen($digits) < 2 && null !== ($char = $this->cursor->peek()) && ctype_xdigit($char)) {
+            $digits .= $char;
+            $this->cursor->skip();
+        }
+
+        return \intval($digits, 16);
     }
 
     /**
@@ -236,13 +244,13 @@ final readonly class ClassParser
      */
     private function posix(): array
     {
-        if (1 !== preg_match('/^:(\^?)([a-z]+):\]/', $this->cursor->ahead(12), $match) || !isset(self::POSIX[$match[2]])) {
-            throw new UnsupportedPattern(\sprintf('The POSIX class "[%s]" is not supported.', explode(']', $this->cursor->ahead(12))[0]));
+        if (1 !== preg_match('/^:(\^?)([a-z]+):\]/', $this->cursor->ahead(self::POSIX_LENGTH), $match) || !isset(self::POSIX[$match[2]])) {
+            throw new UnsupportedPattern(\sprintf('The POSIX class "[%s]" is not supported.', explode(']', $this->cursor->ahead(self::POSIX_LENGTH))[0]));
         }
 
         $this->cursor->skip(\strlen($match[0]));
 
-        return '^' === $match[1] ? $this->complement(self::POSIX[$match[2]], false) : self::POSIX[$match[2]];
+        return '^' === $match[1] ? $this->complement(self::POSIX[$match[2]], $this->cursor->caseless) : self::POSIX[$match[2]];
     }
 
     /**
@@ -257,7 +265,7 @@ final readonly class ClassParser
         $outside = [];
 
         for ($code = self::FIRST; $code <= self::LAST; ++$code) {
-            $variants = $caseless ? [$code, \ord(strtolower(\chr($code))[0]), \ord(strtoupper(\chr($code))[0])] : [$code];
+            $variants = $caseless && ctype_alpha(\chr($code)) ? [$code, $code ^ 0x20] : [$code];
 
             if (!$this->inside($variants, $ranges)) {
                 $outside[] = [$code, $code];

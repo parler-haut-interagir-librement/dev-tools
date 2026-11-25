@@ -33,6 +33,7 @@ final class ArrayMergeInLoopRuleTest extends RuleTestCase
             [$this->message('array_merge', '$all'), 36, self::TIP],
             [$this->message('array_merge', '$all'), 43, self::TIP],
             [$this->message('array_merge', '$all'), 47, self::TIP],
+            [$this->message('array_merge', '$all'), 64, self::TIP],
         ]);
     }
 

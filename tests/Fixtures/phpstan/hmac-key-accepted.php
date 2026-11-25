@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Phil\DevTools\Tests\Fixtures\PhpStan;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 final class AcceptedSigner
 {
     private string $key;
@@ -38,5 +40,22 @@ final class AcceptedSigner
     public function callable(): \Closure
     {
         return hash_hmac(...);
+    }
+
+    /**
+     * @param callable(string, string, string): string $callback
+     * @param list<string>                             $secret
+     */
+    public function odd(string $data, callable $callback, ContainerInterface $container, string $name, array $secret): string
+    {
+        return hash_hmac('sha256', $data, ...$secret)
+            .$callback('sha256', $data, 'x')
+            .hash_hmac('sha256', $data, '%kernel.secret')
+            .hash_hmac('sha256', $data, 'kernel.secret%')
+            .hash_hmac('sha256', $data, $data.$data)
+            .hash_hmac('sha256', $data, ContainerInterface::getParameter('kernel.secret'))
+            .hash_hmac('sha256', $data, getParameter('kernel.secret'))
+            .hash_hmac('sha256', $data, (string) $container->getParameter('kernel.project_dir'))
+            .hash_hmac('sha256', $data, (string) $container->getParameter($name));
     }
 }

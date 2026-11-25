@@ -32,6 +32,7 @@ final class InheritedPropertyRedeclarationRuleTest extends RuleTestCase
             [$this->message('count', 'static'), 27, self::TIP],
             [$this->message('own', 'private'), 29, self::TIP],
             [$this->message('label', 'private'), 31, self::TIP],
+            [$this->message('x', 'private', 'ShadowMiddle', 'ShadowBase'), 48, self::TIP],
         ]);
     }
 
@@ -46,9 +47,9 @@ final class InheritedPropertyRedeclarationRuleTest extends RuleTestCase
         self::assertSame('phil.propertyRedeclaration', InheritedPropertyRedeclarationRule::IDENTIFIER);
     }
 
-    private function message(string $property, string $kind): string
+    private function message(string $property, string $kind, string $child = 'RefusedChild', string $parent = 'RefusedBase'): string
     {
-        return \sprintf('Property %sRefusedChild::$%s declares again the %s property %sRefusedBase::$%s: the two are distinct, and the parent never sees this one.', self::FIXTURES, $property, $kind, self::FIXTURES, $property);
+        return \sprintf('Property %s%s::$%s declares again the %s property %s%s::$%s: the two are distinct, and the parent never sees this one.', self::FIXTURES, $child, $property, $kind, self::FIXTURES, $parent, $property);
     }
 
     #[Override]

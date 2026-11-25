@@ -58,11 +58,11 @@ final class ConfigurationTreeReader
         $depth = 0;
 
         foreach ($tokens as $i => $token) {
-            $depth += match ($token->text) {
-                '(' => 1,
-                ')' => -1,
-                default => 0,
-            };
+            if ('(' === $token->text) {
+                ++$depth;
+            } elseif (')' === $token->text) {
+                --$depth;
+            }
 
             if (0 === $depth && (';' === $token->text || '}' === $token->text)) {
                 $this->closeAll();
@@ -88,16 +88,20 @@ final class ConfigurationTreeReader
         if (isset(self::LEAVES[$method]) || isset(self::NODES[$method])) {
             $name = true === ($tokens[$argument] ?? null)?->is(\T_CONSTANT_ENCAPSED_STRING) ? RecipeReader::normalize($tokens[$argument]->text) : '*';
             $this->frames[] = new TreeFrame(isset(self::LEAVES[$method]) ? TreeFrameKind::Leaf : TreeFrameKind::Node, $name);
-
-            return;
-        }
-
-        if (isset(self::BUILDERS[$method]) || str_ends_with($method, 'prototype')) {
+        } elseif (isset(self::BUILDERS[$method]) || str_ends_with($method, 'prototype')) {
             $this->frames[] = new TreeFrame(isset(self::BUILDERS[$method]) ? TreeFrameKind::Builder : TreeFrameKind::Prototype);
-
-            return;
+        } else {
+            $this->configure($method, $tokens, $argument);
         }
+    }
 
+    /**
+     * A call that ends the builder on top, or sets what it holds.
+     *
+     * @param list<PhpToken> $tokens
+     */
+    private function configure(string $method, array $tokens, int $argument): void
+    {
         $frame = $this->frames[\count($this->frames) - 1] ?? null;
 
         if (!$frame instanceof TreeFrame) {

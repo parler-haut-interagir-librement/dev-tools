@@ -18,5 +18,8 @@ function refusedChains(HookedOrder $order, ?HookedOrder $maybe, int $amount): vo
     $f = $order->total = $amount;
     $g = $maybe->total = $amount;
     $h = $i = $order->total = $amount;
-    unset($a, $b, $c, $d, $e, $f, $g, $h, $i);
+    $j = $k = $l = $m = new \ArrayObject();
+    $n = $o = $p = $order->total = $amount;
+    $q = $order->total = $r = $amount;
+    unset($a, $b, $c, $d, $e, $f, $g, $h, $i, $j, $k, $l, $m, $n, $o, $p, $q, $r);
 }
