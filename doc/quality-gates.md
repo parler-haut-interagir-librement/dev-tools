@@ -21,6 +21,7 @@ in it when it is reliable and fast enough for every batch; the slower checks are
 | The prose of the documentation, the hotspots | `docs:lint`, `hotspots` | their own scripts: see [The monorepo workflow](workflow.md) |
 | The file set and the links of the documentation | `docs` | its own script and the hooks: see [The package skeleton](skeleton.md#the-documentation-checks) |
 | The French mirror of the documentation | `docs:translations` | its own script and the hooks: see [below](#the-french-mirror-of-the-documentation) |
+| The conventions of a bundle configuration | `conventions` | its own script, warnings only, and `check-packages`: see [Commands](commands.md#check-config) |
 
 The root's `phil-dev.php` turns off one of the gates `audit`, `unused`, `normalize`, `twig`, `js`, `apps` and `lsp` with
 `'gates' => ['<name>' => false]`: the gate then says it is off and passes. The fast gates also run on the staged files
@@ -116,8 +117,9 @@ every set. An interface stays where its code reads it best, beside its adapters 
 picks one. An exception a `phil-dev.php` still declares for `symplify.requiredInterfaceContractNamespace` matches
 nothing and fails nothing: the generated configuration gives it `reportUnmatched: false`, until the package drops it.
 
-`config/phpstan.neon` loads the rule of this package on the calls to a PSR-3 logger, described
-[below](#a-log-message-is-a-constant-with-placeholders).
+`config/phpstan.neon` loads the rules of this package described below: the calls to a PSR-3 logger, the phantom types
+of a Doctrine mapping, the application secret as an HMAC key, the chained assignments, the private or static properties
+declared again, and an array merged into itself in a loop.
 
 `config/phpstan-symfony-ux.php` adds the rule of this package on the names of components, then the rules of
 `kocal/phpstan-symfony-ux`, one by one, so that a new rule of that package is a decision. They look at a class only
@@ -213,6 +215,64 @@ the reason on the line above, and never as a `@phpstan-ignore` comment:
 The witnesses `tests/Witnesses/PhpStan/LogMessage.php` and `LogContext.php` prove that the shared configuration still
 loads the rule.
 
+### A Doctrine mapping keeps clear of the phantom types
+
+`DoctrineMappingTypeRule` reads the Doctrine attributes of each class as written, without loading them:
+
+| Identifier | Reported |
+|---|---|
+| `phil.doctrineMutableDate` | A `#[Column]` typed `date`, `datetime`, `datetimetz` or `time`, by name or by `Types::DATE_MUTABLE`, `DATETIME_MUTABLE`, `DATETIMETZ_MUTABLE` or `TIME_MUTABLE`; a property typed `\DateTime`, declared or promoted, of an entity, an embeddable or a mapped superclass, or carrying a mapping attribute. |
+| `phil.doctrineDecimal` | A `#[Column]` typed `decimal`, by name or by `Types::DECIMAL`. |
+
+Doctrine tells a change by comparing the value it loaded with the value it finds: a `\DateTime` changed in place is
+the same object, the change is never written, and an entity that shares the instance changes another behind its back.
+A `decimal` column comes back as a string, which the first arithmetic turns into a float and its rounding. The forms
+that hold are the immutable date types with `\DateTimeImmutable`, and an integer of minor units or a string column the
+domain parses. The witnesses are `DoctrineMutableDate.php` and `DoctrineDecimal.php`.
+
+### The application secret is never an HMAC key as it is
+
+`HmacSecretKeyRule` looks at the key of `hash_hmac()`, `hash_hmac_file()`, `hash_init()`, `sodium_crypto_auth()`,
+`sodium_crypto_auth_verify()` and `sodium_crypto_generichash()`, and reports `phil.hmacSecretKey` when the key is the
+application secret as given: the literal `%kernel.secret%`, `getParameter('kernel.secret')`, or a variable, a property
+or an array key named `secret`, `kernelSecret`, `appSecret` or `applicationSecret` — the names under which a bundle
+receives `%kernel.secret%`.
+
+Two bundles that key their digests with the same secret make digests that match: a pseudonym made by one recognises
+the person behind a pseudonym made by the other, and a signature made for one purpose passes for another. Each use
+derives its own key, under a label of its own:
+
+```php
+$this->key = hash_hkdf('sha256', $secret, 32, 'phil_forms.email_digest');
+
+return hash_hmac('sha256', $email, $this->key);
+```
+
+A key that is not the application's, such as the seed of a TOTP or the shared secret of a webhook provider, is named
+after what it is (`$seed`, `$signingKey`). The witness is `HmacSecretKey.php`.
+
+### A chained assignment shares nothing
+
+`ChainedAssignmentRule` reports `phil.chainedAssignment` on the outer assignment of a chain whose value is a `new`, as in
+`$a = $b = new Cart()`, which gives both targets one object, or which writes a property with a `set` hook, as in
+`$total = $order->total = $amount`, which gives `$total` the value written rather than the value the hook stored. One
+assignment per target says what is meant. The witness is `ChainedAssignment.php`.
+
+### A private or static property is not declared again
+
+`InheritedPropertyRedeclarationRule` reports `phil.propertyRedeclaration` on a property, declared or promoted, that a
+parent declares `private` or `static`. Neither is replaced: a private property declared again is a second property the
+parent's methods never see, a static one a second value that `self::` in the parent and `static::` in the child read
+apart. The witness is `PropertyRedeclaration.php`.
+
+### An array is not merged into itself in a loop
+
+`ArrayMergeInLoopRule` reports `phil.arrayMergeInLoop` on `$all = array_merge($all, $part)`, or
+`array_merge_recursive()`, in a `for`, `foreach`, `while` or `do`: each turn copies the whole array, and n parts cost
+n² copies. The parts are collected and merged once after the loop, `array_merge(...$parts)`, or appended with `[]=`. A
+closure or a function inside the loop is not looked at, since the loop does not run it. The witness is
+`ArrayMergeInLoop.php`.
+
 ### The rules of `kocal/phpstan-symfony-ux`
 
 | On | The rules check |
@@ -238,20 +298,26 @@ non-timing-safe calls — and these, each with its identifier:
 | `phil.serialize` | `serialize()` | yes |
 | `phil.dump` | `var_dump()`, `print_r()`, `var_export()`, `dd()`, `dump()` | yes |
 | `phil.weakRandom` | `uniqid()`, `rand()`, `mt_rand()`, `shuffle()`, `array_rand()` | no |
+| `phil.parseUrl` | `parse_url()` and `FILTER_VALIDATE_URL`: an address is parsed and validated by `phil/url`, on the WHATWG URL standard browsers follow | yes |
+| `phil.processState` | `setlocale()`, `putenv()`, `date_default_timezone_set()`: what they set outlives the request in a worker; the locale goes to the intl formatters, the time zone to the date | yes |
 | `phil.componentDispatcher` | the component's `EventDispatcherInterface` | no |
 
 A **witness** is a file under `tests/Witnesses/PhpStan` that must fail: its docblock announces the identifier that
 stops it, in backticks after `Expected identifier:`. `phil-dev witnesses` fails when PHPStan no longer reports that identifier
-in that file, so that a rule that went silent fails the gate. The witnesses sit beside the test suites, which are
-allowed by name (`tests/Unit`, `tests/Integration`, `tests/Functional`, `tests/Support`, `tests/Fixtures`), so that they
-stay under every rule.
+in that file, so that a rule that went silent fails the gate. A witness that announces `none` is the other half: what the
+rules must accept, such as `filter_var($email, FILTER_VALIDATE_EMAIL)` or a key derived by `hash_hkdf()`; it fails when
+PHPStan reports anything there, so that a rule grown too wide fails too. The witnesses sit beside the test suites, which
+are allowed by name (`tests/Unit`, `tests/Integration`, `tests/Functional`, `tests/Support`, `tests/Fixtures`), so that
+they stay under every rule. The rules of this package have their accepted and refused fixtures under
+`tests/Fixtures/phpstan`, read by their unit tests.
 
 ## Rector
 
 The PHP sets read from `composer.json`, the Symfony, Doctrine and PHPUnit sets of the installed versions, and the
 prepared sets, without a version number written anywhere. It skips, in `Domain` layers, the rules that would bring
 Doctrine collections or DBAL constants in or make an entity `readonly`, and three rules whose choice the packages make
-the other way.
+the other way. Rector 2.8.6 or later reports, at the end of the run, each skip that matched nothing
+(`reportUnusedSkips()`): a package's `rector.skip` sheds the exceptions it no longer needs. The report fails nothing.
 
 ## Deptrac and Arkitect
 
@@ -313,8 +379,9 @@ return [
 ## PHPUnit
 
 `Unit` runs without a kernel or a server; `Integration` boots a kernel or talks to a real server, and is skipped
-without one — or replays its recordings, see [HTTP recordings](http-recordings.md). Deprecations, notices and warnings
-fail the run, on every PHP of the matrix.
+without one — or replays its recordings, see [HTTP recordings](http-recordings.md). Deprecations, notices, warnings and
+risky tests fail the run, on every PHP of the matrix (`failOnRisky`): a test that asserts nothing, prints, or leaves an
+error or exception handler behind.
 
 `phil-dev test` runs the suites with ParaTest, one process per core. Every test names what it covers, with
 `#[CoversClass]` or `#[CoversNothing]` (`requireCoverageMetadata`): coverage counts only what a test sets out to test,

@@ -1,0 +1,14 @@
+# The recipe of the example.
+phil_sample:
+    title: 'Status'   # the default
+    limit: 25
+    enabled: true
+    connection: ~
+    token: '%env(TOKEN)%'
+    mail:
+        sender: "no-reply@example.com"
+        ratio: 0.5
+    limiters: { api: { policy: fixed } }
+    mode: a
+other_key:
+    title: Status

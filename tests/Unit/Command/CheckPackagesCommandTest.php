@@ -127,6 +127,24 @@ final class CheckPackagesCommandTest extends CommandTestCase
         );
     }
 
+    public function testABundleConfigurationThatStraysIsAWarning(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug-bundle/README.md', "# phil/slug-bundle\n\n".SecurityFiles::badge('o', 'slug-bundle')."\n");
+        $this->put($root.'/packages/slug-bundle/SECURITY.md', '# Security Policy');
+        $this->put($root.'/packages/slug-bundle/src/PhilSlugBundle.php', "<?php\n// DefinitionConfigurator\n\$root->children()->scalarNode('separator')->end();\n");
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(0, $tester->execute(['packages' => ['slug-bundle']]));
+        self::assertSame(
+            "== phil/slug-bundle\n"
+            ."   warning: option \"separator\" has no default: give it one, or declare it isRequired().\n"
+            ."   warning: option \"separator\" is not named in doc/ nor in README.md: document it with its default.\n"
+            ."Every package installs and passes on its own.\n",
+            $tester->getDisplay(),
+        );
+    }
+
     public function testAnArchiveThatLeavesOutTheTestsFailsThePackage(): void
     {
         $root = $this->fixture('monorepo');

@@ -1,0 +1,8 @@
+{
+    "name": "phil/taint-sql-fixture",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}

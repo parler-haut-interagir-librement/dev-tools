@@ -7,6 +7,7 @@ namespace Phil\DevTools\Console;
 use Phil\DevTools\Command\AuditCommand;
 use Phil\DevTools\Command\BcCommand;
 use Phil\DevTools\Command\BenchCommand;
+use Phil\DevTools\Command\CheckConfigCommand;
 use Phil\DevTools\Command\CheckDocsCommand;
 use Phil\DevTools\Command\CheckPackagesCommand;
 use Phil\DevTools\Command\CheckTranslationsCommand;
@@ -57,6 +58,7 @@ final class Application extends Console
             new CheckTranslationsCommand($root, $runner),
             new StampTranslationsCommand($root, $runner),
             new CheckPackagesCommand($root, $runner),
+            new CheckConfigCommand($root, $runner),
             new InfectionCommand($root, $runner),
             new DeptracCommand($root, $runner),
             new WitnessesCommand($root, $runner),

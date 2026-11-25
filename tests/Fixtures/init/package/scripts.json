@@ -40,6 +40,7 @@
         "docs": "@php @bin@ check-docs",
         "docs:lint": "@php @bin@ lint-docs",
         "docs:translations": "@php @bin@ check-translations",
+        "conventions": "@php @bin@ check-config",
         "lint:apps": "@php @bin@ lint-apps",
         "lsp": "@php @bin@ lsp",
         "hooks": "vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json",
@@ -89,6 +90,7 @@
         "hotspots": "The files that change most and are the most complex, with churn-php.",
         "docs:lint": "The prose of the documentation, with cspell, markdownlint and Vale; a script of its own.",
         "docs:translations": "The French mirror of the documentation of each package, blocking or advisory by docs.translations.",
+        "conventions": "The conventions of each bundle configuration: root key, documented defaults, a recipe without the defaults; warnings.",
         "lint:apps": "The container, the expressions and the YAML of each functional test application, through its own console.",
         "lsp": "The diagnostics of Symfony Language Tools on each Symfony application, every code blocking.",
         "hooks": "Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit."

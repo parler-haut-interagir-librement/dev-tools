@@ -38,6 +38,27 @@ final class WitnessCheckerTest extends TestCase
         ], new WitnessChecker()->check([$dir.'/Stopped.php', $dir.'/French.php', $dir.'/Mute.php', $dir.'/Silent.php', $dir.'/Empty.php'], $report));
     }
 
+    public function testAWitnessThatAnnouncesNoneMustPass(): void
+    {
+        $dir = $this->temporaryDirectory();
+        $this->put($dir.'/Clean.php', "<?php\n/** Expected identifier: `none` */");
+        $this->put($dir.'/Absent.php', "<?php\n/** Expected identifier: `none` */");
+        $this->put($dir.'/Wide.php', "<?php\n/** Expected identifier: `none` */");
+        $this->put($dir.'/Unnamed.php', "<?php\n/** Expected identifier: `none` */");
+
+        $report = json_encode(['files' => [
+            $dir.'/Clean.php' => ['messages' => []],
+            $dir.'/Wide.php' => ['messages' => [['identifier' => 'phil.parseUrl'], ['identifier' => 'phil.parseUrl'], ['identifier' => 'phil.dump']]],
+            $dir.'/Unnamed.php' => ['messages' => [['message' => 'no identifier']]],
+        ]], \JSON_THROW_ON_ERROR);
+
+        self::assertSame('none', WitnessChecker::NONE);
+        self::assertSame([
+            $dir.'/Wide.php must pass, and PHPStan reports `phil.parseUrl`, `phil.dump` there; a rule is too wide.',
+            $dir.'/Unnamed.php must pass, and PHPStan reports an error there; a rule is too wide.',
+        ], new WitnessChecker()->check([$dir.'/Clean.php', $dir.'/Absent.php', $dir.'/Wide.php', $dir.'/Unnamed.php'], $report));
+    }
+
     public function testTheReportIsReadByTheRealPathToo(): void
     {
         $dir = $this->temporaryDirectory();

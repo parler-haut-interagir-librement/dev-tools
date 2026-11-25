@@ -13,9 +13,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: 'witnesses', description: 'Checks that PHPStan still reports each forbidden call in its witness', help: <<<'TXT'
-    Runs PHPStan on the tests/Witnesses/PhpStan directory of each package with the forbidden calls only, and
-    passes when each witness is stopped by the rule its docblock announces ("Expected identifier: `…`"). A
-    workspace without witnesses passes.
+    Runs PHPStan on the tests/Witnesses/PhpStan directory of each package with the forbidden calls and the rules
+    of phil/dev-tools only, and passes when each witness is stopped by the rule its docblock announces
+    ("Expected identifier: `…`"), and when nothing is reported in a witness that announces `none`. A workspace
+    without witnesses passes.
     TXT)]
 final class WitnessesCommand extends WorkspaceCommand
 {

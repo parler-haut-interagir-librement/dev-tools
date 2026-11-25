@@ -65,6 +65,9 @@ return static function (string $root): RectorConfigBuilder {
         ->withImportNames(importShortClasses: false)
         ->withCache($root.'/var/rector')
         ->withParallel()
+        // A skip that no longer matches anything is reported at the end of the run, so that each package's
+        // `rector.skip` sheds the exceptions it no longer needs (Rector 2.8.6).
+        ->reportUnusedSkips()
         ->withSkip([
             ...$layered,
 

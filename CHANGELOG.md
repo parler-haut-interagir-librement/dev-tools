@@ -7,7 +7,49 @@ Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, a
 
 ## Unreleased
 
-The next version is 0.1.9-alpha.
+The next version is 0.2.0-alpha: its new rules fail the packages that break them.
+
+### Added
+
+- `phil.parseUrl` in `config/phpstan-disallowed.neon`: `parse_url()` and the constant `FILTER_VALIDATE_URL` are
+  refused, with a message that points to `phil/url` and its WHATWG URL parsing; allowed in the test suites. Its
+  witnesses are `tests/Witnesses/PhpStan/ParseUrl.php` and `FilterValidateUrl.php`.
+- `phil.processState` in `config/phpstan-disallowed.neon`: `setlocale()`, `putenv()` and `date_default_timezone_set()`
+  are refused, since what they set outlives the request in a worker; allowed in the test suites. Its witnesses are
+  `SetLocale.php`, `PutEnv.php` and `DefaultTimezone.php`.
+- `DoctrineMappingTypeRule`, loaded by `config/phpstan.neon`: a Doctrine mapping with a mutable date type
+  (`Types::DATE_MUTABLE`, `DATETIME_MUTABLE`, `DATETIMETZ_MUTABLE`, `TIME_MUTABLE` or their names) or a mapped
+  `\DateTime` property is reported as `phil.doctrineMutableDate`, a `decimal` column as `phil.doctrineDecimal`.
+- `HmacSecretKeyRule`, loaded by `config/phpstan.neon`: the application secret used as it is as the key of
+  `hash_hmac()`, `hash_hmac_file()`, `hash_init()`, `sodium_crypto_auth()`, `sodium_crypto_auth_verify()` or
+  `sodium_crypto_generichash()` — the literal `%kernel.secret%`, `getParameter('kernel.secret')`, or a variable, a
+  property or an array key named `secret`, `kernelSecret`, `appSecret` or `applicationSecret` — is reported as
+  `phil.hmacSecretKey`: each use derives its own key with `hash_hkdf()`.
+- `ChainedAssignmentRule`, loaded by `config/phpstan.neon`: a chained assignment of a `new`, or one that writes a
+  property with a `set` hook, is reported as `phil.chainedAssignment`, once per chain.
+- `InheritedPropertyRedeclarationRule`, loaded by `config/phpstan.neon`: a property, declared or promoted, that a parent
+  declares `private` or `static` is reported as `phil.propertyRedeclaration`.
+- `ArrayMergeInLoopRule`, loaded by `config/phpstan.neon`: `array_merge()` or `array_merge_recursive()` of an array into
+  itself in a `for`, `foreach`, `while` or `do`, outside the closures and functions inside it, is reported as
+  `phil.arrayMergeInLoop`.
+- Each new rule has its witness under `tests/Witnesses/PhpStan` and its accepted and refused fixtures under
+  `tests/Fixtures/phpstan`. A witness whose docblock announces `none` must pass: `phil-dev witnesses` fails when PHPStan
+  reports anything there; `Accepted.php` is the one of this package.
+- `phil-dev check-config [packages…] [--strict]`, and the `conventions` script of `init`: it warns when a bundle's root
+  key is not `<vendor>_<name>`, when an option has no default and is not required, when an option is not named in
+  `doc/*.md` or `README.md`, and when the latest recipe under `recipe/<version>/config/packages/` sets an option to its
+  default. The tree is read from the source without loading it. The warnings fail nothing; `--strict` fails.
+  `check-packages` prints them with its other warnings.
+- `Phil\DevTools\Fuzz\RegexGenerator`: strings a regular expression accepts, drawn with a fixed seed (character
+  classes, POSIX classes, a few Unicode properties, escapes, groups, alternatives, quantifiers, anchors), each checked
+  against the expression; lookarounds, back-references, atomic groups, possessive quantifiers, word boundaries, inline
+  flags and the `x` modifier are refused with `UnsupportedPattern`. It takes rejected cases written by hand and throws
+  `RejectedCaseAccepted` when none is given or one is accepted. It is a fuzz target of this package,
+  `regex-generator`.
+- `phil-dev taint` loads the Doctrine plugin of Psalm when the workspace installs `doctrine/dbal`, `doctrine/orm`,
+  `doctrine/persistence` or `doctrine/collections`, and sets `markAllNonInternalCodeAsApi` and `loadLibraryPlugins`. An
+  integration test proves that a request concatenated into a query is reported as `TaintedSql`, and a stored value
+  printed back unescaped as `TaintedHtml`.
 
 ### Changed
 
@@ -15,6 +57,13 @@ The next version is 0.1.9-alpha.
   from `^0.34`. The generated `var/phil-dev/infection.json` is unchanged and valid against the 0.35 schema, and
   `--threads=max` starts one process per core but one. An argument given after `--` that is not a readable path, such
   as `Differ::diff`, reaches Infection as a source symbol selector.
+- `vendor-bin/psalm` and the one `init` writes require `vimeo/psalm` `^7.15`, which follows SQL from what a query
+  stores to what another reads back.
+- `vendor-bin/rector` and the one `init` writes require `rector/rector` `^2.8.6`; `config/rector.php` calls
+  `reportUnusedSkips()`, which lists, at the end of a run, the skips that matched nothing, without failing it.
+- The `phpunit.dist.xml` that `init` writes, and this package's, set `failOnRisky="true"`: a risky test fails the run.
+- `ext-ctype` is required: the regex generator reads character classes with `ctype_alnum()`, `ctype_alpha()` and
+  `ctype_xdigit()`.
 
 ### Fixed
 

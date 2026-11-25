@@ -1,0 +1,9 @@
+{
+    "name": "tilttek/sample-bundle",
+    "type": "symfony-bundle",
+    "autoload": {
+        "psr-4": {
+            "Tilttek\\SampleBundle\\": "src/"
+        }
+    }
+}

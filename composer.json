@@ -21,6 +21,7 @@
     "homepage": "https://ph-il.ca",
     "require": {
         "php": ">=8.5",
+        "ext-ctype": "*",
         "ext-dom": "*",
         "ext-libxml": "*",
         "ext-mbstring": "*",
@@ -80,6 +81,7 @@
         "bench:baseline": "@php bin/phil-dev bench --baseline",
         "bench:compare": "@php bin/phil-dev bench --compare",
         "bench:worker": "@php bin/phil-dev bench:worker",
+        "conventions": "@php bin/phil-dev check-config",
         "cs": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer check --diff",
         "cs:fix": "vendor-bin/php-cs-fixer/vendor/bin/php-cs-fixer fix",
         "deps": "vendor/bin/composer-dependency-analyser",
@@ -138,6 +140,7 @@
         "bench:baseline": "The benchmarks, stored as the baseline of this machine.",
         "bench:compare": "The benchmarks against the baseline, failing above the threshold of bench.threshold.",
         "bench:worker": "A page served by FrankenPHP in worker mode, measured.",
+        "conventions": "The conventions of each bundle configuration: root key, documented defaults, a recipe without the defaults; warnings.",
         "deps:audit": "The installed packages against the security advisories.",
         "deps:normalize": "Every composer.json checked against composer-normalize.",
         "deps:normalize:fix": "Every composer.json normalized.",

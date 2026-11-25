@@ -113,6 +113,14 @@ final readonly class Package
     }
 
     /**
+     * The path of a file or directory of the package, relative to it, from its absolute path.
+     */
+    public function relativePath(string $absolute): string
+    {
+        return substr($absolute, \strlen($this->dir) + 1);
+    }
+
+    /**
      * The paths the tools read — directories and files — absolute, those that exist: the manifest's `paths`, or `src`
      * and `tests`.
      *

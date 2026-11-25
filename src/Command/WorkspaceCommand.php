@@ -47,7 +47,7 @@ abstract class WorkspaceCommand extends Command
     {
         if (true === $input->getOption('skip-planned')) {
             // The tools the command starts — PHPStan, Rector, PHPUnit — read the variable through their configurations.
-            putenv(Workspace::SKIP_PLANNED_VARIABLE.'=1'); // @phpstan-ignore disallowed.function
+            putenv(Workspace::SKIP_PLANNED_VARIABLE.'=1'); // @phpstan-ignore phil.processState
         }
 
         if (!Workspace::skipPlannedFromEnvironment()) {
