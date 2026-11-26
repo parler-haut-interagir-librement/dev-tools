@@ -43,7 +43,7 @@
         "conventions": "@php @bin@ check-config",
         "lint:apps": "@php @bin@ lint-apps",
         "lsp": "@php @bin@ lsp",
-        "hooks": "vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json",
+        "hooks": "@php @bin@ hooks",
         "gates": [
             "@deps",
             "@deps:audit",
@@ -93,6 +93,6 @@
         "conventions": "The conventions of each bundle configuration: root key, documented defaults, a recipe without the defaults; warnings.",
         "lint:apps": "The container, the expressions and the YAML of each functional test application, through its own console.",
         "lsp": "The diagnostics of Symfony Language Tools on each Symfony application, every code blocking.",
-        "hooks": "Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit."
+        "hooks": "Installs the git hooks of captainhook.json in the git directory the worktrees share, once the checkout has the tools they call."
     }
 }

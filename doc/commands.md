@@ -19,6 +19,7 @@
 | `generate` | Writes the generated Deptrac, Infection, Psalm, Biome and churn-php configurations under `var/phil-dev/`. |
 | `test [--suite=NAME] [-- arguments]` | Runs the tests with ParaTest, or PHPUnit when ParaTest is missing. |
 | `staged <php-cs-fixer\|phpstan\|twig-cs-fixer> [--in-dir=DIR…]` | Runs a fast gate on the staged files, for the pre-commit hook. |
+| `hooks [--check]` | Installs the git hooks of `captainhook.json` in the git directory the worktrees share, or checks that the checkout has the tools they call. |
 | `audit` | Checks the installed packages against the security advisories. |
 | `unused` | Finds the required packages the code never uses. |
 | `normalize [--fix]` | Checks, or fixes, that every `composer.json` is normalized. |
@@ -216,6 +217,16 @@ keeps those under a directory. Nothing staged of the type passes. The names are 
 handed to the tool as arguments of their own, after `--`, never through a shell: see
 [The monorepo workflow](workflow.md#the-hooks). PHPStan given only files its configuration excludes says
 `No files found to analyse.` and fails; `staged phpstan` passes then.
+
+## hooks
+
+`hooks` installs the git hooks of `captainhook.json` with CaptainHook's `install --force`, its `--git-directory` set
+to the directory `git rev-parse --git-common-dir` names: the hooks land in the repository the clone and its worktrees
+share, from any of them. It first checks that the checkout has CaptainHook — at `config.run.path`, by default
+`vendor-bin/captainhook/vendor/bin/captainhook` — and the tool under `vendor-bin/` of each action that runs
+`staged <tool>`, and fails naming the `composer bin <tool> install` of each one missing. `--check` stops after that
+check. A missing or malformed `captainhook.json` fails. See
+[The monorepo workflow](workflow.md#hooks-and-worktrees).
 
 ## audit, unused, normalize, twig, js
 

@@ -28,6 +28,18 @@ use Phil\DevTools\Workspace\Workspace;
  * requires; its infrastructure and its bundle class see everything, `require-dev` and `Forbidden` included: they
  * integrate. A manifest replaces the layers of its package with `deptrac.layers` and the rules of a layer with
  * `deptrac.ruleset`.
+ *
+ * A bundle with an `Integration` directory beside its `Domain` — or whose manifest sets `deptrac.integrations` — keeps
+ * the code that touches the packages it only suggests in `<Name>Integration`:
+ *
+ * - each package of its `suggest` that it does not require becomes visible to that layer and to the bundle class only:
+ *   a known package through its own layers, an installed one through a `Suggested…` layer named after its namespace,
+ *   read from `vendor/<name>/composer.json`; a namespace the default or an `allow` already covers stays there;
+ * - its domain, application and infrastructure see neither the integration nor those packages, even those of
+ *   `require-dev`;
+ * - only its bundle class sees the integration, which no other package sees;
+ * - every other layer that sees `Forbidden` sees the `Suggested…` layers too, the rest of the world they were taken
+ *   from.
  */
 final readonly class DeptracConfig
 {
@@ -43,8 +55,11 @@ final readonly class DeptracConfig
         '^Psr\\\\.*',
     ];
 
+    private Integrations $integrations;
+
     public function __construct(private Workspace $workspace)
     {
+        $this->integrations = new Integrations($workspace);
     }
 
     /**
@@ -66,10 +81,13 @@ final readonly class DeptracConfig
         }
 
         $allowed = $this->allowedLayers($default);
+        $covering = [...$default, ...array_merge(...array_values($allowed))];
+        $suggested = $this->suggestedLayers($layers, $covering);
+
         $lookaheads = '';
         $generated = [];
 
-        foreach ([...$layers, self::DEFAULT => $default, ...$allowed] as $name => $regexes) {
+        foreach ([...$layers, self::DEFAULT => $default, ...$allowed, ...$suggested] as $name => $regexes) {
             $generated[] = ['name' => $name, 'collectors' => $this->collectors($regexes)];
 
             foreach ($regexes as $regex) {
@@ -81,19 +99,15 @@ final readonly class DeptracConfig
         // `Random\` is left out for the same reason: the classes of the `random` extension are internal.
         $generated[] = ['name' => self::FORBIDDEN, 'collectors' => $this->collectors(['^'.$lookaheads.'(?!Random\\\\)[^\\\\]+\\\\.+'])];
 
+        $known = [...$layers, self::DEFAULT => [], self::FORBIDDEN => [], ...$allowed, ...$suggested];
         $ruleset = [];
 
         foreach ($this->workspace->known() as $package) {
-            foreach ($this->rulesOf($package, $allowed) as $name => $visible) {
-                $kept = [];
-
-                foreach ($visible as $other) {
-                    if ($other !== $name && !\in_array($other, $kept, true) && (isset($layers[$other]) || isset($allowed[$other]) || self::DEFAULT === $other || self::FORBIDDEN === $other)) {
-                        $kept[] = $other;
-                    }
-                }
-
-                $ruleset[$name] = $kept;
+            foreach ($this->rulesOf($package, $allowed, $suggested, $covering) as $name => $visible) {
+                $ruleset[$name] = array_values(array_unique(array_filter(
+                    $visible,
+                    static fn (string $other): bool => $other !== $name && isset($known[$other]),
+                )));
             }
         }
 
@@ -140,6 +154,29 @@ final readonly class DeptracConfig
         }
 
         return 'Allowed'.$position;
+    }
+
+    /**
+     * The `Suggested…` layers of every package that integrates, each once, but a name a package already declares.
+     *
+     * @param array<string, list<string>> $layers
+     * @param list<string>                $covering
+     *
+     * @return array<string, list<string>>
+     */
+    private function suggestedLayers(array $layers, array $covering): array
+    {
+        $suggested = [];
+
+        foreach ($this->workspace->known() as $package) {
+            foreach ($this->integrations->suggested($package, $covering) as $name => $regex) {
+                if (!isset($layers[$name])) {
+                    $suggested[$name] = [$regex];
+                }
+            }
+        }
+
+        return $suggested;
     }
 
     /**
@@ -224,6 +261,11 @@ final readonly class DeptracConfig
             $layers[] = new Layer($name.'Domain', ['^'.$quoted.'\\\\Domain\\\\.*'], LayerKind::Domain);
             $layers[] = new Layer($name.'Application', ['^'.$quoted.'\\\\Application\\\\.*'], LayerKind::Application);
             $layers[] = new Layer($name.'Infrastructure', ['^'.$quoted.'\\\\Infrastructure\\\\.*'], LayerKind::Infrastructure);
+
+            if ($this->integrations->integrates($package)) {
+                $layers[] = new Layer($name.Integrations::DIRECTORY, ['^'.$quoted.'\\\\'.Integrations::DIRECTORY.'\\\\.*'], LayerKind::Integration);
+            }
+
             $layers[] = new Layer($name, ['^'.$quoted.'\\\\[^\\\\]+$'], LayerKind::Bundle);
         }
 
@@ -258,13 +300,19 @@ final readonly class DeptracConfig
     /**
      * The rules of each layer of a package: the defaults, replaced layer by layer by the manifest's `deptrac.ruleset`.
      *
+     * Every rule that sees `Forbidden` also sees the `Suggested…` layers of the other packages; the integration and
+     * the bundle class of a package that integrates see its own suggested packages as well.
+     *
      * @param array<string, list<string>> $allowed
+     * @param array<string, list<string>> $suggested the `Suggested…` layers of every package
+     * @param list<string>                $covering  the regular expressions of the default and of every `allow`
      *
      * @return array<string, list<string>>
      */
-    private function rulesOf(Package $package, array $allowed): array
+    private function rulesOf(Package $package, array $allowed, array $suggested, array $covering): array
     {
-        $rules = $this->defaultRulesOf($package, $this->allowedOf($package, $allowed));
+        $integrated = $this->integratedOf($package, $covering);
+        $rules = $this->defaultRulesOf($package, $this->allowedOf($package, $allowed), $integrated);
 
         foreach ($package->manifest->map('deptrac', 'ruleset') as $layer => $visible) {
             if (!\is_string($layer) || !\is_array($visible) || [] !== array_filter($visible, static fn (mixed $name): bool => !\is_string($name))) {
@@ -275,18 +323,69 @@ final readonly class DeptracConfig
             $rules[$layer] = $visible;
         }
 
+        $integrating = [];
+
+        foreach ($this->layersOf($package) as $layer) {
+            if (LayerKind::Integration === $layer->kind || (LayerKind::Bundle === $layer->kind && [] !== $integrated)) {
+                $integrating[] = $layer->name;
+            }
+        }
+
+        $others = array_diff(array_keys($suggested), $integrated);
+
+        foreach ($rules as $layer => $visible) {
+            if (\in_array(self::FORBIDDEN, $visible, true)) {
+                $rules[$layer] = [...$visible, ...$others, ...\in_array($layer, $integrating, true) ? $integrated : []];
+            }
+        }
+
         return $rules;
     }
 
     /**
-     * @param list<string> $allowed the layers of the dependencies the package is allowed besides the default
+     * The layers only the integration and the bundle class of a package see: those of the known packages it suggests
+     * without requiring them, and its `Suggested…` layers.
+     *
+     * @param list<string> $covering
+     *
+     * @return list<string>
+     */
+    private function integratedOf(Package $package, array $covering): array
+    {
+        if (!$this->integrations->integrates($package)) {
+            return [];
+        }
+
+        $names = [];
+
+        foreach ($package->suggests as $name) {
+            $dependency = $this->workspace->byName($name);
+
+            if ($dependency instanceof Package && !\in_array($name, $package->requires, true)) {
+                foreach ($this->layersOf($dependency) as $layer) {
+                    if ($layer->seenByOthers()) {
+                        $names[] = $layer->name;
+                    }
+                }
+            }
+        }
+
+        return [...$names, ...array_keys($this->integrations->suggested($package, $covering))];
+    }
+
+    /**
+     * @param list<string> $allowed    the layers of the dependencies the package is allowed besides the default
+     * @param list<string> $integrated the layers only its integration and its bundle class see
      *
      * @return array<string, list<string>>
      */
-    private function defaultRulesOf(Package $package, array $allowed): array
+    private function defaultRulesOf(Package $package, array $allowed, array $integrated): array
     {
         $required = $this->layersOfDependencies($package->requires);
-        $everything = $this->names($this->layersOfDependencies([...$package->requires, ...$package->devRequires]));
+        $everything = array_diff(
+            $this->names(array_filter($this->layersOfDependencies([...$package->requires, ...$package->devRequires]), static fn (Layer $layer): bool => $layer->seenByOthers())),
+            $integrated,
+        );
         $libraries = $this->names(array_filter($required, static fn (Layer $layer): bool => LayerKind::Library === $layer->kind));
         $domains = $this->names(array_filter($required, static fn (Layer $layer): bool => $layer->seenByDomains()));
         $services = $this->names(array_filter($required, static fn (Layer $layer): bool => $layer->seenByApplications()));
@@ -303,7 +402,8 @@ final readonly class DeptracConfig
                 LayerKind::Domain => [self::DEFAULT, ...$allowed, ...$domains],
                 LayerKind::Application => [...$own['Domain'] ?? [], self::DEFAULT, ...$allowed, self::FORBIDDEN, ...$services],
                 LayerKind::Infrastructure => [...$own['Domain'] ?? [], ...$own['Application'] ?? [], self::DEFAULT, ...$allowed, self::FORBIDDEN, ...$everything],
-                LayerKind::Bundle => [...$own['Domain'] ?? [], ...$own['Application'] ?? [], ...$own['Infrastructure'] ?? [], self::DEFAULT, ...$allowed, self::FORBIDDEN, ...$everything],
+                LayerKind::Integration => [...$own['Domain'] ?? [], ...$own['Application'] ?? [], ...$own['Infrastructure'] ?? [], self::DEFAULT, ...$allowed, self::FORBIDDEN, ...$everything],
+                LayerKind::Bundle => [...$own['Domain'] ?? [], ...$own['Application'] ?? [], ...$own['Infrastructure'] ?? [], ...$own['Integration'] ?? [], self::DEFAULT, ...$allowed, self::FORBIDDEN, ...$everything],
             };
         }
 

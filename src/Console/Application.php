@@ -14,6 +14,7 @@ use Phil\DevTools\Command\CheckTranslationsCommand;
 use Phil\DevTools\Command\DeptracCommand;
 use Phil\DevTools\Command\FuzzCommand;
 use Phil\DevTools\Command\GenerateCommand;
+use Phil\DevTools\Command\HooksCommand;
 use Phil\DevTools\Command\HotspotsCommand;
 use Phil\DevTools\Command\InfectionCommand;
 use Phil\DevTools\Command\InitCommand;
@@ -73,6 +74,7 @@ final class Application extends Console
             new UnusedCommand($root, $runner),
             new TwigCommand($root, $runner),
             new StagedCommand($root, $runner),
+            new HooksCommand($root, $runner),
             new LspCommand($root, $runner),
             new TwigStanCommand($root, $runner),
             new JsCommand($root, $runner),

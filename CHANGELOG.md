@@ -24,6 +24,26 @@ The next version is 0.2.1-alpha.
   routes named `_…` are left out by default (`smokeRouteExclusions()`), and a kernel with nothing to request is an
   error. `Testing\SmokeRoutes` makes the list of requests from a route collection. `symfony/framework-bundle`,
   `symfony/browser-kit` and `symfony/routing` are suggested.
+- The optional integrations of a bundle in `phil-dev deptrac`: a bundle with an `Integration` directory, or whose
+  manifest sets `deptrac.integrations`, gets a `<Name>Integration` layer (`LayerKind::Integration`). The packages of
+  its `suggest` that it does not require are visible to that layer and to its bundle class only — a known package
+  through its own layers, an installed one through a `Suggested…` layer per PSR-4 namespace read from
+  `vendor/<name>/composer.json`, taken out of `Forbidden` and seen by every other layer that sees `Forbidden`; its
+  domain, application and infrastructure see neither, `require-dev` included, and no other package sees the
+  integration. A namespace the default or an `allow` covers stays there. `Config\Integrations` decides both;
+  `Package::$suggests` holds the names of `suggest`, `Layer::seenByOthers()` says whether another package may see a
+  layer. See `doc/dependencies.md`.
+- `phil-dev hooks [--check]`: installs the hooks of `captainhook.json` with `--git-directory` set to the git directory
+  the clone and its worktrees share, after checking that the checkout has CaptainHook (`config.run.path`) and the tool
+  under `vendor-bin/` of each `staged <tool>` action, naming the `composer bin <tool> install` of each one missing;
+  `--check` stops after the check. `doc/workflow.md` describes the hooks of a worktree and the `captainhook.json` of a
+  monorepo, which a test keeps equal to the generated one.
+
+### Changed
+
+- The `hooks` script `init` writes runs `phil-dev hooks`, and the Castor task `helpers:hooks` passes CaptainHook the
+  shared git directory: run from a worktree, CaptainHook no longer writes the hooks beside a `.git` file.
+- `Layer::seenByApplications()` is false for an integration. `StagedCommand::TOOLS` is public, for `phil-dev hooks`.
 
 ## 0.2.0-alpha - 2026-11-25
 

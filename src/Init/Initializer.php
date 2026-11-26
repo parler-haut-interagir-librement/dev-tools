@@ -153,7 +153,7 @@ final readonly class Initializer
             'conventions' => $bin.' check-config',
             'lint:apps' => $bin.' lint-apps',
             'lsp' => $bin.' lsp',
-            'hooks' => 'vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json',
+            'hooks' => $bin.' hooks',
             'packages' => $bin.' check-packages',
             'packages:next' => $bin.' php next -- php '.$binary.' check-packages',
             'split' => $bin.' split',
@@ -205,7 +205,7 @@ final readonly class Initializer
             'conventions' => 'The conventions of each bundle configuration: root key, documented defaults, a recipe without the defaults; warnings.',
             'lint:apps' => 'The container, the expressions and the YAML of each functional test application, through its own console.',
             'lsp' => 'The diagnostics of Symfony Language Tools on each Symfony application, every code blocking.',
-            'hooks' => 'Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.',
+            'hooks' => 'Installs the git hooks of captainhook.json in the git directory the worktrees share, once the checkout has the tools they call.',
             'split' => 'The finished packages split to their public repositories; dry run unless --push is given.',
         ];
 

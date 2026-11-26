@@ -121,7 +121,7 @@
             "@test",
             "@infection"
         ],
-        "hooks": "vendor-bin/captainhook/vendor/bin/captainhook install --force --configuration=captainhook.json",
+        "hooks": "@php bin/phil-dev hooks",
         "hotspots": "@php bin/phil-dev hotspots",
         "infection": "@php bin/phil-dev infection",
         "infection:changed": "@php bin/phil-dev infection --changed",
@@ -162,7 +162,7 @@
         "docs:translations": "The French mirror of the documentation of each package, blocking or advisory by docs.translations.",
         "fuzz": "The fuzz targets of the packages, each for its time budget; a script of its own.",
         "gates": "Every quality gate, in order: the slow checks are scripts of their own.",
-        "hooks": "Installs the git hooks of captainhook.json: the fast gates on the staged files before each commit.",
+        "hooks": "Installs the git hooks of captainhook.json in the git directory the worktrees share, once the checkout has the tools they call.",
         "hotspots": "The files that change most and are the most complex, with churn-php.",
         "infection": "Mutation testing of the whole code at 100 % of covered mutants.",
         "infection:changed": "Mutation testing of the files changed since the base ref (PHIL_DEV_BASE_REF, else origin/main), once per batch.",

@@ -27,6 +27,7 @@ final readonly class Package
      *                                                 backslash, each with its directories relative to the package
      * @param list<string>                $requires    the packages `require` names
      * @param list<string>                $devRequires the packages `require-dev` names
+     * @param list<string>                $suggests    the packages `suggest` names
      */
     public function __construct(
         public string $dir,
@@ -38,6 +39,7 @@ final readonly class Package
         public array $requires,
         public array $devRequires,
         public PackageRole $role,
+        public array $suggests = [],
     ) {
     }
 
@@ -74,6 +76,7 @@ final readonly class Package
             self::names($composer['require'] ?? null),
             self::names($composer['require-dev'] ?? null),
             $role,
+            self::names($composer['suggest'] ?? null),
         );
     }
 

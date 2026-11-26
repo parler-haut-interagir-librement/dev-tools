@@ -18,6 +18,9 @@ enum LayerKind
 
     case Infrastructure;
 
+    /** The code of a bundle that touches a package it only suggests: `<Namespace>\Integration\<Package>\`. */
+    case Integration;
+
     /** The classes at the root of a bundle's namespace: the bundle class. */
     case Bundle;
 }

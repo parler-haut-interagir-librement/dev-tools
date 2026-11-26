@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=e2f22c6c82ca9b541a196712253633c2eee560f26729d602c80333de8bc6dedf -->
+<!-- phil-dev source-sha256=4ba7458b50e68f686622880b109efceca4b4606bca7b7133c215dcbbb7b552ce -->
 # phil/dev-tools
 
 **Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts,
@@ -32,7 +32,7 @@ dans son *worktree*.
 | Les portes `audit`, `unused`, `normalize`, `twig` et `js`, ParaTest, les extensions de PHPStan | Implémentées et testées |
 | `taint`, `fuzz`, `sbom`, `bc`, `twigstan` | Implémentés et testés |
 | `bench --baseline` et `--compare`, `bench:worker` et le service FrankenPHP, l'image `bench-ext` | Implémentés et testés |
-| `split`, la configuration de CaptainHook et `staged`, `lint-docs` et son dictionnaire français, `hotspots` | Implémentés et testés |
+| `split`, la configuration de CaptainHook, `staged` et `hooks`, `lint-docs` et son dictionnaire français, `hotspots` | Implémentés et testés |
 | `merge-lot` : la fusion d'un lot dans main, son verrou, ses portes et son nettoyage, avec arrêt au premier échec | Implémentée et testée |
 | Les fichiers de sécurité d'un dépôt scindé (Dependabot, OpenSSF Scorecard, zizmor), son badge, `split --security-files`, les fichiers Dependabot et zizmor d'un monodépôt, la politique Snyk d'un monodépôt public | Implémentés et testés |
 | `lint-apps` : `lint:container`, `lint:expressions` et `lint:yaml` sur chaque application de test fonctionnel | Implémenté et testé |

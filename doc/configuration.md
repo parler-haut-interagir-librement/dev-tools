@@ -96,6 +96,7 @@ return [
 | | `testFrameworkOptions` | Root only: the PHPUnit options; `--testsuite=Unit` by default. |
 | `deptrac` | `allow` | The dependencies the package is allowed besides the default; see [Dependencies](dependencies.md). |
 | | `layers`, `ruleset` | Layers of the package's own, and rules replacing the defaults of a layer. |
+| | `integrations` | Whether a bundle has its `Integration` layer; by default, whether it has an `Integration` directory. See [Dependencies](dependencies.md#optional-integrations). |
 | | `default`, `configs` | Root only: the default replaced; extra Deptrac configurations. |
 | `arkitect` | `namespaces` | Namespaces admitted besides those of `autoload`. |
 | | `rules` | A callable returning extra Arkitect rules. |

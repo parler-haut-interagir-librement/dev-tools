@@ -5,7 +5,8 @@ the finished packages, the prose of the documentation and the hotspots of the co
 
 | Script | What it runs | When |
 |---|---|---|
-| `composer hooks` | Installs the git hooks of `captainhook.json`. | Once per clone. |
+| `composer hooks` | Installs the git hooks of `captainhook.json` in the git directory the worktrees share. | Once per clone. |
+| `phil-dev hooks --check` | Checks that a checkout has the tools the hooks call. | In a new worktree, before its first commit. |
 | `phil-dev merge-lot <branch>` | The branch of a lot rebased, gated and merged into main, then its worktree and branch removed. | When a lot is finished. |
 | `composer split` | The finished packages split to their public repositories. | When a package is released. |
 | `composer docs:lint` | cspell, markdownlint and Vale on the documentation. | Before a release of the documentation. |
@@ -23,8 +24,60 @@ its shell runs: a file staged as `a; curl … | sh;.php` would run that command 
 `phil-dev staged` reads the names from git itself, separated by NUL bytes, and hands them to the tool as arguments of
 their own, after `--`, so that a name with spaces, quotes, a semicolon or a leading dash stays one path. A project
 that adds its own action keeps to fixed command lines, or to an action of CaptainHook's `php` type.
-The slow gates — Deptrac, the tests, Infection — stay in `composer gates`. `composer hooks` installs the hooks once
-per clone; a worktree shares them.
+The slow gates — Deptrac, the tests, Infection — stay in `composer gates`.
+
+### Hooks and worktrees
+
+`composer hooks` runs `phil-dev hooks`, once per clone. The hooks live in the git directory that the clone and all its
+worktrees share, and each runs from the checkout that commits: CaptainHook, then the tool of each action, from that
+checkout's own `vendor-bin/`. So:
+
+- `phil-dev hooks` installs them with CaptainHook's `--git-directory` set to that shared directory, from the main
+  checkout as from a worktree. Run from a worktree without it, CaptainHook would take `.git` — a file there — for the
+  directory of the hooks;
+- before installing, it checks that the checkout has CaptainHook, at the `config.run.path` of `captainhook.json`, and
+  the tool under `vendor-bin/` of each action that runs `phil-dev staged <tool>`, and names the
+  `composer bin <tool> install` of each one missing;
+- a new worktree needs those tools before its first commit. `composer install` installs them, through the
+  `forward-command` of the Composer bin plugin; a worktree whose `vendor/` is copied from the main checkout instead
+  copies the `vendor/` of each of `vendor-bin/captainhook/`, `vendor-bin/php-cs-fixer/`, `vendor-bin/phpstan/` and
+  `vendor-bin/twig/` as well, or runs `composer bin all install`. `phil-dev hooks --check` says whether it is ready.
+
+A commit never goes around the hooks — no `--no-verify`, no `core.hooksPath` set aside: a checkout where they cannot run
+gets its tools first.
+
+### The hooks of a monorepo
+
+A monorepo uses the `captainhook.json` that `init` writes, as a package does, with `vendor/bin/phil-dev` as the binary:
+
+```json
+{
+    "config": {
+        "ansi-colors": true,
+        "fail-on-first-error": false,
+        "run": {"mode": "shell", "path": "vendor-bin/captainhook/vendor/bin/captainhook"}
+    },
+    "pre-commit": {
+        "enabled": true,
+        "actions": [
+            {"action": "php vendor/bin/phil-dev staged php-cs-fixer", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["php"]}]},
+            {"action": "php vendor/bin/phil-dev staged phpstan", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["php"]}]},
+            {"action": "php vendor/bin/phil-dev staged twig-cs-fixer", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["twig"]}]},
+            {"action": "php vendor/bin/phil-dev normalize", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["json"]}]},
+            {"action": "php vendor/bin/phil-dev check-docs", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["md"]}]},
+            {"action": "php vendor/bin/phil-dev check-translations", "conditions": [{"exec": "\\CaptainHook\\App\\Hook\\Condition\\FileStaged\\OfType", "args": ["md"]}]}
+        ]
+    }
+}
+```
+
+`init` writes it when it is missing. An older one is replaced by this content, and the `hooks` script by
+`@php vendor/bin/phil-dev hooks`: `init --force` would do both, but it rewrites every thin file of the root with them.
+A script of the monorepo's own that runs a tool on
+the staged files gives way to `phil-dev staged`, which does the same from git, without a shell; `staged phpstan` passes
+when every staged file is outside what PHPStan analyses, so `--in-dir=packages/` is only needed to keep the root's own
+files out. The hooks then need, in each checkout, `vendor-bin/captainhook/`, `vendor-bin/php-cs-fixer/`,
+`vendor-bin/phpstan/` and `vendor-bin/twig/`, each with its `composer.json` and `composer.lock` committed.
 
 ## The merge of a lot
 

@@ -34,7 +34,7 @@ final class StagedCommand extends WorkspaceCommand
      *
      * @var array<string, array{string, string, list<string>, string}>
      */
-    private const array TOOLS = [
+    public const array TOOLS = [
         'php-cs-fixer' => ['php-cs-fixer', 'php-cs-fixer', ['check', '--diff', '--path-mode=intersection'], 'php'],
         'phpstan' => ['phpstan', 'phpstan', ['analyse', '--no-progress'], 'php'],
         'twig-cs-fixer' => ['twig', 'twig-cs-fixer', ['lint', '--no-cache'], 'twig'],

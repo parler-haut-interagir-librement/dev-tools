@@ -68,7 +68,7 @@ The tasks run from the directory of the project, whichever directory `castor` is
 | `fix:php`, `fix:rector`, `fix:twig`, `fix:js`, `fix:composer` | `fix-php`… | Each fixer. |
 | `fix:all` | `fix` | Every fixer, Rector first, then the functions of `fix_also`. |
 | `ci:all` | `ci` | The coverage, every lint, then the functions of `ci_also`. |
-| `helpers:hooks` | `hooks` | Installs the git hooks of `captainhook.json`. |
+| `helpers:hooks` | `hooks` | Installs the git hooks of `captainhook.json` in the git directory the worktrees share. |
 | `helpers:versions` | `versions` | The versions of Castor, PHP, Composer, Symfony and the tools. |
 
 A task that runs several steps runs them all and fails when one of them fails: its exit code is 1, never a sum.

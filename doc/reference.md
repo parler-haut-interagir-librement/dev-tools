@@ -8,6 +8,7 @@
 | `Workspace\MemberAutoloader` | Adds the members' PSR-4 prefixes, from their own `composer.json`, to Composer's `ClassLoader`. |
 | `Config\Tooling` | What the shared configurations of PHP-CS-Fixer, Rector, PHPStan and Arkitect read. |
 | `Config\DeptracConfig`, `Layer`, `LayerKind` | The generated Deptrac configuration. |
+| `Config\Integrations` | The optional integrations of the bundles: whether a bundle has its `Integration` layer, and the `Suggested…` layers of the packages it suggests. |
 | `Config\InfectionConfig` | The generated Infection configuration. |
 | `Config\PsalmConfig` | The generated Psalm configuration of the taint analysis. |
 | `Config\TwigStanConfig` | The generated TwigStan configuration and its PHPStan configuration. |

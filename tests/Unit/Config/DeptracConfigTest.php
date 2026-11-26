@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Phil\DevTools\Tests\Unit\Config;
 
 use Phil\DevTools\Config\DeptracConfig;
+use Phil\DevTools\Config\Integrations;
 use Phil\DevTools\Config\Layer;
 use Phil\DevTools\Config\LayerKind;
 use Phil\DevTools\Config\YamlWriter;
@@ -18,6 +19,7 @@ use Random\Randomizer;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 
 #[CoversClass(DeptracConfig::class)]
+#[CoversClass(Integrations::class)]
 #[CoversClass(Layer::class)]
 #[CoversClass(LayerKind::class)]
 #[CoversClass(YamlWriter::class)]
@@ -133,6 +135,120 @@ final class DeptracConfigTest extends TestCase
         self::assertSame(['ADomain', 'BDomain', 'AApplication', 'BApplication', 'AInfrastructure', 'BInfrastructure', 'DefaultAllowed', 'Forbidden'], $ruleset['A']);
     }
 
+    public function testABundleKeepsWhatItSuggestsInItsIntegration(): void
+    {
+        $root = $this->integratingWorkspace();
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $layers = array_column($config['layers'], 'collectors', 'name');
+        $ruleset = $config['ruleset'];
+
+        self::assertSame([['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Integration\\\\.*']], $layers['PhilSearchBundleIntegration']);
+        self::assertSame([['type' => 'classLike', 'value' => '^Loupe\\\\Loupe\\\\.*']], $layers['SuggestedLoupeLoupe']);
+        self::assertArrayNotHasKey('SuggestedSymfonyComponentConsole', $layers);
+        self::assertArrayNotHasKey('SuggestedPhilOutbox', $layers);
+        self::assertStringContainsString('(?!Phil\\\\SearchBundle\\\\Integration\\\\.*)', $layers['Forbidden'][0]['value']);
+        self::assertStringContainsString('(?!Loupe\\\\Loupe\\\\.*)', $layers['Forbidden'][0]['value']);
+        self::assertDoesNotMatchRegularExpression('/'.$layers['Forbidden'][0]['value'].'/', 'Loupe\\Loupe\\LoupeFactory');
+        self::assertMatchesRegularExpression('/'.$layers['Forbidden'][0]['value'].'/', 'Loupe\\Other\\Thing');
+
+        self::assertSame(['DefaultAllowed', 'PhilCore'], $ruleset['PhilSearchBundleDomain']);
+        self::assertSame(['PhilSearchBundleDomain', 'DefaultAllowed', 'Forbidden', 'PhilCore'], $ruleset['PhilSearchBundleApplication']);
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilTool'], $ruleset['PhilSearchBundleInfrastructure']);
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilTool', 'PhilOutbox', 'SuggestedLoupeLoupe'], $ruleset['PhilSearchBundleIntegration']);
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundleIntegration', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilTool', 'PhilOutbox', 'SuggestedLoupeLoupe'], $ruleset['PhilSearchBundle']);
+
+        // Another package sees the suggested package where it saw the rest of the world, and never the integration.
+        self::assertSame(['PhilOtherBundleDomain', 'PhilOtherBundleApplication', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundle', 'SuggestedLoupeLoupe'], $ruleset['PhilOtherBundleInfrastructure']);
+        self::assertSame(['PhilOtherBundleDomain', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundle', 'SuggestedLoupeLoupe'], $ruleset['PhilOtherBundleApplication']);
+        self::assertSame(['DefaultAllowed'], $ruleset['PhilOutbox']);
+    }
+
+    public function testTheManifestDecidesWhetherABundleIntegrates(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => false]];");
+        $this->put($root.'/packages/other-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => true, 'ruleset' => ['PhilOtherBundle' => ['DefaultAllowed', 'Forbidden']]]];");
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $names = array_column($config['layers'], 'name');
+
+        self::assertNotContains('PhilSearchBundleIntegration', $names);
+        self::assertNotContains('SuggestedLoupeLoupe', $names);
+        self::assertContains('PhilOtherBundleIntegration', $names);
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilOutbox', 'PhilTool'], $config['ruleset']['PhilSearchBundleInfrastructure']);
+        self::assertSame(['DefaultAllowed', 'Forbidden'], $config['ruleset']['PhilOtherBundle']);
+        self::assertSame(['PhilOtherBundleDomain', 'PhilOtherBundleApplication', 'PhilOtherBundleInfrastructure', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundle'], $config['ruleset']['PhilOtherBundleIntegration']);
+    }
+
+    public function testAnOverriddenRuleOfTheBundleClassSeesWhatItSuggests(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['ruleset' => ['PhilSearchBundle' => ['DefaultAllowed', 'Forbidden'], 'PhilSearchBundleDomain' => ['DefaultAllowed']]]];");
+        $ruleset = new DeptracConfig(Workspace::load($root))->build()['deptrac']['ruleset'];
+
+        self::assertSame(['DefaultAllowed', 'Forbidden', 'PhilOutbox', 'SuggestedLoupeLoupe'], $ruleset['PhilSearchBundle']);
+        self::assertSame(['DefaultAllowed'], $ruleset['PhilSearchBundleDomain']);
+    }
+
+    public function testALibraryOrADeclaredPackageNeverIntegrates(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/core/src/Integration/.keep', '');
+        $this->put($root.'/packages/core/phil-dev.php', "<?php return ['deptrac' => ['integrations' => true]];");
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => true, 'layers' => ['Search' => '^Phil\\\\\\\\SearchBundle\\\\\\\\.*']]];");
+        $config = new DeptracConfig(Workspace::load($root));
+
+        $names = array_column($config->build()['deptrac']['layers'], 'name');
+
+        self::assertNotContains('PhilCoreIntegration', $names);
+        self::assertNotContains('PhilSearchBundleIntegration', $names);
+        self::assertFalse(new Integrations(Workspace::load($root))->integrates(Workspace::load($root)->byName('phil/core') ?? self::fail('phil/core is unknown.')));
+    }
+
+    public function testWhatTheDefaultAndTheKnownPackagesCoverIsNotSuggestedAgain(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/composer.json', '{"name": "phil/search-bundle", "type": "symfony-bundle", "require": {"phil/core": "*"}, "suggest": {"psr/log": "x", "phil/outbox": "x", "acme/two": "x"}, "autoload": {"psr-4": {"Phil\\\\SearchBundle\\\\": "src/"}}}');
+        $this->put($root.'/vendor/psr/log/composer.json', '{"name": "psr/log", "autoload": {"psr-4": {"Psr\\\\Log\\\\": "src/"}}}');
+        $this->put($root.'/vendor/phil/outbox/composer.json', '{"name": "phil/outbox", "autoload": {"psr-4": {"Phil\\\\Outbox\\\\": "src/"}}}');
+        $this->put($root.'/vendor/acme/two/composer.json', '{"name": "acme/two", "autoload": {"psr-4": {"Acme\\\\Two\\\\": "src/"}}}');
+        $this->put($root.'/phil-dev.php', "<?php return ['deptrac' => ['default' => ['^Symfony\\\\\\\\Component\\\\\\\\.*', '^Acme\\\\\\\\Two\\\\\\\\.*', '^Psr\\\\\\\\.*']]];");
+        $names = array_column(new DeptracConfig(Workspace::load($root))->build()['deptrac']['layers'], 'name');
+
+        self::assertNotContains('SuggestedPsrLog', $names);
+        self::assertNotContains('SuggestedAcmeTwo', $names);
+        self::assertNotContains('SuggestedPhilOutbox', $names);
+    }
+
+    public function testSeveralSuggestedLayersAreKeptAndSeenByEveryIntegrationLayer(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/composer.json', '{"name": "phil/search-bundle", "type": "symfony-bundle", "require": {"phil/core": "*"}, "suggest": {"acme/two": "x", "loupe/loupe": "x"}, "autoload": {"psr-4": {"Phil\\\\SearchBundle\\\\": "src/"}}}');
+        $this->put($root.'/vendor/acme/two/composer.json', '{"name": "acme/two", "autoload": {"psr-4": {"Acme\\\\Two\\\\": "src/", "Acme\\\\Three\\\\": "lib/"}}}');
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $names = array_column($config['layers'], 'name');
+
+        self::assertSame(['SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'Suggested'))));
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundleIntegration', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], $config['ruleset']['PhilSearchBundle']);
+        self::assertSame(['PhilOtherBundleDomain', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundle', 'SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], $config['ruleset']['PhilOtherBundleApplication']);
+    }
+
+    public function testTheIntegrationOfABundleWithTwoNamespacesSeesAllItsLayers(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root", "type": "symfony-bundle", "autoload": {"psr-4": {"A\\\\": "a/", "B\\\\": "b/"}}}');
+        $this->put($root.'/a/Integration/.keep', '');
+
+        $ruleset = new DeptracConfig(Workspace::load($root))->build()['deptrac']['ruleset'];
+
+        self::assertSame(['ADomain', 'BDomain', 'AApplication', 'BApplication', 'AInfrastructure', 'BInfrastructure', 'DefaultAllowed', 'Forbidden'], $ruleset['AIntegration']);
+        self::assertSame(['ADomain', 'BDomain', 'AApplication', 'BApplication', 'AInfrastructure', 'BInfrastructure', 'AIntegration', 'BIntegration', 'DefaultAllowed', 'Forbidden'], $ruleset['A']);
+    }
+
+    public function testTheNameOfASuggestedLayer(): void
+    {
+        self::assertSame('SuggestedLoupeLoupe', Integrations::name('Loupe\\Loupe'));
+    }
+
     public function testTheNamesOfAllowedLayers(): void
     {
         self::assertSame('AllowedLeagueUri', DeptracConfig::allowedName('^League\\\\Uri\\\\.*', 1));
@@ -195,6 +311,26 @@ final class DeptracConfigTest extends TestCase
         new DeptracConfig(Workspace::load($root))->build();
     }
 
+    /**
+     * A bundle that suggests a known package it also has in `require-dev`, a known package it requires, an installed
+     * package, a package the default covers and a package that is not installed; another bundle that requires it.
+     */
+    private function integratingWorkspace(): string
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root"}');
+        $this->put($root.'/packages/core/composer.json', '{"name": "phil/core", "autoload": {"psr-4": {"Phil\\\\Core\\\\": "src/"}}}');
+        $this->put($root.'/packages/outbox/composer.json', '{"name": "phil/outbox", "autoload": {"psr-4": {"Phil\\\\Outbox\\\\": "src/"}}}');
+        $this->put($root.'/packages/tool/composer.json', '{"name": "phil/tool", "autoload": {"psr-4": {"Phil\\\\Tool\\\\": "src/"}}}');
+        $this->put($root.'/packages/search-bundle/composer.json', '{"name": "phil/search-bundle", "type": "symfony-bundle", "require": {"phil/core": "*"}, "require-dev": {"phil/outbox": "*", "phil/tool": "*"}, "suggest": {"phil/outbox": "x", "phil/core": "x", "loupe/loupe": "x", "symfony/console": "x", "vendor/absent": "x", "ext-intl": "x"}, "autoload": {"psr-4": {"Phil\\\\SearchBundle\\\\": "src/"}}}');
+        $this->put($root.'/packages/search-bundle/src/Integration/Outbox/.keep', '');
+        $this->put($root.'/packages/other-bundle/composer.json', '{"name": "phil/other-bundle", "type": "symfony-bundle", "require": {"phil/search-bundle": "*"}, "autoload": {"psr-4": {"Phil\\\\OtherBundle\\\\": "src/"}}}');
+        $this->put($root.'/vendor/loupe/loupe/composer.json', '{"name": "loupe/loupe", "autoload": {"psr-4": {"Loupe\\\\Loupe\\\\": "src/"}}}');
+        $this->put($root.'/vendor/symfony/console/composer.json', '{"name": "symfony/console", "autoload": {"psr-4": {"Symfony\\\\Component\\\\Console\\\\": ""}}}');
+
+        return $root;
+    }
+
     public function testTheLayerName(): void
     {
         self::assertSame('TilttekQuestsBundle', DeptracConfig::name('Tilttek\\QuestsBundle'));
@@ -209,5 +345,9 @@ final class DeptracConfigTest extends TestCase
         self::assertSame([false, true], $seen(LayerKind::Application));
         self::assertSame([false, false], $seen(LayerKind::Infrastructure));
         self::assertSame([false, true], $seen(LayerKind::Bundle));
+        self::assertSame([false, false], $seen(LayerKind::Integration));
+        self::assertFalse(new Layer('A', [], LayerKind::Integration)->seenByOthers());
+        self::assertTrue(new Layer('A', [], LayerKind::Bundle)->seenByOthers());
+        self::assertTrue(new Layer('A', [], LayerKind::Infrastructure)->seenByOthers());
     }
 }

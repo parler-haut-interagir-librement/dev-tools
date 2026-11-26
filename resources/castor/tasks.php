@@ -460,7 +460,8 @@ function hooks(): int
 {
     title('helpers:hooks');
 
-    return success(exit_code(\sprintf('%s install --force --configuration=captainhook.json', CAPTAINHOOK)));
+    // Into the git directory every worktree shares: from a worktree, `.git` is a file, not the directory of the hooks.
+    return success(exit_code(\sprintf('%s install --force --configuration=captainhook.json --git-directory="$(git rev-parse --path-format=absolute --git-common-dir)"', CAPTAINHOOK)));
 }
 
 #[AsTask(name: 'versions', namespace: 'helpers', description: 'Output the versions of the stack', aliases: ['versions'])]
