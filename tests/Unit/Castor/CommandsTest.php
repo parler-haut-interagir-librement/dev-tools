@@ -41,6 +41,8 @@ final class CommandsTest extends TestCase
         yield 'a whole number' => ["  Lines:   80% (8/10)\n", 80.0];
         yield 'none' => [' Summary:', null];
         yield 'empty' => ['', null];
+        yield 'coloured by PHPUnit' => ["\e[30;42m  Lines:   97.50% (39/40)\e[0m\n", 97.5];
+        yield 'coloured, the code before the label only' => ["\e[33m  Lines:\e[0m   50.00% (1/2)\n", 50.0];
         yield 'not a summary line' => ["  Methods: 75.00% (3/4)   Lines: 12.50% (1/8)\n", null];
     }
 

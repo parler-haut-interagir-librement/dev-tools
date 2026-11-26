@@ -42,7 +42,9 @@ final class Commands
      */
     public static function coveredLines(string $report): ?float
     {
-        if (1 !== preg_match('/^\h*Lines:\h+(\d{1,3}(?:\.\d+)?)%/m', $report, $match)) {
+        // PHPUnit colours the summary when it writes to a terminal: the escape codes go before matching.
+        $plain = preg_replace('/\e\[[0-9;]*m/', '', $report) ?? $report;
+        if (1 !== preg_match('/^\h*Lines:\h+(\d{1,3}(?:\.\d+)?)%/m', $plain, $match)) {
             return null;
         }
 

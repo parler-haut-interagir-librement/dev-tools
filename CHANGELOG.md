@@ -45,6 +45,12 @@ The next version is 0.2.1-alpha.
   shared git directory: run from a worktree, CaptainHook no longer writes the hooks beside a `.git` file.
 - `Layer::seenByApplications()` is false for an integration. `StagedCommand::TOOLS` is public, for `phil-dev hooks`.
 
+### Fixed
+
+- `Castor\Commands::coveredLines()` reads the coverage summary that PHPUnit colours when it writes to a terminal: the
+  colour codes are left out before the line is read, so `test:coverage` no longer reports a coloured run as holding no
+  summary.
+
 ## 0.2.0-alpha - 2026-11-25
 
 Its new rules fail the packages that break them.
