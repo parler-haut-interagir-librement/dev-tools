@@ -34,13 +34,24 @@
         "ergebnis/phpunit-slow-test-detector": "^2.27",
         "phpstan/phpstan": "^2.3",
         "phpunit/phpunit": "^13.4",
+        "psr/log": "^3.0",
         "shipmonk/composer-dependency-analyser": "^1.8",
+        "symfony/browser-kit": "^8.2",
+        "symfony/dependency-injection": "^8.2",
+        "symfony/framework-bundle": "^8.2",
         "symfony/http-client": "^8.2",
-        "symfony/phpunit-bridge": "^8.2"
+        "symfony/http-foundation": "^8.2",
+        "symfony/http-kernel": "^8.2",
+        "symfony/phpunit-bridge": "^8.2",
+        "symfony/process": "^8.2",
+        "symfony/routing": "^8.2"
     },
     "suggest": {
+        "symfony/browser-kit": "For RouteSmokeTesting, the route smoke test of a test kernel (8.2 or later)",
+        "symfony/framework-bundle": "For RouteSmokeTesting, the route smoke test of a test kernel (8.2 or later)",
         "symfony/http-client": "For HttpRecording, to record and replay the HTTP exchanges of integration tests (8.2 or later)",
-        "symfony/phpunit-bridge": "For HttpRecording and the #[UseRecord] attribute of integration tests (8.2 or later)"
+        "symfony/phpunit-bridge": "For HttpRecording and the #[UseRecord] attribute of integration tests (8.2 or later)",
+        "symfony/routing": "For SmokeRoutes and RouteSmokeTesting, the routes a smoke test requests (8.2 or later)"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

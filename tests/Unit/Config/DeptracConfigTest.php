@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Random\Randomizer;
+use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 
 #[CoversClass(DeptracConfig::class)]
 #[CoversClass(Layer::class)]
@@ -56,7 +57,7 @@ final class DeptracConfigTest extends TestCase
             ['name' => 'Forbidden', 'collectors' => [['type' => 'classLike', 'value' => $forbidden]]],
         ], $config['layers']);
 
-        foreach (['Symfony\\Bundle\\FrameworkBundle\\FrameworkBundle' => 1, 'Symfony\\Component\\Yaml\\Yaml' => 0, 'Phil\\SlugBundle\\PhilSlugBundle' => 0, 'Phil\\SlugBundle\\Twig\\Extension' => 1, Randomizer::class => 0, 'DateTimeImmutable' => 0] as $class => $matches) {
+        foreach ([FrameworkBundle::class => 1, 'Symfony\\Component\\Yaml\\Yaml' => 0, 'Phil\\SlugBundle\\PhilSlugBundle' => 0, 'Phil\\SlugBundle\\Twig\\Extension' => 1, Randomizer::class => 0, 'DateTimeImmutable' => 0] as $class => $matches) {
             $found = preg_match('/'.$forbidden.'/', $class);
             self::assertSame($matches, $found, $class);
         }

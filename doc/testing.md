@@ -25,5 +25,45 @@ php bin/phil-dev php next -- php bin/phil-dev infection
 
 `Phil\DevTools\Testing\ServiceUrl::first()` reads the URL of a real server for an integration test skipped without one,
 and `Phil\DevTools\Testing\HttpRecording` records and replays the exchanges of an HTTP service: see
-[Real servers](services.md) and [HTTP recordings](http-recordings.md). A package that uses them requires
+[Real servers](services.md) and [HTTP recordings](http-recordings.md). `RouteSmokeTesting` requests every GET route
+without a parameter of a test kernel: see [below](#route-smoke-test). A package that uses them requires
 `phil/dev-tools` in `require-dev`, with `symfony/http-client` and `symfony/phpunit-bridge` for the recordings.
+
+## Route smoke test
+
+`Phil\DevTools\Testing\RouteSmokeTesting` is a trait for a `WebTestCase`: every GET route without a parameter of the
+test kernel is requested, and fails the test when it answers a server error (a status of 500 or more). A bundle uses it
+on the small application it boots for its functional tests, an application on its own kernel:
+
+```php
+use Phil\DevTools\Testing\RouteSmokeTesting;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+final class RouteSmokeTest extends WebTestCase
+{
+    use RouteSmokeTesting;
+
+    protected static function getKernelClass(): string
+    {
+        return TestKernel::class;
+    }
+
+    /**
+     * @return list<array<string, string>>
+     */
+    protected static function smokeRouteParameters(): array
+    {
+        return [['_locale' => 'fr'], ['_locale' => 'en']];
+    }
+}
+```
+
+A route is requested when it accepts GET, or any method, and every parameter it has no default for is supplied by a set
+of `smokeRouteParameters()`: once with no parameter, or once per set that supplies them all and whose values meet the
+requirements of the route. A route whose name starts with a prefix of `smokeRouteExclusions()` is left out; by default
+`_`, the profiler, the toolbar and the error pages. Each path is requested once, by a test named `GET <path>`, and a
+kernel with nothing to request is an error rather than an empty pass.
+
+`Phil\DevTools\Testing\SmokeRoutes::from()` makes that list from a route collection and a URL generator, for a test
+that requests the routes another way. The trait needs `symfony/framework-bundle` and `symfony/browser-kit`, and
+`SmokeRoutes` needs `symfony/routing`, all three in the `require-dev` of the package that uses them.

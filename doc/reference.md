@@ -42,8 +42,11 @@
 | `Bench\WorkerBench`, `WorkerBenchResult` | The requests of the worker-mode benchmark and their percentiles. |
 | `Services\TestServices` | The real servers and their variables. |
 | `Testing\ServiceUrl`, `HttpRecording` | The helpers of integration tests. |
+| `Testing\RouteSmokeTesting`, `SmokeRoutes` | The route smoke test of a test kernel, and the GET routes it requests; see [Testing](testing.md#route-smoke-test). |
+| `Castor\Settings`, `Commands` | What the common Castor tasks read of `PHIL_CASTOR`, and the commands and coverage summaries they build and read; see [Castor tasks](castor.md). |
 | `DevTools`, `Files` | Where this package is, reading its files and removing the directories it generates. |
 | `Exception\DevToolsException` | Implemented by every exception of the package. |
+| `Exception\InvalidCastorSettings` | A `PHIL_CASTOR` setting the common Castor tasks refuse. |
 | `Exception\UnsupportedPattern`, `RejectedCaseAccepted` | A pattern the regex generator cannot draw from; a rejected case its pattern accepts, or none given. |
 
 | File | Role |
@@ -57,6 +60,7 @@
 | `resources/init/`, `resources/skeleton/` | The templates of `init` and `new`, the French mirror of the documentation included. |
 | `doc/fr-glossary.md` | The words and the tone of the French documentation. |
 | `resources/security/split/`, `resources/security/monorepo/` | The Dependabot and OpenSSF Scorecard templates of a split repository; the Snyk policy and workflow of a public monorepo. |
+| `resources/castor/tasks.php` | The common Castor tasks an application's `castor.php` imports; see [Castor tasks](castor.md). |
 | `resources/compose.yaml` | The real servers, and FrankenPHP for the worker-mode benchmark, on the plain image and on `bench-ext`. |
 | `resources/bench-ext/Dockerfile` | The image of the benchmarks with PHP extensions, built on demand. |
 | `resources/lint/app.php` | Lints one functional test application through its own console, for `lint-apps`. |

@@ -55,7 +55,8 @@ several batches can work at once in their own worktrees.
 | [The French glossary](doc/fr-glossary.md) | The words and the tone of the French documentation, in French. |
 | [The add-on convention](doc/add-ons.md) | Tagged services, extension points and when they are stable. |
 | [Extension points](doc/extension-points.md) | What a project may change in this package. |
-| [Testing](doc/testing.md) | This package's tests, and the test helpers. |
+| [Testing](doc/testing.md) | This package's tests, and the test helpers, the route smoke test included. |
+| [Castor tasks](doc/castor.md) | The common Castor tasks of an application: tests, coverage, lints, fixers, CI. |
 | [Reference](doc/reference.md) | Every class and file of the package. |
 
 ## Quick start
