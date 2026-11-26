@@ -26,10 +26,20 @@ final readonly class Layer
     }
 
     /**
-     * Whether an application layer that requires this layer's package may see it: anything but an infrastructure.
+     * Whether an application layer that requires this layer's package may see it: anything but an infrastructure or
+     * an integration.
      */
     public function seenByApplications(): bool
     {
-        return LayerKind::Infrastructure !== $this->kind;
+        return LayerKind::Infrastructure !== $this->kind && LayerKind::Integration !== $this->kind;
+    }
+
+    /**
+     * Whether another package may see it at all: anything but an integration, which only its own bundle class
+     * references.
+     */
+    public function seenByOthers(): bool
+    {
+        return LayerKind::Integration !== $this->kind;
     }
 }

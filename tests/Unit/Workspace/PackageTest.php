@@ -50,6 +50,7 @@ final class PackageTest extends TestCase
             'type' => 'symfony-bundle',
             'require' => ['php' => '>=8.5', 'ext-intl' => '*', 'phil/resource' => '^0.1', '0' => 'odd', 'psr/clock' => '^1.0'],
             'require-dev' => ['phpunit/phpunit' => '^13.4'],
+            'suggest' => ['ext-intl' => 'x', 'phil/outbox' => 'For the outbox'],
             'autoload' => ['psr-4' => ['Tilttek\\ExampleBundle\\' => 'src/', 'Tilttek\\Extra\\' => ['lib/', 'other/', 3], '' => 'root/', 'Tilttek\\Root\\' => '', '\\' => 'ignored/']],
         ], \JSON_THROW_ON_ERROR));
         mkdir($dir.'/src');
@@ -65,6 +66,7 @@ final class PackageTest extends TestCase
         self::assertFalse($package->isRoot());
         self::assertSame(['phil/resource', 'psr/clock'], $package->requires);
         self::assertSame(['phpunit/phpunit'], $package->devRequires);
+        self::assertSame(['phil/outbox'], $package->suggests);
         self::assertSame(['Tilttek\\ExampleBundle' => ['src'], 'Tilttek\\Extra' => ['lib', 'other'], 'Tilttek\\Root' => ['.']], $package->namespaces);
         self::assertSame([$dir.'/src', $dir.'/lib', $dir], $package->sourceDirectories());
         self::assertSame([$dir.'/src', $dir.'/lib'], $package->paths());

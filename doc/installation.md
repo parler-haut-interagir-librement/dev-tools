@@ -17,7 +17,7 @@ is given, and `phil-dev.php` is never replaced. [Commands](commands.md) describe
 
 `composer update` then installs the quality tools, each in its own `vendor-bin/<tool>/` through
 `bamarni/composer-bin-plugin`, so that their dependencies never meet the project's. `composer deps:normalize:fix`
-sorts the scripts `init` added, and `composer hooks` installs the git hooks of `captainhook.json`.
+sorts the scripts `init` added, and `composer hooks` installs the git hooks of `captainhook.json` in the git directory the worktrees share.
 
 ## Every day
 

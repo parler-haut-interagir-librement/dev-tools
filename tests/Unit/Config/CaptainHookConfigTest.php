@@ -31,6 +31,14 @@ final class CaptainHookConfigTest extends TestCase
         ], $config['pre-commit']);
     }
 
+    public function testTheMonorepoConfigurationOfTheWorkflowIsTheGeneratedOne(): void
+    {
+        $workflow = (string) file_get_contents(\dirname(__DIR__, 3).'/doc/workflow.md');
+
+        self::assertSame(1, preg_match('/### The hooks of a monorepo.*?```json\n(.*?)\n```/s', $workflow, $match));
+        self::assertSame(new CaptainHookConfig('vendor/bin/phil-dev')->build(), json_decode($match[1], true, flags: \JSON_THROW_ON_ERROR));
+    }
+
     public function testTheJson(): void
     {
         $json = new CaptainHookConfig('bin/phil-dev')->json();
