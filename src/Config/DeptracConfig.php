@@ -331,7 +331,7 @@ final readonly class DeptracConfig
             }
         }
 
-        $others = array_values(array_diff(array_keys($suggested), $integrated));
+        $others = array_diff(array_keys($suggested), $integrated);
 
         foreach ($rules as $layer => $visible) {
             if (\in_array(self::FORBIDDEN, $visible, true)) {
@@ -382,10 +382,10 @@ final readonly class DeptracConfig
     private function defaultRulesOf(Package $package, array $allowed, array $integrated): array
     {
         $required = $this->layersOfDependencies($package->requires);
-        $everything = array_values(array_diff(
+        $everything = array_diff(
             $this->names(array_filter($this->layersOfDependencies([...$package->requires, ...$package->devRequires]), static fn (Layer $layer): bool => $layer->seenByOthers())),
             $integrated,
-        ));
+        );
         $libraries = $this->names(array_filter($required, static fn (Layer $layer): bool => LayerKind::Library === $layer->kind));
         $domains = $this->names(array_filter($required, static fn (Layer $layer): bool => $layer->seenByDomains()));
         $services = $this->names(array_filter($required, static fn (Layer $layer): bool => $layer->seenByApplications()));

@@ -204,6 +204,46 @@ final class DeptracConfigTest extends TestCase
         self::assertFalse(new Integrations(Workspace::load($root))->integrates(Workspace::load($root)->byName('phil/core') ?? self::fail('phil/core is unknown.')));
     }
 
+    public function testWhatTheDefaultAndTheKnownPackagesCoverIsNotSuggestedAgain(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/composer.json', '{"name": "phil/search-bundle", "type": "symfony-bundle", "require": {"phil/core": "*"}, "suggest": {"psr/log": "x", "phil/outbox": "x", "acme/two": "x"}, "autoload": {"psr-4": {"Phil\\\\SearchBundle\\\\": "src/"}}}');
+        $this->put($root.'/vendor/psr/log/composer.json', '{"name": "psr/log", "autoload": {"psr-4": {"Psr\\\\Log\\\\": "src/"}}}');
+        $this->put($root.'/vendor/phil/outbox/composer.json', '{"name": "phil/outbox", "autoload": {"psr-4": {"Phil\\\\Outbox\\\\": "src/"}}}');
+        $this->put($root.'/vendor/acme/two/composer.json', '{"name": "acme/two", "autoload": {"psr-4": {"Acme\\\\Two\\\\": "src/"}}}');
+        $this->put($root.'/phil-dev.php', "<?php return ['deptrac' => ['default' => ['^Symfony\\\\\\\\Component\\\\\\\\.*', '^Acme\\\\\\\\Two\\\\\\\\.*', '^Psr\\\\\\\\.*']]];");
+        $names = array_column(new DeptracConfig(Workspace::load($root))->build()['deptrac']['layers'], 'name');
+
+        self::assertNotContains('SuggestedPsrLog', $names);
+        self::assertNotContains('SuggestedAcmeTwo', $names);
+        self::assertNotContains('SuggestedPhilOutbox', $names);
+    }
+
+    public function testSeveralSuggestedLayersAreKeptAndSeenByEveryIntegrationLayer(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/composer.json', '{"name": "phil/search-bundle", "type": "symfony-bundle", "require": {"phil/core": "*"}, "suggest": {"acme/two": "x", "loupe/loupe": "x"}, "autoload": {"psr-4": {"Phil\\\\SearchBundle\\\\": "src/"}}}');
+        $this->put($root.'/vendor/acme/two/composer.json', '{"name": "acme/two", "autoload": {"psr-4": {"Acme\\\\Two\\\\": "src/", "Acme\\\\Three\\\\": "lib/"}}}');
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $names = array_column($config['layers'], 'name');
+
+        self::assertSame(['SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'Suggested'))));
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundleIntegration', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], $config['ruleset']['PhilSearchBundle']);
+        self::assertSame(['PhilOtherBundleDomain', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundle', 'SuggestedAcmeTwo', 'SuggestedAcmeThree', 'SuggestedLoupeLoupe'], $config['ruleset']['PhilOtherBundleApplication']);
+    }
+
+    public function testTheIntegrationOfABundleWithTwoNamespacesSeesAllItsLayers(): void
+    {
+        $root = $this->temporaryDirectory();
+        $this->put($root.'/composer.json', '{"name": "phil/root", "type": "symfony-bundle", "autoload": {"psr-4": {"A\\\\": "a/", "B\\\\": "b/"}}}');
+        $this->put($root.'/a/Integration/.keep', '');
+
+        $ruleset = new DeptracConfig(Workspace::load($root))->build()['deptrac']['ruleset'];
+
+        self::assertSame(['ADomain', 'BDomain', 'AApplication', 'BApplication', 'AInfrastructure', 'BInfrastructure', 'DefaultAllowed', 'Forbidden'], $ruleset['AIntegration']);
+        self::assertSame(['ADomain', 'BDomain', 'AApplication', 'BApplication', 'AInfrastructure', 'BInfrastructure', 'AIntegration', 'BIntegration', 'DefaultAllowed', 'Forbidden'], $ruleset['A']);
+    }
+
     public function testTheNameOfASuggestedLayer(): void
     {
         self::assertSame('SuggestedLoupeLoupe', Integrations::name('Loupe\\Loupe'));

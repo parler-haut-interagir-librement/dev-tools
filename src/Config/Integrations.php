@@ -71,13 +71,14 @@ final readonly class Integrations
         $layers = [];
 
         foreach ($package->suggests as $name) {
-            $directory = $this->workspace->root->path('vendor/'.$name);
+            $relative = 'vendor/'.$name;
+            $directory = $this->workspace->root->path($relative);
 
             if (\in_array($name, $package->requires, true) || $this->workspace->byName($name) instanceof Package || !is_file($directory.'/composer.json')) {
                 continue;
             }
 
-            foreach (array_keys(Package::fromDirectory($directory, 'vendor/'.$name, PackageRole::Installed)->namespaces) as $namespace) {
+            foreach (array_keys(Package::fromDirectory($directory, $relative, PackageRole::Installed)->namespaces) as $namespace) {
                 if (!$this->covered($namespace, $covering)) {
                     $layers[self::name($namespace)] = '^'.str_replace('\\', '\\\\', $namespace).'\\\\.*';
                 }

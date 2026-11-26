@@ -133,6 +133,9 @@ final class HooksCommandTest extends CommandTestCase
             'pre-push' => ['actions' => 'none'],
             'commit-msg' => 'none',
         ]));
+        self::assertSame(['vendor-bin/captainhook/vendor/bin/captainhook' => 'captainhook', 'vendor-bin/phpstan/vendor/bin/phpstan' => 'phpstan'], HooksCommand::tools([
+            'pre-commit' => ['actions' => [['action' => 'php bin/phil-dev staged unknown'], ['action' => 'php bin/phil-dev staged phpstan']]],
+        ]));
         self::assertSame(['tools/captainhook' => 'captainhook'], HooksCommand::tools(['config' => ['run' => ['path' => 'tools/captainhook']]]));
         self::assertSame(['vendor-bin/hooks/vendor/bin/captainhook' => 'hooks'], HooksCommand::tools(['config' => ['run' => ['path' => 'vendor-bin/hooks/vendor/bin/captainhook']]]));
         self::assertSame(['vendor-bin/captainhook/vendor/bin/captainhook' => 'captainhook', 'vendor-bin/phpstan/vendor/bin/phpstan' => 'phpstan'], HooksCommand::tools(['pre-commit' => ['actions' => [['action' => 'php vendor/bin/phil-dev staged  phpstan --in-dir=packages/']]]]));
