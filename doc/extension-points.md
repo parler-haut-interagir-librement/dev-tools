@@ -13,4 +13,6 @@ change them, and its CHANGELOG says how.
 | Read the workspace | Use `Workspace::load()` and `Tooling`, which the shared configurations use |
 | Turn a gate off | Set `gates.<name>` to `false` in the root's `phil-dev.php`; see [Quality gates](quality-gates.md) |
 | Fuzz a parser, measure a worker | Declare `fuzz.targets` or `bench.worker` in the package's `phil-dev.php`; see [Security checks](security.md) and [Benchmarks](benchmarks.md) |
+| Change what the common Castor tasks run | Define `PHIL_CASTOR` before importing them; see [Castor tasks](castor.md#settings) |
+| Request routes with parameters in the smoke test | Return parameter sets from `smokeRouteParameters()`, prefixes from `smokeRouteExclusions()`; see [Testing](testing.md#route-smoke-test) |
 | Compile the templates with the package's extensions | Name a loader under `twig.loader`; see [Quality gates](quality-gates.md#twig-templates) |

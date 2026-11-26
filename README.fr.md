@@ -1,4 +1,4 @@
-<!-- phil-dev source-sha256=9cf18a090c76db268a24a5f3f2058963e61a1cbfaa1b422c18e3738c6b425554 -->
+<!-- phil-dev source-sha256=e2f22c6c82ca9b541a196712253633c2eee560f26729d602c80333de8bc6dedf -->
 # phil/dev-tools
 
 **Shared development tooling for PHIL and Tilttek packages: quality-tool configurations, Composer scripts,
@@ -58,7 +58,8 @@ dans son *worktree*.
 | [Le glossaire français](doc/fr-glossary.md) | Les mots et le ton de la documentation française, en français. |
 | [The add-on convention](doc/add-ons.md) | Les services étiquetés, les points d'extension et le moment où ils sont stables. |
 | [Extension points](doc/extension-points.md) | Ce qu'un projet peut changer dans ce paquet. |
-| [Testing](doc/testing.md) | Les tests de ce paquet, et les outils d'aide aux tests. |
+| [Testing](doc/testing.md) | Les tests de ce paquet, et les outils d'aide aux tests, le test de fumée des routes inclus. |
+| [Castor tasks](doc/castor.md) | Les tâches Castor communes d'une application : tests, couverture, linters, correcteurs, CI. |
 | [Reference](doc/reference.md) | Chaque classe et chaque fichier du paquet. |
 
 ## Démarrage rapide

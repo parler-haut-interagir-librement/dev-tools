@@ -5,6 +5,26 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+The next version is 0.2.1-alpha.
+
+### Added
+
+- `resources/castor/tasks.php`, the common Castor tasks of an application, imported by its `castor.php` from
+  `vendor/phil/dev-tools/`: the tests by suite (`test:all`, `test:suite`, `test:unit`, `test:integration`,
+  `test:functional`, `test:api`, `test:e2e`, `test:next`), `test:coverage` with its threshold of covered lines,
+  `test:infection`, `security:taint`, the lints and the static analysis (`lint:*`, `lint:analyse`), the fixers
+  (`fix:*`), `ci:all`, `helpers:hooks` and `helpers:versions`. The constant `PHIL_CASTOR` sets the suites, the
+  threshold, the YAML paths, the templates, the dev container and the application's own functions each aggregate task
+  calls after its steps; `Castor\Settings` reads it, `Castor\Commands` builds the commands and reads the coverage
+  summary, and `Exception\InvalidCastorSettings` refuses an unknown key or a wrong value. See `doc/castor.md`.
+- `Testing\RouteSmokeTesting`, a trait for the `WebTestCase` of a bundle's test kernel or of an application: every GET
+  route without a parameter, or whose parameters a set of `smokeRouteParameters()` supplies, answers under 500; the
+  routes named `_…` are left out by default (`smokeRouteExclusions()`), and a kernel with nothing to request is an
+  error. `Testing\SmokeRoutes` makes the list of requests from a route collection. `symfony/framework-bundle`,
+  `symfony/browser-kit` and `symfony/routing` are suggested.
+
 ## 0.2.0-alpha - 2026-11-25
 
 Its new rules fail the packages that break them.

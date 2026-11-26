@@ -16,15 +16,17 @@ return [
     'phpstan' => [
         // These load the classes of PHP-CS-Fixer, Rector, Arkitect and Twig, which only their own vendor-bin has.
         // The fuzz targets run inside nikic/php-fuzzer, which gives them `$config`. The script of lint-apps runs with
-        // the autoloader of the workspace it lints, whose Symfony kernel and console this package does not require.
-        'excludePaths' => ['config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php', 'tests/Fuzz/*', 'resources/lint/app.php'],
+        // the autoloader of the workspace it lints, whose Symfony kernel and console this package does not require. The
+        // common Castor tasks run inside Castor, which gives them its functions; what they decide is in `src/Castor`.
+        'excludePaths' => ['resources/castor/tasks.php', 'config/arkitect.php', 'config/php-cs-fixer.php', 'config/rector.php', 'config/twig-loader.php', 'tests/Fuzz/*', 'resources/lint/app.php'],
     ],
     'deptrac' => [
         // The recorder of HttpRecording is the PHPUnit bridge's: the helper only exists for the tests of packages.
         // The member autoloader adds its prefixes to Composer's ClassLoader, which every Composer project holds.
         // The PHPStan rules of this package run inside PHPStan, on the classes of its parser. The rule on logger calls
-        // names the PSR-3 interface by its `::class`, a string that loads nothing.
-        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*', '^Psr\\\\Log\\\\LoggerInterface$'],
+        // names the PSR-3 interface by its `::class`, a string that loads nothing. The route smoke test is a trait of the
+        // test cases of packages, which name its data provider with the attribute of PHPUnit.
+        'allow' => ['^Symfony\\\\Bridge\\\\PhpUnit\\\\.*', '^PHPUnit\\\\Framework\\\\Attributes\\\\.*', '^Composer\\\\Autoload\\\\ClassLoader$', '^PHPStan\\\\.*', '^PhpParser\\\\.*', '^Psr\\\\Log\\\\LoggerInterface$'],
     ],
     // The tooling's own documentation has no French mirror yet.
     'docs' => ['translations' => 'advisory', 'public' => true],
@@ -60,7 +62,12 @@ return [
             // A package on its own is reloaded as itself, its own name for the only package analysed, which is all it holds either way;
             // and the names reach a test that only asks whether one is among them, as a list or as a map.
             'ReturnRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
-            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners']],
+            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners'], 'ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(.*', '.*\$missing = array_values\(.*']],
+            // The variables of a compiled route are all names, never numbers, and the keys of the keys given are only
+            // compared as strings by array_diff(): PHPStan asks for the filter and the cast to know the types, and the
+            // code behaves the same without them.
+            'UnwrapArrayFilter' => ['ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(array_filter\(.*']],
+            'UnwrapArrayMap' => ['ignoreSourceCodeByRegex' => ['.*array_diff\(array_map\(strval\(\.\.\.\), array_keys\(\$given\)\).*']],
             // The members are sorted by directory, so a member whose directory is the start of another's comes first and the
             // longer one, tested later, takes the file back: the slash only keeps the first from being the last match.
             'ConcatOperandRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
