@@ -7,7 +7,9 @@ namespace Phil\DevTools\Tests\Unit\Testing;
 use Phil\DevTools\Testing\SmokeRoutes;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -99,6 +101,77 @@ final class SmokeRoutesTest extends TestCase
         ]);
 
         self::assertSame(['GET /same' => ['routeName' => 'first', 'path' => '/same']], SmokeRoutes::from($routes, $this->generator($routes)));
+    }
+
+    public function testAValueTheRequirementRefusesDoesNotStopTheNextSet(): void
+    {
+        $routes = $this->routes(['hello' => new Route('/{_locale}/hello', requirements: ['_locale' => 'fr|en'])]);
+        $generator = $this->generator($routes);
+        $generator->setStrictRequirements(null);
+
+        self::assertSame(['GET /en/hello'], array_keys(SmokeRoutes::from($routes, $generator, [['_locale' => 'de'], ['_locale' => 'en']])));
+    }
+
+    public function testAGeneratorThatFailsForASetDoesNotStopTheNextSet(): void
+    {
+        $routes = $this->routes(['hello' => new Route('/{_locale}/hello')]);
+        $generator = new class implements UrlGeneratorInterface {
+            public function setContext(RequestContext $context): void
+            {
+            }
+
+            public function getContext(): RequestContext
+            {
+                return new RequestContext();
+            }
+
+            /**
+             * @param array<mixed> $parameters
+             */
+            public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string
+            {
+                $locale = $parameters['_locale'] ?? null;
+
+                if ('de' === $locale) {
+                    throw new RouteNotFoundException('No route for this set.');
+                }
+
+                return '/'.(\is_string($locale) ? $locale : '').'/hello';
+            }
+        };
+
+        self::assertSame(['GET /fr/hello'], array_keys(SmokeRoutes::from($routes, $generator, [['_locale' => 'de'], ['_locale' => 'fr']])));
+    }
+
+    public function testASetThatSuppliesNothingMissingIsNeverGenerated(): void
+    {
+        $routes = $this->routes(['article' => new Route('/{_locale}/article/{slug}')]);
+        $generator = new class implements UrlGeneratorInterface {
+            public int $calls = 0;
+
+            public function setContext(RequestContext $context): void
+            {
+            }
+
+            public function getContext(): RequestContext
+            {
+                return new RequestContext();
+            }
+
+            /**
+             * @param array<mixed> $parameters
+             */
+            public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string
+            {
+                ++$this->calls;
+
+                return '/'.implode('/', array_filter($parameters, is_string(...)));
+            }
+        };
+
+        self::assertSame([], SmokeRoutes::from($routes, $generator, [['_locale' => 'fr'], ['slug' => 'only']]));
+        self::assertSame(0, $generator->calls);
+        self::assertSame(['GET /fr/only'], array_keys(SmokeRoutes::from($routes, $generator, [['_locale' => 'fr', 'slug' => 'only']])));
     }
 
     /**

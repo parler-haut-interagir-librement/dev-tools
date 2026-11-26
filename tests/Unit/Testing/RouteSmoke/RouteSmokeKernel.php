@@ -15,7 +15,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
 /**
- * The applications of the route smoke tests, each with its own routes and a cache of its own in the temporary
+ * The applications of the route smoke tests, each with its own routes and a cache of its own, per checkout, in the temporary
  * directory; their controllers are methods of the kernel.
  */
 abstract class RouteSmokeKernel extends Kernel
@@ -45,13 +45,13 @@ abstract class RouteSmokeKernel extends Kernel
     #[Override]
     public function getCacheDir(): string
     {
-        return sys_get_temp_dir().'/phil-dev-route-smoke/'.hash('xxh128', static::class).'/cache';
+        return sys_get_temp_dir().'/phil-dev-route-smoke/'.hash('xxh128', static::class.__FILE__).'/cache';
     }
 
     #[Override]
     public function getLogDir(): string
     {
-        return sys_get_temp_dir().'/phil-dev-route-smoke/'.hash('xxh128', static::class).'/log';
+        return sys_get_temp_dir().'/phil-dev-route-smoke/'.hash('xxh128', static::class.__FILE__).'/log';
     }
 
     public function page(): Response
@@ -62,6 +62,11 @@ abstract class RouteSmokeKernel extends Kernel
     public function missing(): Response
     {
         return new Response('missing', Response::HTTP_NOT_FOUND);
+    }
+
+    public function edge(): Response
+    {
+        return new Response('edge', 499);
     }
 
     public function fail(): never

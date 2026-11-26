@@ -50,8 +50,6 @@ trait RouteSmokeTesting
      */
     public static function provideSmokeRoutes(): array
     {
-        self::bootKernel();
-
         try {
             $router = self::getContainer()->get('router');
 

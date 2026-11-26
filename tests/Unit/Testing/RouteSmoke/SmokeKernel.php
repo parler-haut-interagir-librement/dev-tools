@@ -24,6 +24,7 @@ final class SmokeKernel extends RouteSmokeKernel
         $routes->add('paged', '/list/{page}')->controller('kernel::page')->defaults(['page' => '1']);
         $routes->add('hello', '/{_locale}/hello')->controller('kernel::page')->requirements(['_locale' => 'fr|en']);
         $routes->add('_internal', '/internal')->controller('kernel::fail');
+        $routes->add('_edge', '/edge')->controller('kernel::edge');
         $routes->add('boom', '/boom')->controller('kernel::fail')->methods(['DELETE']);
     }
 }

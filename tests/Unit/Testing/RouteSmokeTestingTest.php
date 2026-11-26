@@ -14,7 +14,10 @@ use Phil\DevTools\Tests\Unit\Testing\RouteSmoke\SmokeKernel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\ExpectationFailedException;
+use ReflectionMethod;
+use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * The trait run as a bundle runs it, on the routes of a small application: the routes it keeps answer under 500, and
@@ -25,6 +28,15 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class RouteSmokeTestingTest extends WebTestCase
 {
     use RouteSmokeTesting;
+
+    /**
+     * The class of the kernel is kept by the test case for every test that follows: each test starts from its own.
+     */
+    #[Override]
+    protected function setUp(): void
+    {
+        self::$class = null;
+    }
 
     #[Override]
     protected static function getKernelClass(): string
@@ -68,6 +80,64 @@ final class RouteSmokeTestingTest extends WebTestCase
         self::fail('A route that answers 500 fails the smoke test.');
     }
 
+    #[MaximumDuration(2000)]
+    public function testTheTestMethodIsPublicForPhpUnit(): void
+    {
+        self::assertTrue(new ReflectionMethod(self::class, 'testRouteAnswersWithoutServerError')->isPublic());
+    }
+
+    #[MaximumDuration(2000)]
+    public function testAStatusJustUnderTheServerErrorsPasses(): void
+    {
+        $this->testRouteAnswersWithoutServerError('edge', '/edge');
+
+        $response = self::getClient()?->getResponse();
+
+        self::assertInstanceOf(Response::class, $response);
+        self::assertSame(499, $response->getStatusCode());
+    }
+
+    #[MaximumDuration(2000)]
+    public function testAKernelBootedBeforeTheRequestIsShutDownFirst(): void
+    {
+        self::bootKernel();
+
+        $this->testRouteAnswersWithoutServerError('home', '/');
+
+        self::assertTrue(self::$booted);
+    }
+
+    #[MaximumDuration(2000)]
+    public function testTheKernelIsShutDownWhenTheSelectionFails(): void
+    {
+        $failing = new class('failing') extends WebTestCase {
+            use RouteSmokeTesting;
+
+            #[Override]
+            protected static function getKernelClass(): string
+            {
+                return SmokeKernel::class;
+            }
+
+            /**
+             * @return list<array<string, string>>
+             */
+            protected static function smokeRouteParameters(): array
+            {
+                throw new RuntimeException('The parameters fail.');
+            }
+        };
+
+        try {
+            $failing::provideSmokeRoutes();
+            self::fail('The selection fails.');
+        } catch (RuntimeException $runtimeException) {
+            self::assertSame('The parameters fail.', $runtimeException->getMessage());
+        }
+
+        self::assertFalse(self::$booted, 'The kernel is shut down even when the selection fails.');
+    }
+
     public function testTheDefaultsLeaveOutTheInternalRoutesAndTryNoParameter(): void
     {
         $default = new class('default') extends WebTestCase {
@@ -86,6 +156,8 @@ final class RouteSmokeTestingTest extends WebTestCase
         };
 
         self::assertSame([[], ['_']], $default::defaults());
+        self::assertTrue(new ReflectionMethod($default, 'smokeRouteParameters')->isProtected());
+        self::assertTrue(new ReflectionMethod($default, 'smokeRouteExclusions')->isProtected());
     }
 
     #[MaximumDuration(2000)]

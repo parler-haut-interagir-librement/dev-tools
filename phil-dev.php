@@ -62,7 +62,12 @@ return [
             // A package on its own is reloaded as itself, its own name for the only package analysed, which is all it holds either way;
             // and the names reach a test that only asks whether one is among them, as a list or as a map.
             'ReturnRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
-            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners']],
+            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners'], 'ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(.*', '.*\$missing = array_values\(.*']],
+            // The variables of a compiled route are all names, never numbers, and the keys of the keys given are only
+            // compared as strings by array_diff(): PHPStan asks for the filter and the cast to know the types, and the
+            // code behaves the same without them.
+            'UnwrapArrayFilter' => ['ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(array_filter\(.*']],
+            'UnwrapArrayMap' => ['ignoreSourceCodeByRegex' => ['.*array_diff\(array_map\(strval\(\.\.\.\), array_keys\(\$given\)\).*']],
             // The members are sorted by directory, so a member whose directory is the start of another's comes first and the
             // longer one, tested later, takes the file back: the slash only keeps the first from being the last match.
             'ConcatOperandRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
