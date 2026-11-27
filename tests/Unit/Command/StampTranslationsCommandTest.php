@@ -102,6 +102,20 @@ final class StampTranslationsCommandTest extends CommandTestCase
         self::assertSame(SourceStamp::fingerprint('# Root'), SourceStamp::read((string) file_get_contents($root.'/README.fr.md')));
     }
 
+    public function testTheRootOfAMonorepoIsLeftAloneWhenOnlyAMemberIsNamed(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/README.md', '# Root');
+        $this->put($root.'/README.fr.md', '# Racine');
+        $this->put($root.'/packages/cards/CHANGELOG.fr.md', '# Journal');
+
+        $tester = $this->tester($root, 'stamp-translations');
+
+        self::assertSame(0, $tester->execute(['packages' => ['cards']]));
+        self::assertSame("packages/cards: CHANGELOG.fr.md\n1 stamped.\n", $tester->getDisplay());
+        self::assertNull(SourceStamp::read((string) file_get_contents($root.'/README.fr.md')));
+    }
+
     private function monorepo(): string
     {
         $root = $this->temporaryDirectory();
