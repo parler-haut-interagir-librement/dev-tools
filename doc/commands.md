@@ -91,10 +91,14 @@ regular expressions of the root's `docs.forbidden` and of each `--forbid`.
 
 `check-translations` compares `README.md` and `doc/**/*.md` with `README.fr.md` and `doc/fr/**`: a document without its
 mirror, a mirror without its document, the number of headings of each level and the code blocks fail; a translation
-behind its English is reported. A package whose `docs.translations`, else the root's, is `advisory` never fails, and is
-summed up on one line; `-v` lists its findings. `stamp-translations` writes the SHA-256 of the English on the first line
-of each mirror of the packages it names; `--file` narrows it to documents given by their English or French path. See
-[Quality gates](quality-gates.md#the-french-mirror-of-the-documentation).
+behind its English is reported. Every other document at the root of a package (`CHANGELOG.md`, `CONTRIBUTING.md`,
+`SECURITY.md`…, `AGENTS.md` and `LICENSE.md` left out) is compared the same way with its French twin, `CHANGELOG.fr.md`,
+and so are the documents at the root of a monorepo, `README.md` included, when no member is singled out. A twin still
+to write is reported as missing, on one line per package, and fails only where `docs.twins` is `blocking` or with
+`--require-twins`. A package whose `docs.translations`, else the root's, is `advisory` never fails, and is summed up on
+one line; `-v` lists its findings. `stamp-translations` writes the SHA-256 of the English on the first line of each
+mirror and twin of the packages it names, `.` naming the root of a monorepo; `--file` narrows it to documents given by
+their English or French path. See [Quality gates](quality-gates.md#the-french-mirror-of-the-documentation).
 
 ## check-packages
 
@@ -128,6 +132,15 @@ decides. A directory left out takes its whole content with it.
 It also warns, without failing, when the package has no `SECURITY.md` or when its README shows
 no security badge — what its split repository would lack; `phil-dev split --security-files` adds both. See
 [The monorepo workflow](workflow.md#the-badge-and-the-files-of-the-existing-members).
+
+A Doctrine mapping the package ships as a file — `*.orm.xml`, `*.orm.yml`, `*.orm.yaml` or `*.dcm.xml`, anywhere but in
+`vendor/`, `var/` and dot directories — is a warning too: entities and embeddable classes are mapped by PHP
+attributes (`#[ORM\Entity]`, `#[ORM\Embeddable]`), beside the code they describe. `--strict-mapping` makes each file a
+failure:
+
+```text
+phil/example: config/doctrine/Slug.orm.xml maps entities in a file: map them by PHP attributes (#[ORM\Entity], #[ORM\Embeddable]).
+```
 
 The path repositories install each member at the branch its branch alias names (`dev-main`, aliased `0.1.x-dev`),
 whatever branch the checkout is on: from a worktree on `b/topic`, Composer would otherwise read `dev-b/topic`, which no

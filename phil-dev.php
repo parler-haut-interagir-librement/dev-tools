@@ -62,7 +62,8 @@ return [
             // A package on its own is reloaded as itself, its own name for the only package analysed, which is all it holds either way;
             // and the names reach a test that only asks whether one is among them, as a list or as a map.
             'ReturnRemoval' => ['ignore' => [InfectionCommand::class.'::owners']],
-            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners'], 'ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(.*', '.*\$missing = array_values\(.*']],
+            'UnwrapArrayValues' => ['ignore' => [InfectionCommand::class.'::owners'], 'ignoreSourceCodeByRegex' => ['.*\$variables = array_values\(.*', '.*\$missing = array_values\(.*', '.*\$names = array_values\(array_diff\(\$names, \$rootNames\)\);']],
+            // What is left of the names once the root's is taken out only reaches a loop, which reads each name whatever its key.
             // The variables of a compiled route are all names, never numbers, and the keys of the keys given are only
             // compared as strings by array_diff(): PHPStan asks for the filter and the cast to know the types, and the
             // code behaves the same without them.

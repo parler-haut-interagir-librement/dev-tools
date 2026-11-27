@@ -22,6 +22,43 @@ final class MirrorsTest extends TestCase
         self::assertSame('doc/fr/a/b.md', Mirrors::mirrorOf('doc/a/b.md'));
         self::assertSame('README.md', Mirrors::sourceOf('README.fr.md'));
         self::assertSame('doc/a/b.md', Mirrors::sourceOf('doc/fr/a/b.md'));
+        self::assertSame('CHANGELOG.fr.md', Mirrors::mirrorOf('CHANGELOG.md'));
+        self::assertSame('CHANGELOG.md', Mirrors::sourceOf('CHANGELOG.fr.md'));
+    }
+
+    public function testWhatIsATwin(): void
+    {
+        self::assertTrue(Mirrors::isTwin('CHANGELOG.fr.md'));
+        self::assertTrue(Mirrors::isTwin('README.fr.md'));
+        self::assertTrue(Mirrors::isMirror('SECURITY.fr.md'));
+        self::assertTrue(Mirrors::isFrench('SECURITY.fr.md'));
+        self::assertFalse(Mirrors::isTwin('AGENTS.fr.md'));
+        self::assertFalse(Mirrors::isTwin('LICENSE.fr.md'));
+        self::assertFalse(Mirrors::isTwin('.fr.md'));
+        self::assertFalse(Mirrors::isTwin('CHANGELOG.md'));
+        self::assertFalse(Mirrors::isTwin('doc/CHANGELOG.fr.md'));
+        self::assertFalse(Mirrors::isMirror('doc/a.fr.md'));
+        self::assertTrue(Mirrors::hasTwin('CHANGELOG.md'));
+        self::assertTrue(Mirrors::hasTwin('README.md'));
+        self::assertFalse(Mirrors::hasTwin('AGENTS.md'));
+        self::assertFalse(Mirrors::hasTwin('LICENSE.md'));
+        self::assertFalse(Mirrors::hasTwin('CHANGELOG.fr.md'));
+        self::assertFalse(Mirrors::hasTwin('doc/a.md'));
+        self::assertFalse(Mirrors::hasTwin('LICENSE'));
+    }
+
+    public function testTheTwinsOfAPackage(): void
+    {
+        $package = $this->packageWith(['README.md', 'README.fr.md', 'SECURITY.md', 'CHANGELOG.md', 'CHANGELOG.fr.md', 'AGENTS.md', 'LICENSE', 'LICENSE.md', 'ORPHAN.fr.md', 'doc/a.md', 'doc/fr/a.md', 'notes.txt']);
+        mkdir($package->path('folder.md'));
+
+        self::assertSame(['CHANGELOG.md', 'SECURITY.md'], Mirrors::twinSources($package));
+        self::assertSame(['CHANGELOG.md', 'README.md', 'SECURITY.md'], Mirrors::twinSources($package, readme: true));
+        self::assertSame(['CHANGELOG.fr.md', 'ORPHAN.fr.md'], Mirrors::twins($package));
+        self::assertSame(['CHANGELOG.fr.md', 'ORPHAN.fr.md', 'README.fr.md'], Mirrors::twins($package, readme: true));
+        self::assertSame(['README.md', 'doc/a.md'], Mirrors::sources($package));
+        self::assertSame(['README.fr.md', 'doc/fr/a.md'], Mirrors::mirrors($package));
+        self::assertSame(['README.fr.md', 'doc/fr/a.md', 'CHANGELOG.fr.md', 'ORPHAN.fr.md'], Mirrors::french($package));
     }
 
     public function testWhatIsAMirror(): void

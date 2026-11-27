@@ -5,6 +5,30 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+The next version is 0.2.2-alpha.
+
+### Added
+
+- `check-packages` warns about a Doctrine mapping a package ships as a file (`*.orm.xml`, `*.orm.yml`, `*.orm.yaml`,
+  `*.dcm.xml`): entities and embeddable classes are mapped by PHP attributes. `--strict-mapping` makes each file a
+  failure. `Conventions\DoctrineMapping` finds them. See `doc/commands.md`.
+- The French twins at the root: `check-translations` compares every other document at the root of a package
+  (`CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`…; `AGENTS.md` and `LICENSE.md` left out)
+  with `<name>.fr.md` beside it, as it compares a mirror, and the documents at the root of a monorepo, `README.md`
+  included, when no member is singled out. A twin still to write is `translation-twin-missing`, summed up on one line
+  per package and failing only with `--require-twins` or where `docs.twins` is `blocking`. `stamp-translations` stamps
+  the twins of the packages it names, and those at the root of a monorepo named by `.` or by its Composer name.
+  `Mirrors::isTwin()`, `hasTwin()`, `twinSources()` and `twins()`, `TranslationChecker::checkTwins()` and
+  `twinsBlock()`. See `doc/quality-gates.md`.
+
+### Changed
+
+- The last line of `check-translations` counts the missing twins: `0 blocking, 1 late, 2 missing, 0 advisory.`
+- `Mirrors::french()` holds the twins, so `lint-docs` reads them with the French dictionary, and `Mirrors::mirrorOf()`
+  and `sourceOf()` name the twin of any document at the root.
+
 ## 0.2.1-alpha - 2026-11-26
 
 ### Added

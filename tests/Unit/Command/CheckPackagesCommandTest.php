@@ -145,6 +145,40 @@ final class CheckPackagesCommandTest extends CommandTestCase
         );
     }
 
+    public function testADoctrineMappingFileIsAWarning(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug-bundle/README.md', "# phil/slug-bundle\n\n".SecurityFiles::badge('o', 'slug-bundle')."\n");
+        $this->put($root.'/packages/slug-bundle/SECURITY.md', '# Security Policy');
+        $this->put($root.'/packages/slug-bundle/config/doctrine/Slug.orm.xml', '<doctrine-mapping/>');
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(0, $tester->execute(['packages' => ['slug-bundle']]));
+        self::assertSame(
+            "== phil/slug-bundle\n"
+            ."   warning: config/doctrine/Slug.orm.xml maps entities in a file: map them by PHP attributes (#[ORM\\Entity], #[ORM\\Embeddable]).\n"
+            ."Every package installs and passes on its own.\n",
+            $tester->getDisplay(),
+        );
+    }
+
+    public function testStrictMappingFailsThePackageThatShipsAMappingFile(): void
+    {
+        $root = $this->fixture('monorepo');
+        $this->put($root.'/packages/slug/SECURITY.md', '# Security Policy');
+        $this->put($root.'/packages/slug/config/doctrine/Slug.orm.yaml', 'Slug: {}');
+        $this->put($root.'/packages/slug/config/doctrine/Old.dcm.xml', '<doctrine-mapping/>');
+        $tester = $this->tester($root, 'check-packages');
+
+        self::assertSame(1, $tester->execute(['packages' => ['slug'], '--strict-mapping' => true]));
+        self::assertSame(
+            "== phil/slug\n"
+            ."phil/slug: config/doctrine/Old.dcm.xml maps entities in a file: map them by PHP attributes (#[ORM\\Entity], #[ORM\\Embeddable]).\n"
+            ."phil/slug: config/doctrine/Slug.orm.yaml maps entities in a file: map them by PHP attributes (#[ORM\\Entity], #[ORM\\Embeddable]).\n",
+            $tester->getDisplay(),
+        );
+    }
+
     public function testAnArchiveThatLeavesOutTheTestsFailsThePackage(): void
     {
         $root = $this->fixture('monorepo');

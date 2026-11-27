@@ -12,10 +12,15 @@ use Phil\DevTools\Workspace\Package;
  * Compares the English documentation of a package with its French mirror: a document without its mirror, a mirror
  * without its document, the headings of each level and the code blocks fail; a translation behind its source is
  * reported. Whether a failure blocks is the choice of `docs.translations`, else of `docs.public`.
+ *
+ * The other documents at the root — `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`… — are compared with their French
+ * twins the same way, but a twin still to write is reported apart, and blocks only where `docs.twins` asks for it.
  */
 final readonly class TranslationChecker
 {
     public const string MISSING = 'translation-missing';
+
+    public const string TWIN_MISSING = 'translation-twin-missing';
 
     public const string ORPHAN = 'translation-orphan';
 
@@ -34,28 +39,33 @@ final readonly class TranslationChecker
      */
     public function check(Package $package): array
     {
-        $findings = [];
-        $mirrors = Mirrors::mirrors($package);
+        return $this->pairs($package, Mirrors::sources($package), Mirrors::mirrors($package), self::MISSING);
+    }
 
-        foreach (Mirrors::sources($package) as $source) {
-            $mirror = Mirrors::mirrorOf($source);
+    /**
+     * Compares the documents at the root of a package, `README.md` left to `check()`, or of a repository, `README.md`
+     * included, with their French twins.
+     *
+     * @return list<Finding>
+     */
+    public function checkTwins(Package $package, bool $readme = false): array
+    {
+        return $this->pairs($package, Mirrors::twinSources($package, $readme), Mirrors::twins($package, $readme), self::TWIN_MISSING);
+    }
 
-            if (!\in_array($mirror, $mirrors, true)) {
-                $findings[] = new Finding(self::MISSING, $source, null, 'no translation at '.$mirror);
+    /**
+     * Whether a twin still to write stops the gate: `docs.twins` of the package, else of the root, is `blocking`; it is
+     * advisory by default.
+     */
+    public function twinsBlock(Package $package, Package $root): bool
+    {
+        $mode = $package->manifest->get('docs', 'twins') ?? $root->manifest->get('docs', 'twins') ?? self::ADVISORY;
 
-                continue;
-            }
-
-            array_push($findings, ...$this->compare($mirror, Files::read($package->path($source)), Files::read($package->path($mirror))));
+        if (self::BLOCKING !== $mode && self::ADVISORY !== $mode) {
+            throw new InvalidManifest(\sprintf('docs.twins of %s is "%s" or "%s".', $package->name, self::BLOCKING, self::ADVISORY));
         }
 
-        foreach ($mirrors as $mirror) {
-            if (!is_file($package->path(Mirrors::sourceOf($mirror)))) {
-                $findings[] = new Finding(self::ORPHAN, $mirror, null, 'no English document at '.Mirrors::sourceOf($mirror));
-            }
-        }
-
-        return $findings;
+        return self::BLOCKING === $mode;
     }
 
     /**
@@ -74,6 +84,37 @@ final readonly class TranslationChecker
         }
 
         return self::BLOCKING === $mode;
+    }
+
+    /**
+     * @param list<string> $sources the English documents
+     * @param list<string> $mirrors the French documents that exist
+     *
+     * @return list<Finding>
+     */
+    private function pairs(Package $package, array $sources, array $mirrors, string $missing): array
+    {
+        $findings = [];
+
+        foreach ($sources as $source) {
+            $mirror = Mirrors::mirrorOf($source);
+
+            if (!\in_array($mirror, $mirrors, true)) {
+                $findings[] = new Finding($missing, $source, null, 'no translation at '.$mirror);
+
+                continue;
+            }
+
+            array_push($findings, ...$this->compare($mirror, Files::read($package->path($source)), Files::read($package->path($mirror))));
+        }
+
+        foreach ($mirrors as $mirror) {
+            if (!is_file($package->path(Mirrors::sourceOf($mirror)))) {
+                $findings[] = new Finding(self::ORPHAN, $mirror, null, 'no English document at '.Mirrors::sourceOf($mirror));
+            }
+        }
+
+        return $findings;
     }
 
     /**

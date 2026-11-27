@@ -69,6 +69,53 @@ final class StampTranslationsCommandTest extends CommandTestCase
         self::assertSame("phil/alone: README.fr.md\n1 stamped.\n", $tester->getDisplay());
     }
 
+    public function testItStampsTheTwinsAtTheRootOfAPackage(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/packages/cards/CHANGELOG.fr.md', '# Journal');
+        $this->put($root.'/packages/cards/ORPHAN.fr.md', '# Orphelin');
+        $tester = $this->tester($root, 'stamp-translations');
+
+        self::assertSame(0, $tester->execute(['packages' => ['cards']]));
+        self::assertSame("packages/cards: CHANGELOG.fr.md\n1 stamped.\n", $tester->getDisplay());
+        self::assertSame(SourceStamp::fingerprint((string) file_get_contents($root.'/packages/cards/CHANGELOG.md')), SourceStamp::read((string) file_get_contents($root.'/packages/cards/CHANGELOG.fr.md')));
+        self::assertSame('# Orphelin', file_get_contents($root.'/packages/cards/ORPHAN.fr.md'));
+    }
+
+    public function testItStampsTheRootOfAMonorepoWhenNamed(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/README.md', '# Root');
+        $this->put($root.'/README.fr.md', '# Racine');
+        $this->put($root.'/SECURITY.md', '# Security');
+        $this->put($root.'/SECURITY.fr.md', '# Sécurité');
+        $this->put($root.'/packages/cards/CHANGELOG.fr.md', '# Journal');
+
+        $tester = $this->tester($root, 'stamp-translations');
+        self::assertSame(0, $tester->execute(['packages' => ['.'], '--file' => ['SECURITY.md']]));
+        self::assertSame("phil/root: SECURITY.fr.md\n1 stamped.\n", $tester->getDisplay());
+        self::assertNull(SourceStamp::read((string) file_get_contents($root.'/packages/cards/CHANGELOG.fr.md')));
+
+        $tester = $this->tester($root, 'stamp-translations');
+        self::assertSame(0, $tester->execute(['packages' => ['phil/root', 'cards']]));
+        self::assertSame("phil/root: README.fr.md\npackages/cards: CHANGELOG.fr.md\n2 stamped.\n", $tester->getDisplay());
+        self::assertSame(SourceStamp::fingerprint('# Root'), SourceStamp::read((string) file_get_contents($root.'/README.fr.md')));
+    }
+
+    public function testTheRootOfAMonorepoIsLeftAloneWhenOnlyAMemberIsNamed(): void
+    {
+        $root = $this->monorepo();
+        $this->put($root.'/README.md', '# Root');
+        $this->put($root.'/README.fr.md', '# Racine');
+        $this->put($root.'/packages/cards/CHANGELOG.fr.md', '# Journal');
+
+        $tester = $this->tester($root, 'stamp-translations');
+
+        self::assertSame(0, $tester->execute(['packages' => ['cards']]));
+        self::assertSame("packages/cards: CHANGELOG.fr.md\n1 stamped.\n", $tester->getDisplay());
+        self::assertNull(SourceStamp::read((string) file_get_contents($root.'/README.fr.md')));
+    }
+
     private function monorepo(): string
     {
         $root = $this->temporaryDirectory();
