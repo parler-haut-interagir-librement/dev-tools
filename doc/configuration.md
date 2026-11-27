@@ -106,6 +106,7 @@ return [
 | | `words` | Words cspell accepts besides the shared list; the root's apply to every member. |
 | | `markdownlint` | Root only: markdownlint rules over the shared ones. |
 | | `translations` | `blocking` or `advisory`: whether the failures of `check-translations` stop the gate. A package's value wins over the root's; without either, a public package blocks and any other is advisory; see [Quality gates](quality-gates.md#while-the-existing-packages-catch-up). |
+| | `twins` | `blocking` or `advisory`, the default: whether a document at the root without its French twin (`CHANGELOG.fr.md`…) stops the gate of a blocking package. A package's value wins over the root's; see [Quality gates](quality-gates.md#the-french-twins-at-the-root). |
 | `gates` | `audit`, `unused`, `normalize`, `twig`, `js`, `apps`, `lsp` | Root only: `false` turns that gate off. |
 | `apps` | `skip` | The kernels of the functional test applications `lint-apps` leaves out, by class name; see [Quality gates](quality-gates.md#the-functional-test-applications). |
 | `phpunit` | `parallel` | Root only: `false` runs the tests with PHPUnit instead of ParaTest. |

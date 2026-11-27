@@ -503,13 +503,45 @@ names given to it narrow them.
 | Code | Means | Effect |
 |---|---|---|
 | `translation-missing` | An English document without its mirror. | Fails. |
-| `translation-orphan` | A mirror without its English document. | Fails. |
+| `translation-twin-missing` | A document at the root without its French twin. | Reported; fails where `docs.twins` is `blocking`, or with `--require-twins`. |
+| `translation-orphan` | A mirror or a twin without its English document. | Fails. |
 | `translation-headings` | Not as many headings of a level as the English, fenced code left out. | Fails. |
 | `translation-code` | A fenced code block, info string included, that differs from the English, or not as many blocks. | Fails. |
 | `translation-late` | The English has changed since the translation, or the mirror has no stamp. | Reported. |
 
 A late translation whose structure has drifted fails too, on its headings or its code. `doc/fr-glossary.md`, written
 in French, has no English document.
+
+### The French twins at the root
+
+The other documents at the root of a package — `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
+and any other `.md` — have their French twin beside them: `CHANGELOG.fr.md`, `CONTRIBUTING.fr.md`… So do the documents
+at the root of a monorepo, its `README.md` included; they are checked with the members when no member is singled out by
+name or by `PHIL_DEV_PACKAGES`. `AGENTS.md`, written for coding agents, and the licence have no twin.
+
+A twin is compared with its English as a mirror is: its stamp, its headings and its code blocks. A twin still to write
+is reported, without failing, on one line per package; `-v` lists each one:
+
+```text
+packages/example: no French twin of CHANGELOG.md, SECURITY.md
+0 blocking, 0 late, 2 missing, 0 advisory.
+```
+
+`--require-twins`, or `docs.twins` set to `blocking` in the `phil-dev.php` of the package or of the root, makes each
+one a failure of a blocking package:
+
+```php
+return [
+    'docs' => ['twins' => 'blocking'],
+];
+```
+
+`stamp-translations` stamps the twins of the packages it names with their mirrors, and those at the root of a
+monorepo when it is named by `.` or by its Composer name:
+
+```sh
+phil-dev stamp-translations . --file=CHANGELOG.md
+```
 
 ### How a late translation is found
 

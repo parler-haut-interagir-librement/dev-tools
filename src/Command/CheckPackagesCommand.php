@@ -7,6 +7,7 @@ namespace Phil\DevTools\Command;
 use FilesystemIterator;
 use Override;
 use Phil\DevTools\Conventions\ConfigurationConventions;
+use Phil\DevTools\Conventions\DoctrineMapping;
 use Phil\DevTools\Files;
 use Phil\DevTools\Matrix\Matrix;
 use Phil\DevTools\Split\ArchiveRules;
@@ -51,6 +52,9 @@ use Symfony\Component\Console\Output\OutputInterface;
     It also warns, without failing, about a package without a SECURITY.md, or whose README shows no security badge
     (phil-dev split --security-files adds both), and about a bundle configuration that strays from the conventions
     check-config reports.
+
+    A Doctrine mapping shipped as a file (*.orm.xml, *.orm.yml, *.orm.yaml, *.dcm.xml) is a warning too: entities
+    and embeddable classes are mapped by PHP attributes. --strict-mapping makes each one a failure.
     TXT)]
 final class CheckPackagesCommand extends WorkspaceCommand
 {
@@ -63,7 +67,8 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $this
             ->addArgument('packages', InputArgument::IS_ARRAY, 'The packages to check, by directory or Composer name; all by default')
             ->addOption('keep', null, InputOption::VALUE_NONE, 'Keep each temporary copy, to look into a failure')
-            ->addOption('symfony', null, InputOption::VALUE_REQUIRED, 'Install each package with a Symfony version of the matrix, "floor" or "next"');
+            ->addOption('symfony', null, InputOption::VALUE_REQUIRED, 'Install each package with a Symfony version of the matrix, "floor" or "next"')
+            ->addOption('strict-mapping', null, InputOption::VALUE_NONE, 'Fail a package that ships a Doctrine mapping as XML or YAML, instead of warning');
     }
 
     #[Override]
@@ -80,13 +85,13 @@ final class CheckPackagesCommand extends WorkspaceCommand
         $floor = $matrix->floor('symfony')->version;
         $repositories = $this->repositorySteps($workspace);
         $conventions = new ConfigurationConventions();
+        $mapping = new DoctrineMapping();
+        $strictMapping = true === $input->getOption('strict-mapping');
 
         foreach ($workspace->targets($names) as $package) {
             $output->writeln('== '.$package->name);
 
-            foreach ([...$this->securityWarnings($package), ...$conventions->check($package)] as $warning) {
-                $output->writeln('   warning: '.$warning);
-            }
+            array_push($failures, ...$this->warn($package, $output, $conventions, $mapping, $strictMapping));
 
             $composer = json_decode(Files::read($package->path('composer.json')), true);
             $composer = \is_array($composer) ? $composer : [];
@@ -291,6 +296,33 @@ final class CheckPackagesCommand extends WorkspaceCommand
             PHP_WRAP, \PHP_MAJOR_VERSION.'.'.\PHP_MINOR_VERSION, "['".implode("', '", $polyfills)."']"));
 
         return ['--config='.$file];
+    }
+
+    /**
+     * Writes the warnings of a package: what its split repository would lack, its configuration's conventions, and its
+     * Doctrine mapping files, which fail it instead under `--strict-mapping`.
+     *
+     * @return list<string> the failures
+     */
+    private function warn(Package $package, OutputInterface $output, ConfigurationConventions $conventions, DoctrineMapping $mapping, bool $strictMapping): array
+    {
+        $failures = [];
+
+        foreach ([...$this->securityWarnings($package), ...$conventions->check($package)] as $warning) {
+            $output->writeln('   warning: '.$warning);
+        }
+
+        foreach ($mapping->files($package) as $file) {
+            $problem = $file.' maps entities in a file: map them by PHP attributes (#[ORM\\Entity], #[ORM\\Embeddable]).';
+
+            if ($strictMapping) {
+                $failures[] = $package->name.': '.$problem;
+            } else {
+                $output->writeln('   warning: '.$problem);
+            }
+        }
+
+        return $failures;
     }
 
     /**

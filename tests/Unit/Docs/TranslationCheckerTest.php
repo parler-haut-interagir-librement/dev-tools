@@ -158,6 +158,76 @@ final class TranslationCheckerTest extends TestCase
         new TranslationChecker()->blocks($this->withMode('off'), $this->withMode(null));
     }
 
+    public function testTheTwinsAtTheRootOfAPackage(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/README.md', self::ENGLISH);
+        $this->put($dir.'/AGENTS.md', self::ENGLISH);
+        $this->put($dir.'/LICENSE.md', self::ENGLISH);
+        $this->put($dir.'/CONTRIBUTING.md', self::ENGLISH);
+        $this->pair($dir, 'CHANGELOG.md', 'CHANGELOG.fr.md', self::ENGLISH, "# Titre\n\n## Partie\n\n```sh\nrun\n```\n");
+        $this->pair($dir, 'SECURITY.md', 'SECURITY.fr.md', self::ENGLISH, "# Titre\n\n```sh\nrun\n```\n");
+        $this->put($dir.'/UPGRADE.fr.md', '# Mise à niveau');
+
+        self::assertSame([
+            '[translation-twin-missing] CONTRIBUTING.md: no translation at CONTRIBUTING.fr.md',
+            '[translation-headings] SECURITY.fr.md: 0 of level 2, the English has 1',
+            '[translation-orphan] UPGRADE.fr.md: no English document at UPGRADE.md',
+        ], $this->checkTwins($dir));
+        self::assertSame(['[translation-missing] README.md: no translation at README.fr.md'], $this->check($dir));
+    }
+
+    public function testTheTwinsAtTheRootOfARepositoryIncludeItsReadme(): void
+    {
+        $dir = $this->package();
+        $this->put($dir.'/README.md', self::ENGLISH);
+        $this->pair($dir, 'CHANGELOG.md', 'CHANGELOG.fr.md', self::ENGLISH, self::ENGLISH);
+        $this->put($dir.'/CHANGELOG.md', self::ENGLISH.'More.');
+
+        self::assertSame([
+            '[translation-late] CHANGELOG.fr.md:1: its English document has changed since',
+            '[translation-twin-missing] README.md: no translation at README.fr.md',
+        ], array_map(strval(...), new TranslationChecker()->checkTwins(Package::fromDirectory($dir, '', PackageRole::Root), readme: true)));
+    }
+
+    public function testTheModeOfTheTwins(): void
+    {
+        $checker = new TranslationChecker();
+
+        self::assertFalse($checker->twinsBlock($this->withTwins(null), $this->withTwins(null)));
+        self::assertTrue($checker->twinsBlock($this->withTwins(null), $this->withTwins('blocking')));
+        self::assertTrue($checker->twinsBlock($this->withTwins('blocking'), $this->withTwins('advisory')));
+        self::assertFalse($checker->twinsBlock($this->withTwins('advisory'), $this->withTwins('blocking')));
+        self::assertFalse($checker->twinsBlock($this->withMode('blocking', true), $this->withMode('blocking')));
+    }
+
+    public function testAnUnknownModeOfTheTwinsIsRefused(): void
+    {
+        $this->expectException(InvalidManifest::class);
+        $this->expectExceptionMessageIsOrContains('docs.twins of phil/x is "blocking" or "advisory".');
+
+        new TranslationChecker()->twinsBlock($this->withTwins('on'), $this->withTwins(null));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function checkTwins(string $dir): array
+    {
+        return array_map(strval(...), new TranslationChecker()->checkTwins(Package::fromDirectory($dir, '', PackageRole::Root)));
+    }
+
+    private function withTwins(?string $mode): Package
+    {
+        $dir = $this->package();
+
+        if (null !== $mode) {
+            $this->put($dir.'/phil-dev.php', '<?php return '.var_export(['docs' => ['twins' => $mode]], true).';');
+        }
+
+        return Package::fromDirectory($dir, '', PackageRole::Root);
+    }
+
     /**
      * @return list<string>
      */
