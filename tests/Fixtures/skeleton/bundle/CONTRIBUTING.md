@@ -1,5 +1,7 @@
 # Contributing
 
+[Français](CONTRIBUTING.fr.md)
+
 This package is one of the open `tilttek/*` packages of Tilttek. Its code is developed in the monorepo of
 [Parler Haut Interagir Librement](https://github.com/parler-haut-interagir-librement) (PHIL), with the `phil/*`
 packages whose rules it follows, and its own repository is a read-only copy split from it: **open issues and pull

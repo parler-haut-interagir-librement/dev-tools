@@ -85,7 +85,7 @@ final class DocsCheckerTest extends TestCase
 
         self::assertSame([
             '[broken-link] README.md:30: mine.md',
-            '[broken-link] CHANGELOG.md:16: old.md',
+            '[broken-link] CHANGELOG.md:18: old.md',
             '[broken-link] doc/topic.md:4: nowhere.md',
             '[broken-link] doc/topic.md:4: gone.md',
             '[broken-link] doc/topic.md:4: missing.md#a:b',

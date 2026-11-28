@@ -179,6 +179,77 @@ final class DeptracConfigTest extends TestCase
         self::assertSame(['PhilOtherBundleDomain', 'PhilOtherBundleApplication', 'PhilOtherBundleInfrastructure', 'DefaultAllowed', 'Forbidden', 'PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'PhilSearchBundle'], $config['ruleset']['PhilOtherBundleIntegration']);
     }
 
+    public function testTheManifestListsTheIntegrationDirectories(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => ['Infrastructure/Doctrine', 'Infrastructure/HttpKernel', 'Application/Search/Loupe', 'Infrastructure/Doctrine']]];");
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $layers = array_column($config['layers'], 'collectors', 'name');
+
+        self::assertSame([
+            ['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Infrastructure\\\\Doctrine\\\\.*'],
+            ['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Infrastructure\\\\HttpKernel\\\\.*'],
+            ['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Application\\\\Search\\\\Loupe\\\\.*'],
+        ], $layers['PhilSearchBundleIntegration']);
+        self::assertSame([['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Domain\\\\.*']], $layers['PhilSearchBundleDomain']);
+        self::assertSame([['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\(?!Application\\\\Search\\\\Loupe\\\\)Application\\\\.*']], $layers['PhilSearchBundleApplication']);
+        self::assertSame([['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\(?!Infrastructure\\\\Doctrine\\\\)(?!Infrastructure\\\\HttpKernel\\\\)Infrastructure\\\\.*']], $layers['PhilSearchBundleInfrastructure']);
+
+        $infrastructure = '/'.$layers['PhilSearchBundleInfrastructure'][0]['value'].'/';
+        $integration = static fn (string $class): bool => array_any($layers['PhilSearchBundleIntegration'], static fn (array $collector): bool => 1 === preg_match('/'.$collector['value'].'/', $class));
+
+        self::assertDoesNotMatchRegularExpression($infrastructure, 'Phil\\SearchBundle\\Infrastructure\\Doctrine\\Type\\SlugType');
+        self::assertTrue($integration('Phil\\SearchBundle\\Infrastructure\\Doctrine\\Type\\SlugType'));
+        self::assertMatchesRegularExpression($infrastructure, 'Phil\\SearchBundle\\Infrastructure\\DoctrineLike\\Thing');
+        self::assertFalse($integration('Phil\\SearchBundle\\Infrastructure\\DoctrineLike\\Thing'));
+        self::assertMatchesRegularExpression($infrastructure, 'Phil\\SearchBundle\\Infrastructure\\Messenger\\Handler');
+        self::assertDoesNotMatchRegularExpression('/'.$layers['Forbidden'][0]['value'].'/', 'Phil\\SearchBundle\\Infrastructure\\HttpKernel\\Listener');
+        self::assertDoesNotMatchRegularExpression('/'.$layers['Forbidden'][0]['value'].'/', 'Phil\\SearchBundle\\Infrastructure\\Messenger\\Handler');
+
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'PhilSearchBundleInfrastructure', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilTool', 'PhilOutbox', 'SuggestedLoupeLoupe'], $config['ruleset']['PhilSearchBundleIntegration']);
+        self::assertSame(['PhilSearchBundleDomain', 'PhilSearchBundleApplication', 'DefaultAllowed', 'Forbidden', 'PhilCore', 'PhilTool'], $config['ruleset']['PhilSearchBundleInfrastructure']);
+        self::assertSame(['Infrastructure/Doctrine', 'Infrastructure/HttpKernel', 'Application/Search/Loupe'], new Integrations(Workspace::load($root))->directories(Workspace::load($root)->byName('phil/search-bundle') ?? self::fail('phil/search-bundle is unknown.')));
+    }
+
+    public function testAnEmptyListOfIntegrationDirectoriesMeansNoIntegration(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => []]];");
+        $names = array_column(new DeptracConfig(Workspace::load($root))->build()['deptrac']['layers'], 'name');
+
+        self::assertNotContains('PhilSearchBundleIntegration', $names);
+        self::assertNotContains('SuggestedLoupeLoupe', $names);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function wrongIntegrations(): iterable
+    {
+        yield 'a string' => ["'Integration'", 'must be a boolean or a list of directories'];
+        yield 'a map' => ["['doctrine' => 'Infrastructure/Doctrine']", 'must be a boolean or a list of directories'];
+        yield 'a number' => ['[3]', 'lists "int"'];
+        yield 'an absolute path' => ["['/Infrastructure/Doctrine']", 'lists "/Infrastructure/Doctrine"'];
+        yield 'a trailing slash' => ["['Infrastructure/']", 'lists "Infrastructure/"'];
+        yield 'a parent directory' => ["['Infrastructure/../Domain']", 'lists "Infrastructure/../Domain"'];
+        yield 'a backslash' => ["['Infrastructure\\\\\\\\Doctrine']", 'which is not a directory of its namespace'];
+        yield 'an empty name' => ["['']", 'lists ""'];
+        yield 'a digit first' => ["['Infrastructure/2fa']", 'lists "Infrastructure/2fa"'];
+        yield 'a line break' => ['["Infrastructure\\n"]', 'which is not a directory of its namespace'];
+    }
+
+    #[DataProvider('wrongIntegrations')]
+    public function testWrongIntegrationDirectoriesAreRefused(string $integrations, string $message): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => ".$integrations.']];');
+
+        $this->expectException(InvalidManifest::class);
+        $this->expectExceptionMessageIsOrContains($message);
+
+        new DeptracConfig(Workspace::load($root))->build();
+    }
+
     public function testAnOverriddenRuleOfTheBundleClassSeesWhatItSuggests(): void
     {
         $root = $this->integratingWorkspace();

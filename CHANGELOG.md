@@ -5,6 +5,25 @@ All notable changes to `phil/dev-tools` will be documented in this file.
 Updates follow the [Keep a CHANGELOG](https://keepachangelog.com/) principles, and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+The next version is 0.3.0-alpha.
+
+### Added
+
+- `deptrac.integrations` takes, besides `true` and `false`, the list of directories a bundle's `<Name>Integration`
+  layer gathers, relative to its namespace (`['Infrastructure/Doctrine', 'Infrastructure/HttpKernel']`): each is
+  taken out of the layer it sits in by a negative lookahead, and the rules of the integration apply to it. A directory
+  is made of PHP namespace names separated by slashes; anything else is an `InvalidManifest`.
+  `Integrations::directories()`. See `doc/dependencies.md`.
+- `phil-dev new` writes the French twins `CHANGELOG.fr.md`, `CODE_OF_CONDUCT.fr.md`, `CONTRIBUTING.fr.md` and
+  `SECURITY.fr.md` beside the English documents, each stamped with its English source; the English and French
+  documents link to each other. See `doc/skeleton.md`.
+
+### Changed
+
+- `lint-docs` leaves out `CODE_OF_CONDUCT.fr.md` as it leaves out `CODE_OF_CONDUCT.md`: `DocsLintConfig::UNLINTED`.
+
 ## 0.2.2-alpha - 2026-11-27
 
 ### Added

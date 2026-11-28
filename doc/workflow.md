@@ -235,8 +235,10 @@ when they are missing; a file already there is kept.
 
 ## The prose of the documentation
 
-`phil-dev lint-docs [packages…]` reads the `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `doc/` and
-French mirror of each package with three linters, through the configurations it writes under `var/phil-dev/docs/`:
+`phil-dev lint-docs [packages…]` reads the `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `doc/`,
+French mirror and French twins of each package with three linters, through the configurations it writes under
+`var/phil-dev/docs/`. `CODE_OF_CONDUCT.md` and `CODE_OF_CONDUCT.fr.md`, the text of the Contributor Covenant, are left
+out:
 
 | Linter | What it checks | Configuration |
 |---|---|---|

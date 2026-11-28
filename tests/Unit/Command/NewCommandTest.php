@@ -19,7 +19,7 @@ final class NewCommandTest extends CommandTestCase
         $tester = $this->tester($root, 'new');
 
         self::assertSame(0, $tester->execute(['package' => 'tilttek/cards', '--description' => 'Decks of cards.']));
-        self::assertStringStartsWith("tilttek/cards written in packages/tilttek-cards:\n  CHANGELOG.md\n  CODE_OF_CONDUCT.md\n", $tester->getDisplay());
+        self::assertStringStartsWith("tilttek/cards written in packages/tilttek-cards:\n  CHANGELOG.fr.md\n  CHANGELOG.md\n  CODE_OF_CONDUCT.fr.md\n  CODE_OF_CONDUCT.md\n", $tester->getDisplay());
         self::assertStringEndsWith("\n  src/.gitkeep\n  tests/Unit/.gitkeep\n", $tester->getDisplay());
         self::assertStringContainsString('Decks of cards.', (string) file_get_contents($root.'/packages/tilttek-cards/README.md'));
         self::assertStringContainsString('Copyright (c) '.new DateTimeImmutable()->format('Y').' ', (string) file_get_contents($root.'/packages/tilttek-cards/LICENSE'));

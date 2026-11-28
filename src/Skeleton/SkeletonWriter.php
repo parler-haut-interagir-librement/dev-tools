@@ -18,7 +18,8 @@ use SplFileInfo;
 
 /**
  * Writes the skeleton of a new package: the file set every package has, for a library or for a bundle, in English,
- * with the wording of its vendor, and the French mirror of its README and `doc/`, stamped with its English source.
+ * with the wording of its vendor, and the French mirror of its README and `doc/` and the French twins of its CHANGELOG,
+ * CONTRIBUTING, CODE_OF_CONDUCT and SECURITY, each stamped with its English source.
  *
  * A planned package — one being written — also gets `'status' => 'planned'` in its `phil-dev.php`, a README that
  * describes what it will do, and a smoke test: its bundle class for a bundle, its autoloaded namespace for a library.
@@ -35,6 +36,18 @@ final readonly class SkeletonWriter
             ."\n[Parler Haut Interagir Librement](https://github.com/parler-haut-interagir-librement) (PHIL), with the `phil/*`"
             ."\npackages whose rules it follows, and its own repository is a read-only copy split from it: **open issues and pull"
             ."\nrequests on the monorepo**, not on the split repository.",
+    ];
+
+    /** @var array<string, string> */
+    private const array INTRODUCTIONS_FR = [
+        'phil' => "Ce paquet est l'un des paquets ouverts de [Parler Haut Interagir Librement](https://github.com/parler-haut-interagir-librement)"
+            ."\n(PHIL). Son code est développé dans le monodépôt de PHIL, avec les autres paquets `phil/*`, et son propre dépôt en est"
+            ."\nune copie en lecture seule, scindée du monodépôt : **ouvrez les tickets et les demandes de tirage sur le monodépôt**,"
+            ."\npas sur le dépôt scindé.",
+        'tilttek' => "Ce paquet est l'un des paquets ouverts `tilttek/*` de Tilttek. Son code est développé dans le monodépôt de"
+            ."\n[Parler Haut Interagir Librement](https://github.com/parler-haut-interagir-librement) (PHIL), avec les paquets"
+            ."\n`phil/*` dont il suit les règles, et son propre dépôt en est une copie en lecture seule, scindée du monodépôt :"
+            ."\n**ouvrez les tickets et les demandes de tirage sur le monodépôt**, pas sur le dépôt scindé.",
     ];
 
     /** @var array<string, string> */
@@ -212,6 +225,7 @@ final readonly class SkeletonWriter
             '{{planned_status}}' => '',
             '{{planned_status_fr}}' => '',
             '{{changelog_planned_first}}' => '',
+            '{{changelog_planned_first_fr}}' => '',
             '{{status}}' => '',
         ];
 
@@ -226,6 +240,7 @@ final readonly class SkeletonWriter
             '{{planned_status}}' => "\n| The code described above | Being written |",
             '{{planned_status_fr}}' => "\n| Le code décrit plus haut | En cours d'écriture |",
             '{{changelog_planned_first}}' => "\n- The description of what the package will do, in the README, while its code is being written.",
+            '{{changelog_planned_first_fr}}' => "\n- La description de ce que fera le paquet, dans le README, pendant que son code s'écrit.",
             '{{status}}' => "    // Being written: the gates leave it out when asked to (--skip-planned, PHIL_DEV_SKIP_PLANNED=1).\n    'status' => 'planned',\n",
             ...($name->bundle ? [] : [
                 '{{reference}}' => '| — | The package is being written; it has no public type yet. |',
@@ -321,6 +336,7 @@ final readonly class SkeletonWriter
             '{{holder}}' => self::HOLDERS[$name->vendor],
             '{{badge}}' => SecurityFiles::badge(SecurityFiles::OWNERS[$name->vendor], $name->name),
             '{{contributing_intro}}' => self::INTRODUCTIONS[$name->vendor],
+            '{{contributing_intro_fr}}' => self::INTRODUCTIONS_FR[$name->vendor],
             '{{installation}}' => $installation,
             '{{installation_fr}}' => $installationFr,
             '{{extension_points}}' => $extensionPoints,

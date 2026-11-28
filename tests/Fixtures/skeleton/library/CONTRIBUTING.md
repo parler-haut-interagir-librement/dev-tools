@@ -1,5 +1,7 @@
 # Contributing
 
+[Français](CONTRIBUTING.fr.md)
+
 This package is one of the open packages of [Parler Haut Interagir Librement](https://github.com/parler-haut-interagir-librement)
 (PHIL). Its code is developed in the PHIL monorepo, with the other `phil/*` packages, and its own repository is a
 read-only copy split from it: **open issues and pull requests on the monorepo**, not on the split repository.

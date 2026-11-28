@@ -33,7 +33,7 @@ final class CheckDocsCommandTest extends CommandTestCase
             packages/dice: [missing-file] SECURITY.md: every package has it
             packages/dice: [broken-link] README.md:37: SECURITY.md
             packages/dice: [broken-link] README.fr.md:39: SECURITY.md
-            packages/dice: [broken-link] CONTRIBUTING.md:12: SECURITY.md
+            packages/dice: [broken-link] CONTRIBUTING.md:14: SECURITY.md
             6 findings.
 
             TEXT, $tester->getDisplay());

@@ -36,7 +36,8 @@ final class SkeletonWriterTest extends TestCase
         $files = new SkeletonWriter('2027')->write(PackageName::parse('phil/opening-hours'), $dir, 'Opening hours as values.');
 
         self::assertSame([
-            'CHANGELOG.md', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.md', 'LICENSE', 'README.fr.md', 'README.md', 'SECURITY.md',
+            'CHANGELOG.fr.md', 'CHANGELOG.md', 'CODE_OF_CONDUCT.fr.md', 'CODE_OF_CONDUCT.md', 'CONTRIBUTING.fr.md', 'CONTRIBUTING.md',
+            'LICENSE', 'README.fr.md', 'README.md', 'SECURITY.fr.md', 'SECURITY.md',
             'composer-dependency-analyser.php', 'composer.json',
             'doc/extension-points.md',
             'doc/fr/extension-points.md', 'doc/fr/installation.md', 'doc/fr/reference.md', 'doc/fr/testing.md',
@@ -63,6 +64,21 @@ final class SkeletonWriterTest extends TestCase
         self::assertSame([], new DocsChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
         self::assertSame([], new TranslationChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
         self::assertSame(SourceStamp::fingerprint((string) file_get_contents($dir.'/README.md')), SourceStamp::read((string) file_get_contents($dir.'/README.fr.md')));
+
+        // Each document at the root has its French twin, stamped with its English source and linked both ways.
+        foreach (['CHANGELOG', 'CODE_OF_CONDUCT', 'CONTRIBUTING', 'SECURITY'] as $document) {
+            $english = (string) file_get_contents($dir.'/'.$document.'.md');
+            $french = (string) file_get_contents($dir.'/'.$document.'.fr.md');
+
+            self::assertSame(SourceStamp::fingerprint($english), SourceStamp::read($french), $document);
+            self::assertStringContainsString('[Français]('.$document.'.fr.md)', $english);
+            self::assertStringContainsString('[English]('.$document.'.md)', $french);
+            self::assertStringNotContainsString('{{', $french);
+        }
+
+        self::assertStringContainsString("Ce paquet est l'un des paquets ouverts de [Parler Haut Interagir Librement]", (string) file_get_contents($dir.'/CONTRIBUTING.fr.md'));
+        self::assertStringContainsString("Tous les changements notables de `phil/opening-hours` sont consignés dans ce fichier.\n", (string) file_get_contents($dir.'/CHANGELOG.fr.md'));
+        self::assertStringContainsString("### Ajouté\n\n- Le squelette du paquet", (string) file_get_contents($dir.'/CHANGELOG.fr.md'));
     }
 
     public function testABundle(): void
@@ -81,6 +97,7 @@ final class SkeletonWriterTest extends TestCase
         self::assertStringContainsString("protected string \$extensionAlias = 'tilttek_quests';", $bundle);
         self::assertStringContainsString('a Tilttek project', (string) file_get_contents($dir.'/LICENSE'));
         self::assertStringContainsString('open `tilttek/*` packages of Tilttek', (string) file_get_contents($dir.'/CONTRIBUTING.md'));
+        self::assertStringContainsString("l'un des paquets ouverts `tilttek/*` de Tilttek", (string) file_get_contents($dir.'/CONTRIBUTING.fr.md'));
         self::assertStringContainsString('integrates `tilttek/quests` with Symfony', (string) file_get_contents($dir.'/README.md'));
         self::assertStringContainsString('"type": "symfony-bundle"', (string) file_get_contents($dir.'/composer.json'));
         self::assertSame([], new DocsChecker()->check(Package::fromDirectory($dir, '', PackageRole::Root)));
@@ -128,6 +145,7 @@ final class SkeletonWriterTest extends TestCase
         self::assertStringContainsString("    'status' => 'planned',\n", (string) file_get_contents($dir.'/phil-dev.php'));
         self::assertSame('planned', Package::fromDirectory($dir, '', PackageRole::Root)->manifest->get('status'));
         self::assertStringContainsString("### Added\n\n- The description of what the package will do, in the README, while its code is being written.\n", (string) file_get_contents($dir.'/CHANGELOG.md'));
+        self::assertStringContainsString("### Ajouté\n\n- La description de ce que fera le paquet, dans le README, pendant que son code s'écrit.\n", (string) file_get_contents($dir.'/CHANGELOG.fr.md'));
 
         $composer = json_decode((string) file_get_contents($dir.'/composer.json'), true, 512, \JSON_THROW_ON_ERROR);
         self::assertIsArray($composer);

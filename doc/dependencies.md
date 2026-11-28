@@ -97,12 +97,27 @@ return [
 ];
 ```
 
+A bundle whose integrations already sit inside its code layers lists their directories instead, relative to its
+namespace:
+
+```php
+return [
+    'deptrac' => ['integrations' => ['Infrastructure/Doctrine', 'Infrastructure/HttpKernel', 'Infrastructure/Serializer']],
+];
+```
+
+The `<Name>Integration` layer then gathers those directories, and each is taken out of the layer it sits in:
+`Infrastructure/Doctrine/` belongs to the integration, `Infrastructure/Messenger/` stays in the infrastructure, and the
+rules of the table above apply unchanged. `true` stands for `['Integration']`, `false` and an empty list for no
+integration. Each directory is made of PHP namespace names separated by slashes; anything else — a leading or trailing
+slash, `..`, a backslash — is refused.
+
 A package whose layers `deptrac.layers` declares, and a library, have no integration layer. A rule of the bundle class
 or of the integration that `deptrac.ruleset` replaces, and that names `Forbidden`, still sees the packages the bundle
 suggests.
 
 The dependency analysis sees the same code: the package of an integration is suggested and installed in development
-only, which its `composer-dependency-analyser.php` accepts for the integration and the bundle class:
+only, which its `composer-dependency-analyser.php` accepts for each integration directory and the bundle class:
 
 ```php
 ->ignoreErrorsOnPath(__DIR__.'/src/Integration', [ErrorType::DEV_DEPENDENCY_IN_PROD])

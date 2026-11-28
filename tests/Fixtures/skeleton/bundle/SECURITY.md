@@ -1,5 +1,7 @@
 # Security Policy
 
+[Français](SECURITY.fr.md)
+
 ## Reporting a vulnerability
 
 **Do not report a vulnerability in a public issue, pull request or discussion.** Write to
