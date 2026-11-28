@@ -17,8 +17,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[AsCommand(name: 'new', description: 'Writes the skeleton of a new package, a library or a bundle', help: <<<'TXT'
     Writes the file set every package has — README, CHANGELOG, CODE_OF_CONDUCT, CONTRIBUTING, LICENSE,
     SECURITY, composer.json, composer-dependency-analyser.php, phil-dev.php, doc/, src/ and tests/ — with
-    the wording of its vendor, and the French mirror of its documentation, README.fr.md and doc/fr/. In a monorepo it goes to packages/<name> (packages/tilttek-<name> for
-    Tilttek), where the shared configurations find it without any change at the root.
+    the wording of its vendor, the French mirror of its documentation, README.fr.md and doc/fr/, and the
+    French twins CHANGELOG.fr.md, CODE_OF_CONDUCT.fr.md, CONTRIBUTING.fr.md and SECURITY.fr.md, each stamped
+    with its English source. In a monorepo it goes to packages/<name> (packages/tilttek-<name> for Tilttek),
+    where the shared configurations find it without any change at the root.
 
     --planned writes a package being written: 'status' => 'planned' in its phil-dev.php, a README and
     doc/reference.md that say so and describe what it will do (--description, its first sentence as the

@@ -37,7 +37,7 @@ final class DocsLintConfigTest extends TestCase
     {
         $root = $this->root('<?php return [];');
 
-        foreach (['README.md', 'README.fr.md', 'doc/a.md', 'doc/fr/a.md', 'doc/fr/sub/b.md', 'doc/fr-glossary.md'] as $file) {
+        foreach (['README.md', 'README.fr.md', 'CODE_OF_CONDUCT.md', 'CODE_OF_CONDUCT.fr.md', 'SECURITY.fr.md', 'doc/a.md', 'doc/fr/a.md', 'doc/fr/sub/b.md', 'doc/fr-glossary.md'] as $file) {
             $this->put($root.'/'.$file, '');
         }
 
@@ -47,7 +47,8 @@ final class DocsLintConfigTest extends TestCase
         $english = json_decode($config->cspell($workspace->root), true, flags: \JSON_THROW_ON_ERROR);
 
         self::assertSame([$root.'/README.md', $root.'/doc/a.md'], $config->files($workspace->root));
-        self::assertSame([$root.'/README.fr.md', $root.'/doc/fr/a.md', $root.'/doc/fr/sub/b.md', $root.'/doc/fr-glossary.md'], $config->translations($workspace->root));
+        // The code of conduct is left out in both languages; the other twins are read with the mirrors.
+        self::assertSame([$root.'/README.fr.md', $root.'/doc/fr/a.md', $root.'/doc/fr/sub/b.md', $root.'/SECURITY.fr.md', $root.'/doc/fr-glossary.md'], $config->translations($workspace->root));
         self::assertIsArray($french);
         self::assertIsArray($english);
         self::assertSame('fr,en,en-GB', $french['language']);

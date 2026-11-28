@@ -29,8 +29,9 @@ use Phil\DevTools\Workspace\Workspace;
  * integrate. A manifest replaces the layers of its package with `deptrac.layers` and the rules of a layer with
  * `deptrac.ruleset`.
  *
- * A bundle with an `Integration` directory beside its `Domain` — or whose manifest sets `deptrac.integrations` — keeps
- * the code that touches the packages it only suggests in `<Name>Integration`:
+ * A bundle with an `Integration` directory beside its `Domain` — or whose manifest sets `deptrac.integrations` to `true`
+ * or to a list of directories, such as `Infrastructure/Doctrine` — keeps the code that touches the packages it only
+ * suggests in `<Name>Integration`, which gathers those directories and takes them out of the layer they sit in:
  *
  * - each package of its `suggest` that it does not require becomes visible to that layer and to the bundle class only:
  *   a known package through its own layers, an installed one through a `Suggested…` layer named after its namespace,
@@ -258,18 +259,43 @@ final readonly class DeptracConfig
                 continue;
             }
 
-            $layers[] = new Layer($name.'Domain', ['^'.$quoted.'\\\\Domain\\\\.*'], LayerKind::Domain);
-            $layers[] = new Layer($name.'Application', ['^'.$quoted.'\\\\Application\\\\.*'], LayerKind::Application);
-            $layers[] = new Layer($name.'Infrastructure', ['^'.$quoted.'\\\\Infrastructure\\\\.*'], LayerKind::Infrastructure);
+            $integrations = $this->integrations->directories($package);
 
-            if ($this->integrations->integrates($package)) {
-                $layers[] = new Layer($name.Integrations::DIRECTORY, ['^'.$quoted.'\\\\'.Integrations::DIRECTORY.'\\\\.*'], LayerKind::Integration);
+            foreach (['Domain' => LayerKind::Domain, 'Application' => LayerKind::Application, 'Infrastructure' => LayerKind::Infrastructure] as $directory => $kind) {
+                $layers[] = new Layer($name.$directory, ['^'.$quoted.'\\\\'.$this->outside($directory, $integrations).$directory.'\\\\.*'], $kind);
+            }
+
+            if ([] !== $integrations) {
+                $layers[] = new Layer(
+                    $name.Integrations::DIRECTORY,
+                    array_map(static fn (string $directory): string => '^'.$quoted.'\\\\'.str_replace('/', '\\\\', $directory).'\\\\.*', $integrations),
+                    LayerKind::Integration,
+                );
             }
 
             $layers[] = new Layer($name, ['^'.$quoted.'\\\\[^\\\\]+$'], LayerKind::Bundle);
         }
 
         return $layers;
+    }
+
+    /**
+     * The negative lookaheads that take the integration directories inside a code layer out of it: an
+     * `Infrastructure/Doctrine` integration leaves `Infrastructure` for the integration layer.
+     *
+     * @param list<string> $integrations
+     */
+    private function outside(string $layer, array $integrations): string
+    {
+        $lookaheads = '';
+
+        foreach ($integrations as $directory) {
+            if (str_starts_with($directory, $layer.'/')) {
+                $lookaheads .= '(?!'.str_replace('/', '\\\\', $directory).'\\\\)';
+            }
+        }
+
+        return $lookaheads;
     }
 
     /**

@@ -167,7 +167,6 @@ final class CheckTranslationsCommandTest extends CommandTestCase
     {
         $root = $this->temporaryDirectory();
         $this->tester($root, 'new')->execute(['package' => 'phil/alone', '--dir' => '.']);
-        $this->translateTwins($root);
         unlink($root.'/README.fr.md');
         $tester = $this->tester($root, 'check-translations');
 
@@ -289,8 +288,9 @@ final class CheckTranslationsCommandTest extends CommandTestCase
                 $this->put($root.'/packages/'.$name.'/phil-dev.php', "<?php return ['paths' => ['src', 'tests']];");
             }
 
-            if ($twins) {
-                $this->translateTwins($root.'/packages/'.$name);
+            // The skeleton writes the French twins; a test that needs them missing takes them out.
+            foreach ($twins ? [] : ['CHANGELOG', 'CODE_OF_CONDUCT', 'CONTRIBUTING', 'SECURITY'] as $document) {
+                unlink($root.'/packages/'.$name.'/'.$document.'.fr.md');
             }
         }
 

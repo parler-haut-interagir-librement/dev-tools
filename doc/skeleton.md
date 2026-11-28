@@ -12,6 +12,7 @@
 | `composer-dependency-analyser.php`, `phil-dev.php` | yes | yes |
 | `doc/` | installation, extension points, testing, reference | the same, and configuration |
 | `README.fr.md`, `doc/fr/` | the French mirror of the README and of `doc/`, stamped with its English | the same |
+| `CHANGELOG.fr.md`, `CODE_OF_CONDUCT.fr.md`, `CONTRIBUTING.fr.md`, `SECURITY.fr.md` | the French twin of each, beside it, stamped with its English and linked both ways | the same |
 | `src/`, `tests/Unit/` | empty | the bundle class on `AbstractBundle` and its test |
 
 The versions come from the floor of the [version matrix](version-matrix.md), and the constraints allow the next one.

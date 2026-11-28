@@ -1,5 +1,7 @@
 # Contributing
 
+[Français](CONTRIBUTING.fr.md)
+
 {{contributing_intro}}
 
 ## Reporting a bug

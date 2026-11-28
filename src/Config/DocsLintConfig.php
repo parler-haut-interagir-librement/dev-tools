@@ -32,6 +32,14 @@ final readonly class DocsLintConfig
      */
     public const array ROOT_FILES = ['README.md', 'CHANGELOG.md', 'CONTRIBUTING.md', 'SECURITY.md'];
 
+    /**
+     * The documents at the root the linters leave out, with their French twins: the code of conduct, the text of the
+     * Contributor Covenant, which keeps its own wording and lines.
+     *
+     * @var list<string>
+     */
+    public const array UNLINTED = ['CODE_OF_CONDUCT.md'];
+
     public function __construct(private Workspace $workspace)
     {
     }
@@ -68,13 +76,19 @@ final readonly class DocsLintConfig
     }
 
     /**
-     * The French files of the package, absolute: its mirrors, read with the French dictionary and never by Vale.
+     * The French files of the package, absolute: its mirrors and its twins, read with the French dictionary and never
+     * by Vale; the twins of `UNLINTED` are left out.
      *
      * @return list<string>
      */
     public function translations(Package $package): array
     {
-        return array_map($package->path(...), Mirrors::french($package));
+        $french = array_filter(
+            Mirrors::french($package),
+            static fn (string $file): bool => !Mirrors::isTwin($file) || !\in_array(Mirrors::sourceOf($file), self::UNLINTED, true),
+        );
+
+        return array_values(array_map($package->path(...), $french));
     }
 
     /**
