@@ -211,6 +211,24 @@ final class DeptracConfigTest extends TestCase
         self::assertSame(['Infrastructure/Doctrine', 'Infrastructure/HttpKernel', 'Application/Search/Loupe'], new Integrations(Workspace::load($root))->directories(Workspace::load($root)->byName('phil/search-bundle') ?? self::fail('phil/search-bundle is unknown.')));
     }
 
+    public function testAnIntegrationDirectoryOnlyLeavesTheLayerItSitsIn(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => ['InfrastructureExtra/Doctrine']]];");
+        $config = new DeptracConfig(Workspace::load($root))->build()['deptrac'];
+        $layers = array_column($config['layers'], 'collectors', 'name');
+
+        self::assertSame([['type' => 'classLike', 'value' => '^Phil\\\\SearchBundle\\\\Infrastructure\\\\.*']], $layers['PhilSearchBundleInfrastructure']);
+    }
+
+    public function testTheIntegrationDirectoriesAreAListWhateverTheRepeats(): void
+    {
+        $root = $this->integratingWorkspace();
+        $this->put($root.'/packages/search-bundle/phil-dev.php', "<?php return ['deptrac' => ['integrations' => ['Infrastructure/Doctrine', 'Infrastructure/Doctrine', 'Infrastructure/HttpKernel']]];");
+
+        self::assertSame(['Infrastructure/Doctrine', 'Infrastructure/HttpKernel'], new Integrations(Workspace::load($root))->directories(Workspace::load($root)->byName('phil/search-bundle') ?? self::fail('phil/search-bundle is unknown.')));
+    }
+
     public function testAnEmptyListOfIntegrationDirectoriesMeansNoIntegration(): void
     {
         $root = $this->integratingWorkspace();
